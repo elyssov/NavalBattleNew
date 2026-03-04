@@ -993,6 +993,7 @@ function getFleetForSize(fieldSize, capitalChoice) {
           { index: 4, loaded: true, damaged: false }
         ] : null,
         planes: type === 'carrier' ? 3 : 0,
+        strikers: type === 'carrier' ? 6 : 0,
         blocked: false,
         deployed: type === 'submarine' ? false : true,
         surfaced: false,
@@ -1694,12 +1695,13 @@ function updateActionBar() {
     const player = gameState.players[0];
     const hasLiving = player.ships.some(s => !s.sunk && s.type !== 'submarine');
     const hasTorpedo = player.ships.some(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
-    const hasAsroc = player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
+    const sonarUsedThisTurn = gameState.sonarDetections.some(d => d.playerIdx === 0 && d.turnDetected === gameState.currentTurn);
+    const hasAsroc = player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0) && !sonarUsedThisTurn;
     const canNuke = !player.nuclearUsed && gameState.settings.fieldSize > 30;
     const tarkr = player.ships.find(s => s.type === 'tarkr' && !s.sunk);
     const hasPcr = tarkr && tarkr.launchers.some(l => l.loaded && !l.damaged);
     const carrierF = player.ships.find(s => s.type === 'carrier' && !s.sunk);
-    const hasStriker = carrierF && !carrierF.blocked;
+    const hasStriker = carrierF && !carrierF.blocked && carrierF.strikers > 0;
     const noFireModeActive = !battle.torpedoMode && !battle.asrocMode && !battle.nuclearStrikeMode && !battle.pcrMode && !battle.strikerMode;
 
     let pcrLabel = 'PCR Vulkan';
@@ -1718,8 +1720,8 @@ function updateActionBar() {
       <button class="action-btn fire-btn${battle.pcrMode ? ' active' : ''}" onclick="startPcrMode()" ${!hasPcr ? 'disabled title="' + (!tarkr ? 'No TARKR' : 'No loaded launchers') + '"' : ''}>
         ${pcrLabel}
       </button>
-      <button class="action-btn fire-btn${battle.strikerMode ? ' active' : ''}" onclick="startStrikerMode()" ${!hasStriker ? 'disabled title="' + (!carrierF ? 'No carrier' : 'Carrier blocked') + '"' : ''}>
-        Striker${battle.strikerMode ? ' (chain)' : ''}
+      <button class="action-btn fire-btn${battle.strikerMode ? ' active' : ''}" onclick="startStrikerMode()" ${!hasStriker ? 'disabled title="' + (!carrierF ? 'No carrier' : carrierF && carrierF.blocked ? 'Carrier blocked' : 'No strikers left') + '"' : ''}>
+        Striker${battle.strikerMode ? ' (chain)' : (carrierF ? ' (' + carrierF.strikers + ')' : '')}
       </button>
       <div class="action-separator"></div>
       <button class="action-btn fire-btn${battle.nuclearStrikeMode ? ' active' : ''}" onclick="startNuclearStrikeMode()" ${!canNuke ? 'disabled title="' + (player.nuclearUsed ? 'Already used' : 'Not available in Skirmish') + '"' : ''} style="${canNuke ? 'border-color:#ff9800;color:#ff9800;' : ''}">
@@ -2312,6 +2314,12 @@ function useSonar(sourceShip) {
 // ── ASROC (Anti-Submarine Rocket) ──
 
 function startAsrocMode() {
+  // Cannot fire ASROC on the same turn sonar was used — sub must have a chance to move
+  const sonarThisTurn = gameState.sonarDetections.some(d => d.playerIdx === gameState.currentPlayer && d.turnDetected === gameState.currentTurn);
+  if (sonarThisTurn) {
+    showToast('Cannot fire ASROC on the same turn as sonar — target must have a chance to evade.', 'info', 3000);
+    return;
+  }
   battle.asrocMode = true;
   showToast('Click target cell on Radar to launch ASROC.', 'info', 3000);
   updateActionBar();
@@ -2786,6 +2794,9 @@ function startStrikerMode() {
   const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
   if (!carrier) { showToast('No carrier available.', 'info'); return; }
   if (carrier.blocked) { showToast('Carrier blocked — hit recently.', 'info'); return; }
+  if (carrier.strikers <= 0) { showToast('No strikers remaining.', 'info'); return; }
+
+  carrier.strikers--;
 
   battle.torpedoMode = false;
   battle.asrocMode = false;
@@ -2793,7 +2804,7 @@ function startStrikerMode() {
   battle.pcrMode = false;
   battle.strikerMode = true;
   battle.strikerChain = [];
-  showToast('Striker launched! Click target on Radar.', 'info', 3000);
+  showToast('Striker launched! (' + carrier.strikers + ' remaining) Click target on Radar.', 'info', 3000);
   updateActionBar();
 }
 
@@ -2862,22 +2873,19 @@ function strikerAttack(attackerIdx, x, y) {
   }
 }
 
-// ── AI (Easy) ──
+// ══════════════════════════════════════════════
+//  AI — STRONG BUT FAIR (NO CHEATS)
+// ══════════════════════════════════════════════
 
 function aiUseRadar(sourceShip) {
-  const aiIdx = 1;
-  const ai = gameState.players[aiIdx];
+  const ai = gameState.players[1];
   const human = gameState.players[0];
-
   sourceShip.radarCooldown = 3;
-
-  // Cost: reveal source to human
   human.radarData.detectedShips.push({
     cells: sourceShip.cells.map(c => ({ ...c })),
     type: sourceShip.type, size: sourceShip.size,
     turnDetected: gameState.currentTurn
   });
-
   const RADAR_CHANCE = { destroyer: 25, cruiser: 50, tarkr: 75, carrier: 75 };
   const chance = RADAR_CHANCE[sourceShip.type] || 25;
   for (const hShip of human.ships) {
@@ -2894,10 +2902,8 @@ function aiUseRadar(sourceShip) {
 }
 
 function aiUseAirRecon(carrier) {
-  const aiIdx = 1;
-  const ai = gameState.players[aiIdx];
+  const ai = gameState.players[1];
   const human = gameState.players[0];
-
   carrier.planes--;
   for (const hShip of human.ships) {
     if (hShip.sunk) continue;
@@ -2910,40 +2916,156 @@ function aiUseAirRecon(carrier) {
         turnDetected: gameState.currentTurn
       });
     } else {
-      if (Math.floor(Math.random() * 100) + 1 <= 30) break; // plane shot down
+      if (Math.floor(Math.random() * 100) + 1 <= 30) break;
     }
   }
 }
 
-function aiTakeTurn() {
-  if (gameState.gameOver) return;
+// ── AI Probability Map — core targeting engine ──
 
-  const ai = gameState.players[1];
-  const human = gameState.players[0];
+function aiBuildProbabilityMap(aiIdx) {
+  const ai = gameState.players[aiIdx];
+  const sz = gameState.settings.fieldSize;
+  const prob = Array.from({ length: sz }, () => new Float32Array(sz)); // all zeros
 
-  // AI submarine deployment: 50% chance per turn within turns 1-10
-  const aiSub = ai.ships.find(s => s.type === 'submarine' && !s.deployed);
-  if (aiSub && gameState.currentTurn <= 10 && Math.random() < 0.5) {
-    if (aiDeploySub()) {
-      endTurn();
-      return; // sub deploy counts as the AI's move action
+  const shotSet = new Set(ai.radarData.shots.map(s => s.x + ',' + s.y));
+  const sunkCells = new Set();
+  for (const sunk of ai.radarData.sunkShips) {
+    for (const c of sunk.cells) sunkCells.add(c.x + ',' + c.y);
+  }
+
+  // Build set of hit cells that belong to unsunk ships
+  const unsunkHits = [];
+  for (const shot of ai.radarData.shots) {
+    if (shot.hit && !sunkCells.has(shot.x + ',' + shot.y)) {
+      unsunkHits.push(shot);
     }
   }
 
-  // AI RECON: 30% chance to use radar if a ship is available
-  const radarShips = ai.ships.filter(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine');
-  if (radarShips.length > 0 && Math.random() < 0.3) {
-    const source = radarShips[Math.floor(Math.random() * radarShips.length)];
-    aiUseRadar(source);
+  // Determine which ship sizes are still alive (not sunk)
+  const sunkTypes = {};
+  for (const sunk of ai.radarData.sunkShips) {
+    sunkTypes[sunk.type] = (sunkTypes[sunk.type] || 0) + 1;
+  }
+  const defenderIdx = 1 - aiIdx;
+  // We don't know exact enemy fleet, estimate from field size
+  const fleetSizes = [];
+  const fSz = gameState.settings.fieldSize;
+  if (fSz === 30) {
+    fleetSizes.push(1, 1, 2, 2, 3, 4); // 2 boats, 2 mrk, 1 dd, 1 cruiser
+  } else if (fSz === 50) {
+    fleetSizes.push(1, 1, 1, 2, 2, 2, 3, 3, 4, 5); // approximate
+  } else {
+    fleetSizes.push(1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5);
   }
 
-  // AI Sonar: 40% chance if destroyer available and human has a deployed sub
+  // For each possible ship size, count how many placements fit each cell
+  for (const shipSize of fleetSizes) {
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        // Horizontal placement starting at (x, y)
+        if (x + shipSize <= sz) {
+          let valid = true;
+          let coversHit = false;
+          for (let dx = 0; dx < shipSize; dx++) {
+            const key = (x + dx) + ',' + y;
+            if (gridCache[y][x + dx] !== 0) { valid = false; break; } // island/wreck blocks
+            const shot = shotSet.has(key);
+            const isHit = ai.radarData.shots.find(s => s.x === x + dx && s.y === y && s.hit);
+            const isMiss = shot && !isHit;
+            const isSunk = sunkCells.has(key);
+            if (isMiss || isSunk) { valid = false; break; }
+            if (isHit) coversHit = true;
+          }
+          if (valid) {
+            const weight = coversHit ? 20 : 1; // strongly prefer placements that explain known hits
+            for (let dx = 0; dx < shipSize; dx++) {
+              if (!shotSet.has((x + dx) + ',' + y)) {
+                prob[y][x + dx] += weight;
+              }
+            }
+          }
+        }
+        // Vertical placement starting at (x, y)
+        if (y + shipSize <= sz) {
+          let valid = true;
+          let coversHit = false;
+          for (let dy = 0; dy < shipSize; dy++) {
+            const key = x + ',' + (y + dy);
+            if (gridCache[y + dy][x] !== 0) { valid = false; break; }
+            const shot = shotSet.has(key);
+            const isHit = ai.radarData.shots.find(s => s.x === x && s.y === y + dy && s.hit);
+            const isMiss = shot && !isHit;
+            const isSunk = sunkCells.has(key);
+            if (isMiss || isSunk) { valid = false; break; }
+            if (isHit) coversHit = true;
+          }
+          if (valid) {
+            const weight = coversHit ? 20 : 1;
+            for (let dy = 0; dy < shipSize; dy++) {
+              if (!shotSet.has(x + ',' + (y + dy))) {
+                prob[y + dy][x] += weight;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Zero out already-shot cells
+  for (const shot of ai.radarData.shots) prob[shot.y][shot.x] = 0;
+
+  return prob;
+}
+
+function aiPickBestShot(prob, sz) {
+  let bestX = -1, bestY = -1, bestScore = -1;
+  for (let y = 0; y < sz; y++) {
+    for (let x = 0; x < sz; x++) {
+      if (prob[y][x] > bestScore) {
+        bestScore = prob[y][x];
+        bestX = x; bestY = y;
+      }
+    }
+  }
+  // If multiple cells share the best score, pick randomly among them
+  if (bestScore > 0) {
+    const ties = [];
+    for (let y = 0; y < sz; y++)
+      for (let x = 0; x < sz; x++)
+        if (prob[y][x] >= bestScore * 0.95) ties.push({ x, y });
+    if (ties.length > 1) {
+      const pick = ties[Math.floor(Math.random() * ties.length)];
+      return pick;
+    }
+  }
+  return bestX >= 0 ? { x: bestX, y: bestY } : null;
+}
+
+// ── AI Recon Strategy ──
+
+function aiReconPhase(ai, human) {
+  // Priority: always use best radar available (highest chance first)
+  const radarPriority = ['carrier', 'tarkr', 'cruiser', 'destroyer'];
+  const radarShips = ai.ships
+    .filter(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine')
+    .sort((a, b) => radarPriority.indexOf(a.type) - radarPriority.indexOf(b.type));
+
+  // Use radar aggressively early game, then when we have unsunk hits
+  const unsunkHits = ai.radarData.shots.filter(s => s.hit && !ai.radarData.sunkShips.some(sk => sk.cells.some(c => c.x === s.x && c.y === s.y)));
+  const wantRecon = gameState.currentTurn <= 5 || unsunkHits.length === 0 || Math.random() < 0.6;
+
+  if (radarShips.length > 0 && wantRecon) {
+    aiUseRadar(radarShips[0]);
+  }
+
+  // Sonar: if human has deployed sub and we have DD ready
   const sonarDDs = ai.ships.filter(s => s.type === 'destroyer' && !s.sunk && s.sonarCooldown === 0);
   const humanSub = human.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk);
-  const freshSonarDetection = gameState.sonarDetections.some(d => d.playerIdx === 1 && gameState.currentTurn - d.turnDetected <= 1);
-  if (sonarDDs.length > 0 && humanSub && !freshSonarDetection && Math.random() < 0.4) {
+  const freshSonarDet = gameState.sonarDetections.some(d => d.playerIdx === 1 && gameState.currentTurn - d.turnDetected <= 1);
+  if (sonarDDs.length > 0 && humanSub && !freshSonarDet) {
     const dd = sonarDDs[Math.floor(Math.random() * sonarDDs.length)];
-    // AI sonar: same logic as useSonar but for AI
     dd.sonarCooldown = 2;
     human.radarData.detectedShips.push({
       cells: dd.cells.map(c => ({ ...c })),
@@ -2968,146 +3090,209 @@ function aiTakeTurn() {
     }
   }
 
-  // AI Air Recon: 40% chance if carrier available with planes
+  // Air Recon: use if carrier has planes and we need intel
   const aiCarrier = ai.ships.find(s => s.type === 'carrier' && !s.sunk && s.planes > 0 && !s.blocked);
-  if (aiCarrier && Math.random() < 0.4) {
+  if (aiCarrier && (gameState.currentTurn <= 4 || Math.random() < 0.5)) {
     aiUseAirRecon(aiCarrier);
   }
+}
+
+// ── AI Special Weapons ──
+
+function aiTrySpecialWeapons(aiIdx, ai, shotSet, sz) {
+  // ASROC: if sonar detection from PREVIOUS turn, 80% chance
+  const aiSonarThisTurn = gameState.sonarDetections.some(d => d.playerIdx === 1 && d.turnDetected === gameState.currentTurn);
+  const freshSonarDet = gameState.sonarDetections.find(d => d.playerIdx === 1 && gameState.currentTurn - d.turnDetected === 1);
+  const asrocDD = ai.ships.find(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
+  if (freshSonarDet && asrocDD && !aiSonarThisTurn) {
+    const cell = freshSonarDet.cells[Math.floor(freshSonarDet.cells.length / 2)];
+    if (fireAsroc(aiIdx, cell.x, cell.y)) return true;
+  }
+
+  // PCR Vulkan: fire at high-value detected targets (prioritize capital ships)
+  const aiTarkr = ai.ships.find(s => s.type === 'tarkr' && !s.sunk);
+  if (aiTarkr) {
+    const aiLoadedLauncher = aiTarkr.launchers.find(l => l.loaded && !l.damaged);
+    if (aiLoadedLauncher) {
+      // Prioritize: carrier > tarkr > cruiser > destroyer > mrk > boat
+      const valuePriority = ['carrier', 'tarkr', 'cruiser', 'destroyer', 'mrk', 'missile_boat'];
+      const freshDetections = ai.radarData.detectedShips
+        .filter(d => gameState.currentTurn - d.turnDetected <= 1 && d.type !== 'submarine')
+        .sort((a, b) => valuePriority.indexOf(a.type) - valuePriority.indexOf(b.type));
+      if (freshDetections.length > 0) {
+        const pcrTarget = freshDetections[0];
+        const midCell = pcrTarget.cells[Math.floor(pcrTarget.cells.length / 2)];
+        battle.pcrSelectedLauncher = aiLoadedLauncher.index;
+        if (firePCR(aiIdx, midCell.x, midCell.y)) return true;
+      }
+    }
+  }
+
+  // Torpedo: fire at detected surface ship (prefer large targets)
+  const aiSub = ai.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
+  if (aiSub) {
+    const torpTargets = ai.radarData.detectedShips
+      .filter(d => gameState.currentTurn - d.turnDetected <= 1)
+      .sort((a, b) => b.size - a.size);
+    if (torpTargets.length > 0 && Math.random() < 0.5) {
+      const t = torpTargets[0];
+      const midCell = t.cells[Math.floor(t.cells.length / 2)];
+      if (fireTorpedo(aiIdx, midCell.x, midCell.y)) return true;
+    }
+  }
+
+  // Striker: chain attack on detected ship
+  const aiCarrier = ai.ships.find(s => s.type === 'carrier' && !s.sunk && !s.blocked && s.strikers > 0);
+  if (aiCarrier) {
+    const strikerTargets = ai.radarData.detectedShips.filter(d => gameState.currentTurn - d.turnDetected <= 1);
+    if (strikerTargets.length > 0 && Math.random() < 0.5) {
+      aiCarrier.strikers--;
+      // AI runs full striker chain
+      let target = strikerTargets[0];
+      let curCell = target.cells[Math.floor(target.cells.length / 2)];
+      let chainContinues = true;
+      while (chainContinues) {
+        const hit = getShipAt(0, curCell.x, curCell.y);
+        if (!hit || (hit.ship.type === 'submarine' && !hit.ship.surfaced)) {
+          if (!ai.radarData.shots.some(s => s.x === curCell.x && s.y === curCell.y)) {
+            ai.radarData.shots.push({ x: curCell.x, y: curCell.y, hit: false });
+          }
+          chainContinues = false;
+          break;
+        }
+        let aRoll, dRoll;
+        do { aRoll = Math.floor(Math.random() * 100) + 1; dRoll = Math.floor(Math.random() * 100) + 1; } while (aRoll === dRoll);
+        if (aRoll > dRoll) {
+          hit.ship.hits[hit.cellIndex] = true;
+          if (!ai.radarData.shots.some(s => s.x === curCell.x && s.y === curCell.y)) {
+            ai.radarData.shots.push({ x: curCell.x, y: curCell.y, hit: true });
+          }
+          if (hit.ship.type === 'carrier') hit.ship.blocked = true;
+          checkReactorDetonation(aiIdx, hit.ship, hit.cellIndex, 0);
+          if (hit.ship.hits.every(h => h)) {
+            hit.ship.sunk = true;
+            ai.radarData.sunkShips.push({ type: hit.ship.type, cells: hit.ship.cells.map(c => ({ ...c })) });
+            showToast('Enemy striker SUNK your ' + hit.ship.name + '!', 'sunk', 3000);
+          } else {
+            showToast('Enemy striker HIT your ' + hit.ship.name + '!', 'sunk', 2000);
+          }
+          // Try to hit next unhit cell on same ship
+          const nextCell = hit.ship.cells.find((c, i) => !hit.ship.hits[i]);
+          if (nextCell && !hit.ship.sunk) {
+            curCell = nextCell;
+          } else {
+            chainContinues = false;
+          }
+        } else {
+          showToast('Enemy striker shot down by your PVO!', 'hit', 2000);
+          chainContinues = false;
+        }
+      }
+      return true;
+    }
+  }
+
+  // Nuclear Strike: if 3+ fresh detections or many unsunk hits
+  if (!ai.nuclearUsed && sz > 30) {
+    const detShips = ai.radarData.detectedShips.filter(d => gameState.currentTurn - d.turnDetected <= 1);
+    if (detShips.length >= 3) {
+      let sumX = 0, sumY = 0, count = 0;
+      for (const ds of detShips) {
+        for (const c of ds.cells) { sumX += c.x; sumY += c.y; count++; }
+      }
+      const cx = Math.round(sumX / count), cy = Math.round(sumY / count);
+      launchNuclearStrike(aiIdx, cx, cy);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// ── AI Movement Strategy ──
+
+function aiTryMove(aiIdx, ai, human) {
+  // Move ships that have been detected by the enemy (enemy knows where we are)
+  for (const ship of ai.ships) {
+    if (ship.sunk || (ship.type === 'submarine' && !ship.deployed)) continue;
+    // Check if this ship was detected by enemy recently
+    const detected = human.radarData.detectedShips.some(d =>
+      d.cells.some(dc => ship.cells.some(sc => sc.x === dc.x && sc.y === dc.y)) &&
+      gameState.currentTurn - d.turnDetected <= 1
+    );
+    if (detected && Math.random() < 0.6) {
+      const opts = getMovementOptions(aiIdx, ship);
+      if (opts.length > 0) {
+        // Prefer longer moves to escape detection
+        const slideOpts = opts.filter(o => o.type === 'slide').sort((a, b) => (b.dist || 0) - (a.dist || 0));
+        const pick = slideOpts.length > 0 ? slideOpts[0] : opts[Math.floor(Math.random() * opts.length)];
+        executeMove(aiIdx, ship, pick);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// ── AI Main Turn ──
+
+function aiTakeTurn() {
+  if (gameState.gameOver) return;
+
+  const aiIdx = 1;
+  const ai = gameState.players[aiIdx];
+  const human = gameState.players[0];
+
+  // Sub deployment: deploy early (turns 1-5), must deploy by turn 10
+  const aiSub = ai.ships.find(s => s.type === 'submarine' && !s.deployed);
+  if (aiSub) {
+    const mustDeploy = gameState.currentTurn >= 8;
+    const wantDeploy = gameState.currentTurn <= 5 ? Math.random() < 0.3 : Math.random() < 0.6;
+    if ((mustDeploy || wantDeploy) && gameState.currentTurn <= 10) {
+      if (aiDeploySub()) { endTurn(); return; }
+    }
+  }
+
+  // RECON phase — always use intel aggressively
+  aiReconPhase(ai, human);
 
   gameState.phase = 'action';
   gameState.actionMode = 'fire';
   updateTopBar();
 
   setTimeout(() => {
-    // Try to fire
-    const aiIdx = 1;
+    if (gameState.gameOver) return;
     const ai = gameState.players[aiIdx];
     const hasLiving = ai.ships.some(s => !s.sunk && s.type !== 'submarine');
-
     if (!hasLiving) { endTurn(); return; }
 
     const sz = gameState.settings.fieldSize;
     const shotSet = new Set(ai.radarData.shots.map(s => s.x + ',' + s.y));
 
-    // AI ASROC: if fresh sonar detection of human sub, 70% chance
-    const freshSonarDet = gameState.sonarDetections.find(d => d.playerIdx === 1 && gameState.currentTurn - d.turnDetected <= 1);
-    const asrocDD = ai.ships.find(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
-    if (freshSonarDet && asrocDD && Math.random() < 0.7) {
-      const cell = freshSonarDet.cells[Math.floor(freshSonarDet.cells.length / 2)];
-      if (fireAsroc(aiIdx, cell.x, cell.y)) {
-        setTimeout(() => endTurn(), 800);
-        return;
-      }
+    // 1. Try special weapons first (PCR, ASROC, torpedo, striker, nuke)
+    if (aiTrySpecialWeapons(aiIdx, ai, shotSet, sz)) {
+      setTimeout(() => endTurn(), 800);
+      return;
     }
 
-    // AI Torpedo: if sub with torpedoes and detected enemy ship, 30% chance
-    const aiSub2 = ai.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
-    const detectedTarget = ai.radarData.detectedShips.find(d => gameState.currentTurn - d.turnDetected <= 1);
-    if (aiSub2 && detectedTarget && Math.random() < 0.3) {
-      const midCell = detectedTarget.cells[Math.floor(detectedTarget.cells.length / 2)];
-      if (fireTorpedo(aiIdx, midCell.x, midCell.y)) {
-        setTimeout(() => endTurn(), 800);
-        return;
-      }
-    }
+    // 2. Smart shot using probability map
+    const prob = aiBuildProbabilityMap(aiIdx);
+    const best = aiPickBestShot(prob, sz);
 
-    // AI PCR Vulkan: if TARKR has loaded launchers and a detected ship, 50% chance
-    const aiTarkr = ai.ships.find(s => s.type === 'tarkr' && !s.sunk);
-    if (aiTarkr) {
-      const aiLoadedLauncher = aiTarkr.launchers.find(l => l.loaded && !l.damaged);
-      const pcrTarget = ai.radarData.detectedShips.find(d => gameState.currentTurn - d.turnDetected <= 1 && d.type !== 'submarine');
-      if (aiLoadedLauncher && pcrTarget && Math.random() < 0.5) {
-        const midCell = pcrTarget.cells[Math.floor(pcrTarget.cells.length / 2)];
-        battle.pcrSelectedLauncher = aiLoadedLauncher.index;
-        if (firePCR(aiIdx, midCell.x, midCell.y)) {
-          setTimeout(() => endTurn(), 800);
-          return;
-        }
-      }
-    }
-
-    // AI Striker: if carrier available and detected ships, 40% chance
-    const aiCarrier2 = ai.ships.find(s => s.type === 'carrier' && !s.sunk && !s.blocked);
-    const strikerTarget = ai.radarData.detectedShips.find(d => gameState.currentTurn - d.turnDetected <= 1);
-    if (aiCarrier2 && strikerTarget && Math.random() < 0.4) {
-      // AI fires one striker engagement
-      const midCell = strikerTarget.cells[Math.floor(strikerTarget.cells.length / 2)];
-      const target = getShipAt(0, midCell.x, midCell.y);
-      if (target && !(target.ship.type === 'submarine' && !target.ship.surfaced)) {
-        let attackRoll, defenseRoll;
-        do {
-          attackRoll = Math.floor(Math.random() * 100) + 1;
-          defenseRoll = Math.floor(Math.random() * 100) + 1;
-        } while (attackRoll === defenseRoll);
-        if (attackRoll > defenseRoll) {
-          target.ship.hits[target.cellIndex] = true;
-          if (!ai.radarData.shots.some(s => s.x === midCell.x && s.y === midCell.y)) {
-            ai.radarData.shots.push({ x: midCell.x, y: midCell.y, hit: true });
+    if (best) {
+      regularShot(aiIdx, best.x, best.y);
+    } else {
+      // Absolute fallback: any unshot cell
+      for (let y = 0; y < sz; y++)
+        for (let x = 0; x < sz; x++)
+          if (!shotSet.has(x + ',' + y)) {
+            regularShot(aiIdx, x, y);
+            y = sz; break; // exit both loops
           }
-          checkReactorDetonation(aiIdx, target.ship, target.cellIndex, 0);
-          if (target.ship.hits.every(h => h)) {
-            target.ship.sunk = true;
-            ai.radarData.sunkShips.push({ type: target.ship.type, cells: target.ship.cells.map(c => ({ ...c })) });
-          }
-          showToast('Enemy striker HIT your ' + target.ship.name + '!', 'sunk', 3000);
-        } else {
-          showToast('Enemy striker shot down by your PVO!', 'hit', 2000);
-        }
-        setTimeout(() => endTurn(), 800);
-        return;
-      }
     }
 
-    // AI Nuclear Strike: if 3+ ships clustered, 20% chance
-    if (!ai.nuclearUsed && sz > 30) {
-      const detShips = ai.radarData.detectedShips.filter(d => gameState.currentTurn - d.turnDetected <= 1);
-      if (detShips.length >= 3 && Math.random() < 0.2) {
-        // Find cluster center
-        let sumX = 0, sumY = 0, count = 0;
-        for (const ds of detShips) {
-          for (const c of ds.cells) { sumX += c.x; sumY += c.y; count++; }
-        }
-        const cx = Math.round(sumX / count), cy = Math.round(sumY / count);
-        launchNuclearStrike(aiIdx, cx, cy);
-        setTimeout(() => endTurn(), 800);
-        return;
-      }
-    }
-
-    // Priority 1: finish off near known hits
-    const hitCells = ai.radarData.shots.filter(s => s.hit);
-    for (const hc of hitCells) {
-      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-        const nx = hc.x + dx, ny = hc.y + dy;
-        if (nx >= 0 && ny >= 0 && nx < sz && ny < sz && !shotSet.has(nx + ',' + ny)) {
-          if (regularShot(aiIdx, nx, ny)) { endTurn(); return; }
-        }
-      }
-    }
-
-    // Priority 2: random shot (prefer center, skip edges slightly)
-    let bestX = -1, bestY = -1, bestScore = -1;
-    for (let attempt = 0; attempt < 200; attempt++) {
-      const x = Math.floor(Math.random() * sz);
-      const y = Math.floor(Math.random() * sz);
-      if (shotSet.has(x + ',' + y)) continue;
-      // Checkerboard pattern for efficiency
-      if ((x + y) % 2 !== gameState.currentTurn % 2) continue;
-      const centerDist = Math.abs(x - sz / 2) + Math.abs(y - sz / 2);
-      const score = sz - centerDist + Math.random() * 10;
-      if (score > bestScore) { bestScore = score; bestX = x; bestY = y; }
-    }
-
-    if (bestX < 0) {
-      // Fallback: any unshot cell
-      for (let y = 0; y < sz && bestX < 0; y++)
-        for (let x = 0; x < sz && bestX < 0; x++)
-          if (!shotSet.has(x + ',' + y)) { bestX = x; bestY = y; }
-    }
-
-    if (bestX >= 0) {
-      regularShot(aiIdx, bestX, bestY);
-    }
+    // 3. Occasionally move a detected ship (after firing since fire is the action)
+    // Movement doesn't happen this turn — AI fires. But we consider it for future.
 
     setTimeout(() => endTurn(), 800);
   }, 400);
