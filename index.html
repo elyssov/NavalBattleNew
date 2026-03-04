@@ -664,6 +664,112 @@
   #victory-overlay.lose h1 { color: #ef5350; text-shadow: 0 0 30px rgba(239,83,80,0.5); }
 
   #victory-overlay p { color: #78909c; font-size: 16px; }
+
+  /* ── Rules Overlay ── */
+  #rules-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,10,20,0.95);
+    z-index: 200;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+    overflow-y: auto;
+  }
+
+  #rules-overlay .rules-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  #rules-overlay .rules-header h2 {
+    font-size: 28px;
+    color: #4fc3f7;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  .rules-lang-btn {
+    background: none;
+    border: 1px solid #546e7a;
+    color: #546e7a;
+    padding: 5px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .rules-lang-btn.active { border-color: #4fc3f7; color: #4fc3f7; }
+  .rules-lang-btn:hover { border-color: #b0bec5; color: #b0bec5; }
+
+  #rules-content {
+    max-width: 900px;
+    width: 100%;
+    color: #b0c4de;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  #rules-content h3 {
+    color: #4fc3f7;
+    font-size: 18px;
+    margin: 24px 0 10px;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(79,195,247,0.2);
+    padding-bottom: 6px;
+  }
+
+  #rules-content h4 {
+    color: #66bb6a;
+    font-size: 14px;
+    margin: 16px 0 6px;
+    letter-spacing: 1px;
+  }
+
+  #rules-content p { margin: 6px 0; }
+
+  #rules-content ul {
+    margin: 6px 0 6px 20px;
+    list-style-type: '— ';
+  }
+
+  #rules-content li { margin: 3px 0; }
+
+  #rules-content table {
+    border-collapse: collapse;
+    margin: 10px 0;
+    width: 100%;
+    font-size: 13px;
+  }
+
+  #rules-content th, #rules-content td {
+    border: 1px solid #1e3a5f;
+    padding: 5px 10px;
+    text-align: left;
+  }
+
+  #rules-content th {
+    background: rgba(26,58,92,0.5);
+    color: #4fc3f7;
+  }
+
+  #rules-close-btn {
+    background: linear-gradient(180deg, #1a3a5c, #0d2137);
+    border: 1px solid #4fc3f7;
+    color: #4fc3f7;
+    padding: 8px 30px;
+    font-size: 14px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 30px;
+  }
+  #rules-close-btn:hover { background: linear-gradient(180deg, #254e78, #163050); }
 </style>
 </head>
 <body>
@@ -673,6 +779,19 @@
   <h1>Naval Battle</h1>
   <h2>Strategic Edition</h2>
   <button class="menu-btn" onclick="showSettings()">New Game</button>
+  <button class="menu-btn" onclick="showRules()">Game Rules</button>
+</div>
+
+<!-- Rules Overlay -->
+<div id="rules-overlay">
+  <div class="rules-header">
+    <h2 id="rules-title">Game Rules</h2>
+    <button class="rules-lang-btn active" id="rules-lang-ru" onclick="switchRulesLang('ru')">RU</button>
+    <button class="rules-lang-btn" id="rules-lang-en" onclick="switchRulesLang('en')">EN</button>
+    <button id="rules-close-btn" onclick="hideRules()">X</button>
+  </div>
+  <div id="rules-content"></div>
+  <button id="rules-close-btn" onclick="hideRules()">Close</button>
 </div>
 
 <!-- Settings Screen -->
@@ -890,12 +1009,13 @@ const gameState = {
   ],
   currentTurn: 1,
   currentPlayer: 0,
-  phase: 'recon', // 'recon' | 'action'
-  actionMode: null, // null | 'move' | 'fire'
+  actionDone: false, // true after scan/fire/deploy action taken this turn
+  movePoints: 9, // movement points remaining this turn
   activeTorpedoes: [],
   blastZones: [],
   nuclearZones: [],
   sonarDetections: [],
+  rebFlashes: [], // {cells, expireTime} — ships that were scanned by enemy, flash on fleet map
   gameOver: false
 };
 
@@ -998,6 +1118,7 @@ function getFleetForSize(fieldSize, capitalChoice) {
         deployed: type === 'submarine' ? false : true,
         surfaced: false,
         torpedoes: type === 'submarine' ? 3 : 0,
+        t10: type === 'submarine' ? 1 : 0, // nuclear torpedo
         radarCooldown: 0,
         sonarCooldown: 0,
         asroc: type === 'destroyer' ? 1 : 0,
@@ -1385,8 +1506,10 @@ function startGame() {
 
   // Reset state
   gameState.currentTurn = 1; gameState.currentPlayer = 0;
-  gameState.phase = 'recon'; gameState.actionMode = null;
+  gameState.actionDone = false; gameState.movePoints = 9;
   gameState.activeTorpedoes = []; gameState.gameOver = false;
+  gameState.blastZones = []; gameState.nuclearZones = [];
+  gameState.sonarDetections = []; gameState.rebFlashes = [];
   for (let p = 0; p < 2; p++) {
     gameState.players[p].ships = [];
     gameState.players[p].radarData = { shots: [], detectedShips: [], sunkShips: [] };
@@ -1494,8 +1617,8 @@ function startBattle() {
 
 function beginPlayerTurn() {
   if (gameState.gameOver) return;
-  gameState.phase = 'recon';
-  gameState.actionMode = null;
+  gameState.actionDone = false;
+  gameState.movePoints = 9;
   battle.selectedShip = null;
   battle.moveHighlights = [];
   battle.radarSelectMode = false;
@@ -1541,24 +1664,11 @@ function beginPlayerTurn() {
   updateActionBar();
 
   if (gameState.currentPlayer === 1) {
-    // AI turn
     setTimeout(() => aiTakeTurn(), 600);
   }
 }
 
-function endPhaseRecon() {
-  gameState.phase = 'action';
-  gameState.actionMode = null;
-  battle.radarSelectMode = false;
-  battle.sonarSelectMode = false;
-  updateTopBar();
-  updateActionBar();
-}
-
-function selectActionMode(mode) {
-  gameState.actionMode = mode; // 'move' or 'fire'
-  battle.selectedShip = null;
-  battle.moveHighlights = [];
+function resetFireModes() {
   battle.torpedoMode = false;
   battle.asrocMode = false;
   battle.nuclearStrikeMode = false;
@@ -1566,9 +1676,15 @@ function selectActionMode(mode) {
   battle.pcrSelectedLauncher = -1;
   battle.strikerMode = false;
   battle.strikerChain = [];
-  hideMoveOptions();
-  updateTopBar();
-  updateActionBar();
+  battle.radarSelectMode = false;
+  battle.sonarSelectMode = false;
+  battle.subDeployMode = false;
+  battle.subGhostCells = [];
+}
+
+// REB flash: when enemy scans our ships, they flash briefly on fleet map
+function triggerRebFlash(cells) {
+  gameState.rebFlashes.push({ cells: cells.map(c => ({ ...c })), expireTime: Date.now() + 3000 });
 }
 
 function endTurn() {
@@ -1638,18 +1754,15 @@ function updateTopBar() {
   document.getElementById('tb-player').textContent = gameState.currentPlayer === 0 ? 'You' : 'AI';
 
   const phaseEl = document.getElementById('tb-phase');
-  if (gameState.phase === 'recon') {
-    phaseEl.className = 'tb-phase recon';
-    phaseEl.textContent = 'RECON';
-  } else if (gameState.actionMode === 'move') {
-    phaseEl.className = 'tb-phase move';
-    phaseEl.textContent = 'MOVE';
-  } else if (gameState.actionMode === 'fire') {
-    phaseEl.className = 'tb-phase fire';
-    phaseEl.textContent = 'FIRE';
-  } else {
+  if (gameState.currentPlayer === 1) {
     phaseEl.className = 'tb-phase waiting';
-    phaseEl.textContent = gameState.currentPlayer === 1 ? 'AI THINKING...' : 'MOVE / FIRE';
+    phaseEl.textContent = 'AI THINKING...';
+  } else if (battle.strikerMode) {
+    phaseEl.className = 'tb-phase fire';
+    phaseEl.textContent = 'STRIKER CHAIN';
+  } else {
+    phaseEl.className = 'tb-phase' + (gameState.actionDone ? ' move' : ' recon');
+    phaseEl.textContent = gameState.actionDone ? 'MOVE (' + gameState.movePoints + ' pts)' : 'ACTION + MOVE (' + gameState.movePoints + ')';
   }
 
   document.getElementById('tb-info').textContent = '';
@@ -1661,89 +1774,75 @@ function updateActionBar() {
   const isHuman = gameState.currentPlayer === 0;
   if (!isHuman) return;
 
-  if (gameState.phase === 'recon') {
-    const player = gameState.players[0];
-    const hasRadarShip = player.ships.some(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine');
-    const hasSonar = player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.sonarCooldown === 0);
-    const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
-    const hasAirRecon = carrier && carrier.planes > 0 && !carrier.blocked;
-
+  // Striker chain mode — only show chain info
+  if (battle.strikerMode) {
     bar.innerHTML = `
-      <button class="action-btn recon-btn" onclick="startRadarSelect()" ${!hasRadarShip ? 'disabled title="No ships with radar ready"' : ''}>
-        Radar${battle.radarSelectMode ? ' (select ship)' : ''}
-      </button>
+      <span style="color:#ef5350;font-size:12px;letter-spacing:1px;">Striker active — click next target on Radar</span>
       <div class="action-separator"></div>
-      <button class="action-btn recon-btn${battle.sonarSelectMode ? ' active' : ''}" onclick="startSonarSelect()" ${!hasSonar ? 'disabled title="No destroyer with sonar ready"' : ''}>
-        Sonar${battle.sonarSelectMode ? ' (select DD)' : ''}
-      </button>
-      <div class="action-separator"></div>
-      <button class="action-btn recon-btn" onclick="useAirRecon()" ${!hasAirRecon ? 'disabled title="' + (!carrier ? 'No carrier' : carrier && carrier.planes === 0 ? 'No planes left' : 'Carrier blocked') + '"' : ''}>
-        Air Recon${carrier ? ' (' + carrier.planes + ' planes)' : ''}
-      </button>
-      <div class="action-separator"></div>
-      <button class="action-btn skip-btn" onclick="endPhaseRecon()">Skip Recon</button>
+      <button class="action-btn skip-btn" onclick="battle.strikerMode=false;battle.strikerChain=[];endTurn()">End Sortie</button>
     `;
-  } else if (!gameState.actionMode) {
-    bar.innerHTML = `
-      <button class="action-btn move-btn" onclick="selectActionMode('move')">Move</button>
-      <div class="action-separator"></div>
-      <button class="action-btn fire-btn" onclick="selectActionMode('fire')">Fire</button>
-      <div class="action-separator"></div>
-      <button class="action-btn skip-btn" onclick="endTurn()">Skip</button>
-    `;
-  } else if (gameState.actionMode === 'fire') {
-    const player = gameState.players[0];
-    const hasLiving = player.ships.some(s => !s.sunk && s.type !== 'submarine');
-    const hasTorpedo = player.ships.some(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
-    const sonarUsedThisTurn = gameState.sonarDetections.some(d => d.playerIdx === 0 && d.turnDetected === gameState.currentTurn);
-    const hasAsroc = player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0) && !sonarUsedThisTurn;
-    const canNuke = !player.nuclearUsed && gameState.settings.fieldSize > 30;
-    const tarkr = player.ships.find(s => s.type === 'tarkr' && !s.sunk);
-    const hasPcr = tarkr && tarkr.launchers.some(l => l.loaded && !l.damaged);
-    const carrierF = player.ships.find(s => s.type === 'carrier' && !s.sunk);
-    const hasStriker = carrierF && !carrierF.blocked && carrierF.strikers > 0;
-    const noFireModeActive = !battle.torpedoMode && !battle.asrocMode && !battle.nuclearStrikeMode && !battle.pcrMode && !battle.strikerMode;
-
-    let pcrLabel = 'PCR Vulkan';
-    if (hasPcr) { const cnt = tarkr.launchers.filter(l => l.loaded && !l.damaged).length; pcrLabel += ' (' + cnt + ')'; }
-    if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) pcrLabel = 'PCR PU-' + (battle.pcrSelectedLauncher + 1) + ' (aim)';
-
-    bar.innerHTML = `
-      <button class="action-btn fire-btn${noFireModeActive ? ' active' : ''}" onclick="battle.torpedoMode=false;battle.asrocMode=false;battle.nuclearStrikeMode=false;battle.pcrMode=false;battle.pcrSelectedLauncher=-1;battle.strikerMode=false;battle.strikerChain=[];updateActionBar()">Shot</button>
-      <button class="action-btn fire-btn${battle.torpedoMode ? ' active' : ''}" onclick="startTorpedoMode()" ${!hasTorpedo ? 'disabled title="No sub with torpedoes"' : ''}>
-        Torpedo
-      </button>
-      <button class="action-btn fire-btn${battle.asrocMode ? ' active' : ''}" onclick="startAsrocMode()" ${!hasAsroc ? 'disabled title="No ASROC available"' : ''}>
-        ASROC
-      </button>
-      <div class="action-separator"></div>
-      <button class="action-btn fire-btn${battle.pcrMode ? ' active' : ''}" onclick="startPcrMode()" ${!hasPcr ? 'disabled title="' + (!tarkr ? 'No TARKR' : 'No loaded launchers') + '"' : ''}>
-        ${pcrLabel}
-      </button>
-      <button class="action-btn fire-btn${battle.strikerMode ? ' active' : ''}" onclick="startStrikerMode()" ${!hasStriker ? 'disabled title="' + (!carrierF ? 'No carrier' : carrierF && carrierF.blocked ? 'Carrier blocked' : 'No strikers left') + '"' : ''}>
-        Striker${battle.strikerMode ? ' (chain)' : (carrierF ? ' (' + carrierF.strikers + ')' : '')}
-      </button>
-      <div class="action-separator"></div>
-      <button class="action-btn fire-btn${battle.nuclearStrikeMode ? ' active' : ''}" onclick="startNuclearStrikeMode()" ${!canNuke ? 'disabled title="' + (player.nuclearUsed ? 'Already used' : 'Not available in Skirmish') + '"' : ''} style="${canNuke ? 'border-color:#ff9800;color:#ff9800;' : ''}">
-        Nuclear Strike
-      </button>
-      <div class="action-separator"></div>
-      <button class="action-btn skip-btn" onclick="endTurn()">End Turn</button>
-    `;
-    if (!hasLiving) {
-      showToast('No living surface ships — cannot fire.', 'info');
-      setTimeout(() => endTurn(), 1200);
-    }
-  } else if (gameState.actionMode === 'move') {
-    const sub = gameState.players[0].ships.find(s => s.type === 'submarine' && !s.deployed);
-    const canDeploySub = sub && gameState.currentTurn <= 10;
-    bar.innerHTML = `
-      <span style="color:#66bb6a; font-size:12px; letter-spacing:1px;">${battle.subDeployMode ? 'Click Fleet Map to place sub. Right-click to rotate.' : 'Click a ship on Fleet Map to move it'}</span>
-      ${canDeploySub ? '<div class="action-separator"></div><button class="action-btn move-btn" onclick="startSubDeploy()"' + (battle.subDeployMode ? ' disabled' : '') + '>Deploy Sub</button>' : ''}
-      <div class="action-separator"></div>
-      <button class="action-btn skip-btn" onclick="endTurn()">End Turn</button>
-    `;
+    return;
   }
+
+  const player = gameState.players[0];
+  const ad = gameState.actionDone;
+  const mp = gameState.movePoints;
+
+  // ── SCAN buttons (disabled if action already done) ──
+  const hasRadarShip = !ad && player.ships.some(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine');
+  const hasSonar = !ad && player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.sonarCooldown === 0);
+  const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
+  const hasAirRecon = !ad && carrier && carrier.planes > 0 && !carrier.blocked;
+
+  // ── FIRE buttons (disabled if action already done) ──
+  const hasLiving = player.ships.some(s => !s.sunk && s.type !== 'submarine');
+  const canShot = !ad && hasLiving;
+  const hasTorpedo = !ad && player.ships.some(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
+  const sonarUsedThisTurn = gameState.sonarDetections.some(d => d.playerIdx === 0 && d.turnDetected === gameState.currentTurn);
+  const hasAsroc = !ad && player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0) && !sonarUsedThisTurn;
+  const tarkr = player.ships.find(s => s.type === 'tarkr' && !s.sunk);
+  const hasPcr = !ad && tarkr && tarkr.launchers.some(l => l.loaded && !l.damaged);
+  const hasStriker = !ad && carrier && !carrier.blocked && carrier.strikers > 0;
+  const hasT10 = !ad && player.ships.some(s => s.type === 'submarine' && s.deployed && !s.sunk && s.t10 > 0) && gameState.settings.fieldSize > 30;
+
+  // ── SUB DEPLOY (counts as action) ──
+  const sub = player.ships.find(s => s.type === 'submarine' && !s.deployed);
+  const canDeploySub = !ad && sub && gameState.currentTurn <= 10;
+
+  // Active fire mode
+  const noFireMode = !battle.torpedoMode && !battle.asrocMode && !battle.nuclearStrikeMode && !battle.pcrMode;
+
+  let pcrLabel = 'PCR Vulkan';
+  if (tarkr && hasPcr) { const cnt = tarkr.launchers.filter(l => l.loaded && !l.damaged).length; pcrLabel += ' (' + cnt + ')'; }
+  if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) pcrLabel = 'PCR PU-' + (battle.pcrSelectedLauncher + 1) + ' (aim)';
+
+  // Sub deploy mode
+  if (battle.subDeployMode) {
+    bar.innerHTML = `
+      <span style="color:#66bb6a;font-size:12px;letter-spacing:1px;">Click Fleet Map to deploy sub. Right-click to rotate.</span>
+      <div class="action-separator"></div>
+      <button class="action-btn skip-btn" onclick="battle.subDeployMode=false;battle.subGhostCells=[];updateActionBar()">Cancel</button>
+    `;
+    return;
+  }
+
+  bar.innerHTML = `
+    <button class="action-btn recon-btn${battle.radarSelectMode ? ' active' : ''}" onclick="startRadarSelect()" ${!hasRadarShip ? 'disabled' : ''}>Radar</button>
+    <button class="action-btn recon-btn${battle.sonarSelectMode ? ' active' : ''}" onclick="startSonarSelect()" ${!hasSonar ? 'disabled' : ''}>Sonar</button>
+    <button class="action-btn recon-btn" onclick="useAirRecon()" ${!hasAirRecon ? 'disabled' : ''}>Air Recon${carrier ? ' (' + carrier.planes + ')' : ''}</button>
+    <div class="action-separator"></div>
+    <button class="action-btn fire-btn${canShot && noFireMode ? ' active' : ''}" onclick="resetFireModes();updateActionBar()" ${!canShot ? 'disabled' : ''}>Shot</button>
+    <button class="action-btn fire-btn${battle.torpedoMode ? ' active' : ''}" onclick="startTorpedoMode()" ${!hasTorpedo ? 'disabled' : ''}>Torpedo</button>
+    <button class="action-btn fire-btn${battle.asrocMode ? ' active' : ''}" onclick="startAsrocMode()" ${!hasAsroc ? 'disabled' : ''}>ASROC</button>
+    <button class="action-btn fire-btn${battle.pcrMode ? ' active' : ''}" onclick="startPcrMode()" ${!hasPcr ? 'disabled' : ''}>${pcrLabel}</button>
+    <button class="action-btn fire-btn" onclick="startStrikerMode()" ${!hasStriker ? 'disabled' : ''}>Striker${carrier ? ' (' + carrier.strikers + ')' : ''}</button>
+    <button class="action-btn fire-btn${battle.nuclearStrikeMode ? ' active' : ''}" onclick="startT10Mode()" ${!hasT10 ? 'disabled' : ''} style="${hasT10 ? 'border-color:#ff9800;color:#ff9800;' : ''}">T-10</button>
+    <div class="action-separator"></div>
+    ${canDeploySub ? '<button class="action-btn move-btn" onclick="startSubDeploy()">Deploy Sub</button>' : ''}
+    <span style="color:#66bb6a;font-size:11px;letter-spacing:1px;">Move: ${mp} pts</span>
+    <div class="action-separator"></div>
+    <button class="action-btn skip-btn" onclick="endTurn()">End Turn</button>
+  `;
 }
 
 // ── Toast Notifications ──
@@ -1761,7 +1860,8 @@ function showToast(msg, type, duration) {
 // ── RECON: Radar ──
 
 function startRadarSelect() {
-  if (gameState.phase !== 'recon' || gameState.currentPlayer !== 0) return;
+  if (gameState.actionDone || gameState.currentPlayer !== 0) return;
+  resetFireModes();
   battle.radarSelectMode = true;
   showToast('Click a destroyer or larger ship on the Fleet Map to use as radar source.', 'info', 3000);
   updateActionBar();
@@ -1786,9 +1886,8 @@ function useRadar(sourceShip) {
   // Cost: reveal source ship to enemy
   enemy.radarData.detectedShips.push({
     cells: sourceShip.cells.map(c => ({ ...c })),
-    type: sourceShip.type,
-    size: sourceShip.size,
-    turnDetected: gameState.currentTurn
+    type: sourceShip.type, size: sourceShip.size,
+    turnDetected: gameState.currentTurn, source: 'radar'
   });
 
   // Flat scanner-class-based detection chance
@@ -1803,25 +1902,26 @@ function useRadar(sourceShip) {
     if (roll <= chance) {
       player.radarData.detectedShips.push({
         cells: eShip.cells.map(c => ({ ...c })),
-        type: eShip.type,
-        size: eShip.size,
-        turnDetected: gameState.currentTurn
+        type: eShip.type, size: eShip.size,
+        turnDetected: gameState.currentTurn, source: 'radar'
       });
       detected++;
     }
   }
 
   battle.radarSelectMode = false;
+  gameState.actionDone = true;
   const shipName = sourceShip.name || sourceShip.type.toUpperCase();
   showToast(`Radar scan from ${shipName}: ${detected} ship${detected !== 1 ? 's' : ''} detected. Ship position revealed to enemy.`, detected > 0 ? 'hit' : 'info', 3000);
-  endPhaseRecon();
+  updateTopBar();
+  updateActionBar();
   return true;
 }
 
 // ── RECON: Air Recon ──
 
 function useAirRecon() {
-  if (gameState.phase !== 'recon' || gameState.currentPlayer !== 0) return;
+  if (gameState.actionDone || gameState.currentPlayer !== 0) return;
 
   const playerIdx = gameState.currentPlayer;
   const player = gameState.players[playerIdx];
@@ -1848,9 +1948,8 @@ function useAirRecon() {
     if (roll <= chance) {
       player.radarData.detectedShips.push({
         cells: eShip.cells.map(c => ({ ...c })),
-        type: eShip.type,
-        size: eShip.size,
-        turnDetected: gameState.currentTurn
+        type: eShip.type, size: eShip.size,
+        turnDetected: gameState.currentTurn, source: 'air'
       });
       detected++;
     } else {
@@ -1867,7 +1966,9 @@ function useAirRecon() {
   if (planeLost) msg += ' Plane was shot down!';
   else msg += ` (${carrier.planes} planes remaining)`;
   showToast(msg, detected > 0 ? 'hit' : (planeLost ? 'miss' : 'info'), 3500);
-  endPhaseRecon();
+  gameState.actionDone = true;
+  updateTopBar();
+  updateActionBar();
 }
 
 // ── RECON: Data Aging ──
@@ -2123,6 +2224,11 @@ function executeMove(playerIdx, ship, option) {
   }
 }
 
+function getMoveCost(opt) {
+  if (opt.type === 'rotate') return 3;
+  return opt.dist || 1;
+}
+
 function showMoveOptions(ship, screenX, screenY) {
   const opts = getMovementOptions(gameState.currentPlayer, ship);
   if (opts.length === 0) { showToast('No valid moves for this ship.', 'info'); return; }
@@ -2135,19 +2241,24 @@ function showMoveOptions(ship, screenX, screenY) {
   container.style.top = screenY + 'px';
 
   for (const opt of opts) {
+    const cost = getMoveCost(opt);
+    const canAfford = gameState.movePoints >= cost;
     const btn = document.createElement('button');
     btn.className = 'move-opt-btn';
-    btn.textContent = opt.label;
+    btn.textContent = opt.label + ' (' + cost + ')';
+    if (!canAfford) { btn.disabled = true; btn.style.opacity = '0.35'; }
     btn.onclick = () => {
+      if (gameState.movePoints < cost) return;
       executeMove(gameState.currentPlayer, ship, opt);
+      gameState.movePoints -= cost;
       hideMoveOptions();
-      showToast(ship.name + ' moved.', 'move-toast', 1500);
-      endTurn();
+      showToast(ship.name + ' moved. (' + gameState.movePoints + ' pts left)', 'move-toast', 1500);
+      updateTopBar();
+      updateActionBar();
     };
     container.appendChild(btn);
   }
 
-  // Cancel button
   const cancel = document.createElement('button');
   cancel.className = 'move-opt-btn';
   cancel.textContent = 'Cancel';
@@ -2230,8 +2341,10 @@ function deploySubmarine(playerIdx, cells, orientation) {
   sub.hits = Array(3).fill(false);
   battle.subDeployMode = false;
   battle.subGhostCells = [];
+  gameState.actionDone = true;
   showToast(sub.name + ' deployed!', 'move-toast', 2000);
-  endTurn();
+  updateTopBar();
+  updateActionBar();
 }
 
 function aiDeploySub() {
@@ -2259,7 +2372,8 @@ function aiDeploySub() {
 // ── Sonar (Destroyer) ──
 
 function startSonarSelect() {
-  if (gameState.phase !== 'recon' || gameState.currentPlayer !== 0) return;
+  if (gameState.actionDone || gameState.currentPlayer !== 0) return;
+  resetFireModes();
   battle.sonarSelectMode = true;
   showToast('Click a destroyer on the Fleet Map to ping sonar.', 'info', 3000);
   updateActionBar();
@@ -2279,7 +2393,7 @@ function useSonar(sourceShip) {
   enemy.radarData.detectedShips.push({
     cells: sourceShip.cells.map(c => ({ ...c })),
     type: sourceShip.type, size: sourceShip.size,
-    turnDetected: gameState.currentTurn
+    turnDetected: gameState.currentTurn, source: 'sonar'
   });
 
   // D100 per deployed enemy sub: 60% detection
@@ -2290,7 +2404,7 @@ function useSonar(sourceShip) {
       player.radarData.detectedShips.push({
         cells: eSub.cells.map(c => ({ ...c })),
         type: eSub.type, size: eSub.size,
-        turnDetected: gameState.currentTurn
+        turnDetected: gameState.currentTurn, source: 'sonar'
       });
       gameState.sonarDetections.push({
         cells: eSub.cells.map(c => ({ ...c })),
@@ -2306,9 +2420,11 @@ function useSonar(sourceShip) {
   }
 
   battle.sonarSelectMode = false;
+  gameState.actionDone = true;
   const msg = detected > 0 ? `Sonar ping: ${detected} submarine${detected > 1 ? 's' : ''} detected!` : 'Sonar ping: no submarines detected.';
   showToast(msg, detected > 0 ? 'hit' : 'info', 3000);
-  endPhaseRecon();
+  updateTopBar();
+  updateActionBar();
 }
 
 // ── ASROC (Anti-Submarine Rocket) ──
@@ -2402,7 +2518,7 @@ function fireTorpedo(attackerIdx, targetX, targetY) {
   gameState.players[enemyIdx].radarData.detectedShips.push({
     cells: sub.cells.map(c => ({ ...c })),
     type: sub.type, size: sub.size,
-    turnDetected: gameState.currentTurn
+    turnDetected: gameState.currentTurn, source: 'radar'
   });
 
   // Choose spawn direction: pick direction with most open water
@@ -2512,15 +2628,18 @@ function advanceTorpedoes() {
 
 // ── Nuclear Strike ──
 
-function startNuclearStrikeMode() {
+function startT10Mode() {
   const player = gameState.players[0];
-  if (player.nuclearUsed) { showToast('Nuclear strike already used.', 'info'); return; }
+  if (player.nuclearUsed) { showToast('T-10 already launched this game.', 'info'); return; }
   if (gameState.settings.fieldSize === 30) { showToast('Not available in Skirmish mode.', 'info'); return; }
+  const sub = player.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.t10 > 0);
+  if (!sub) { showToast('No submarine with T-10 available.', 'info'); return; }
 
   showConfirmDialog(
-    'LAUNCH NUCLEAR STRIKE?',
-    'This action cannot be undone. 11x11 zone will be devastated.',
+    'LAUNCH T-10 NUCLEAR TORPEDO?',
+    'This action cannot be undone. 11x11 zone will be devastated. Submarine will surface.',
     () => {
+      resetFireModes();
       battle.nuclearStrikeMode = true;
       showToast('Select target zone center on Radar.', 'info', 3000);
       updateActionBar();
@@ -2535,6 +2654,19 @@ function launchNuclearStrike(attackerIdx, centerX, centerY) {
   const defender = gameState.players[defenderIdx];
   const sz = gameState.settings.fieldSize;
 
+  // T-10 is fired from submarine — surface it
+  const sub = attacker.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.t10 > 0);
+  if (sub) {
+    sub.t10--;
+    sub.surfaced = true;
+    sub.surfacedUntilTurn = gameState.currentTurn + 1;
+    // Reveal sub to enemy
+    defender.radarData.detectedShips.push({
+      cells: sub.cells.map(c => ({ ...c })),
+      type: sub.type, size: sub.size,
+      turnDetected: gameState.currentTurn, source: 'radar'
+    });
+  }
   attacker.nuclearUsed = true;
 
   const x0 = Math.max(0, centerX - 5), x1 = Math.min(sz - 1, centerX + 5);
@@ -2884,7 +3016,7 @@ function aiUseRadar(sourceShip) {
   human.radarData.detectedShips.push({
     cells: sourceShip.cells.map(c => ({ ...c })),
     type: sourceShip.type, size: sourceShip.size,
-    turnDetected: gameState.currentTurn
+    turnDetected: gameState.currentTurn, source: 'radar'
   });
   const RADAR_CHANCE = { destroyer: 25, cruiser: 50, tarkr: 75, carrier: 75 };
   const chance = RADAR_CHANCE[sourceShip.type] || 25;
@@ -2895,8 +3027,9 @@ function aiUseRadar(sourceShip) {
       ai.radarData.detectedShips.push({
         cells: hShip.cells.map(c => ({ ...c })),
         type: hShip.type, size: hShip.size,
-        turnDetected: gameState.currentTurn
+        turnDetected: gameState.currentTurn, source: 'radar'
       });
+      triggerRebFlash(hShip.cells); // REB: our ship was scanned
     }
   }
 }
@@ -2913,8 +3046,9 @@ function aiUseAirRecon(carrier) {
       ai.radarData.detectedShips.push({
         cells: hShip.cells.map(c => ({ ...c })),
         type: hShip.type, size: hShip.size,
-        turnDetected: gameState.currentTurn
+        turnDetected: gameState.currentTurn, source: 'air'
       });
+      triggerRebFlash(hShip.cells); // REB: our ship was spotted by air recon
     } else {
       if (Math.floor(Math.random() * 100) + 1 <= 30) break;
     }
@@ -3046,31 +3180,19 @@ function aiPickBestShot(prob, sz) {
 // ── AI Recon Strategy ──
 
 function aiReconPhase(ai, human) {
-  // Priority: always use best radar available (highest chance first)
-  const radarPriority = ['carrier', 'tarkr', 'cruiser', 'destroyer'];
-  const radarShips = ai.ships
-    .filter(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine')
-    .sort((a, b) => radarPriority.indexOf(a.type) - radarPriority.indexOf(b.type));
+  // ONE scan action per turn — pick the best option
 
-  // Use radar aggressively early game, then when we have unsunk hits
-  const unsunkHits = ai.radarData.shots.filter(s => s.hit && !ai.radarData.sunkShips.some(sk => sk.cells.some(c => c.x === s.x && c.y === s.y)));
-  const wantRecon = gameState.currentTurn <= 5 || unsunkHits.length === 0 || Math.random() < 0.6;
-
-  if (radarShips.length > 0 && wantRecon) {
-    aiUseRadar(radarShips[0]);
-  }
-
-  // Sonar: if human has deployed sub and we have DD ready
+  // Option 1: Sonar (if human has deployed sub and we need intel on it)
   const sonarDDs = ai.ships.filter(s => s.type === 'destroyer' && !s.sunk && s.sonarCooldown === 0);
   const humanSub = human.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk);
   const freshSonarDet = gameState.sonarDetections.some(d => d.playerIdx === 1 && gameState.currentTurn - d.turnDetected <= 1);
-  if (sonarDDs.length > 0 && humanSub && !freshSonarDet) {
+  if (sonarDDs.length > 0 && humanSub && !freshSonarDet && Math.random() < 0.5) {
     const dd = sonarDDs[Math.floor(Math.random() * sonarDDs.length)];
     dd.sonarCooldown = 2;
     human.radarData.detectedShips.push({
       cells: dd.cells.map(c => ({ ...c })),
       type: dd.type, size: dd.size,
-      turnDetected: gameState.currentTurn
+      turnDetected: gameState.currentTurn, source: 'sonar'
     });
     for (const hSub of human.ships) {
       if (hSub.type !== 'submarine' || !hSub.deployed || hSub.sunk) continue;
@@ -3078,8 +3200,9 @@ function aiReconPhase(ai, human) {
         ai.radarData.detectedShips.push({
           cells: hSub.cells.map(c => ({ ...c })),
           type: hSub.type, size: hSub.size,
-          turnDetected: gameState.currentTurn
+          turnDetected: gameState.currentTurn, source: 'sonar'
         });
+        triggerRebFlash(hSub.cells); // REB: our sub was pinged
         gameState.sonarDetections.push({
           cells: hSub.cells.map(c => ({ ...c })),
           turnDetected: gameState.currentTurn,
@@ -3088,12 +3211,24 @@ function aiReconPhase(ai, human) {
         showToast('Your submarine has been pinged by sonar!', 'sunk', 3000);
       }
     }
+    return; // sonar was the action
   }
 
-  // Air Recon: use if carrier has planes and we need intel
+  // Option 2: Air Recon (good intel, burns planes)
   const aiCarrier = ai.ships.find(s => s.type === 'carrier' && !s.sunk && s.planes > 0 && !s.blocked);
-  if (aiCarrier && (gameState.currentTurn <= 4 || Math.random() < 0.5)) {
+  if (aiCarrier && (gameState.currentTurn <= 4 || Math.random() < 0.4)) {
     aiUseAirRecon(aiCarrier);
+    return; // air recon was the action
+  }
+
+  // Option 3: Radar (default)
+  const radarPriority = ['carrier', 'tarkr', 'cruiser', 'destroyer'];
+  const radarShips = ai.ships
+    .filter(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine')
+    .sort((a, b) => radarPriority.indexOf(a.type) - radarPriority.indexOf(b.type));
+
+  if (radarShips.length > 0) {
+    aiUseRadar(radarShips[0]);
   }
 }
 
@@ -3209,31 +3344,6 @@ function aiTrySpecialWeapons(aiIdx, ai, shotSet, sz) {
   return false;
 }
 
-// ── AI Movement Strategy ──
-
-function aiTryMove(aiIdx, ai, human) {
-  // Move ships that have been detected by the enemy (enemy knows where we are)
-  for (const ship of ai.ships) {
-    if (ship.sunk || (ship.type === 'submarine' && !ship.deployed)) continue;
-    // Check if this ship was detected by enemy recently
-    const detected = human.radarData.detectedShips.some(d =>
-      d.cells.some(dc => ship.cells.some(sc => sc.x === dc.x && sc.y === dc.y)) &&
-      gameState.currentTurn - d.turnDetected <= 1
-    );
-    if (detected && Math.random() < 0.6) {
-      const opts = getMovementOptions(aiIdx, ship);
-      if (opts.length > 0) {
-        // Prefer longer moves to escape detection
-        const slideOpts = opts.filter(o => o.type === 'slide').sort((a, b) => (b.dist || 0) - (a.dist || 0));
-        const pick = slideOpts.length > 0 ? slideOpts[0] : opts[Math.floor(Math.random() * opts.length)];
-        executeMove(aiIdx, ship, pick);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 // ── AI Main Turn ──
 
 function aiTakeTurn() {
@@ -3243,59 +3353,131 @@ function aiTakeTurn() {
   const ai = gameState.players[aiIdx];
   const human = gameState.players[0];
 
-  // Sub deployment: deploy early (turns 1-5), must deploy by turn 10
+  // Sub deployment: counts as action
   const aiSub = ai.ships.find(s => s.type === 'submarine' && !s.deployed);
   if (aiSub) {
     const mustDeploy = gameState.currentTurn >= 8;
     const wantDeploy = gameState.currentTurn <= 5 ? Math.random() < 0.3 : Math.random() < 0.6;
     if ((mustDeploy || wantDeploy) && gameState.currentTurn <= 10) {
-      if (aiDeploySub()) { endTurn(); return; }
+      if (aiDeploySub()) {
+        gameState.actionDone = true;
+        // AI still spends movement points after deploying sub
+        aiSpendMovePoints(aiIdx, ai, human);
+        setTimeout(() => endTurn(), 600);
+        return;
+      }
     }
   }
 
-  // RECON phase — always use intel aggressively
-  aiReconPhase(ai, human);
+  // SINGLE ACTION: choose scan OR fire
+  // Strategy: scan if we lack intel, fire if we have targets
+  const freshDetections = ai.radarData.detectedShips.filter(d => gameState.currentTurn - d.turnDetected <= 1);
+  const unsunkHits = ai.radarData.shots.filter(s => s.hit && !ai.radarData.sunkShips.some(sk => sk.cells.some(c => c.x === s.x && c.y === s.y)));
+  const hasTargets = unsunkHits.length > 0 || freshDetections.length > 0;
+  const hasLiving = ai.ships.some(s => !s.sunk && s.type !== 'submarine');
 
-  gameState.phase = 'action';
-  gameState.actionMode = 'fire';
-  updateTopBar();
+  // Decide: scan or fire?
+  // Prefer fire if we have unsunk hits (hunt/kill mode) or fresh detections
+  // Prefer scan early game or when we have no intel
+  let didAction = false;
+  const preferFire = hasTargets && hasLiving;
+  const preferScan = !hasTargets || gameState.currentTurn <= 3;
 
-  setTimeout(() => {
-    if (gameState.gameOver) return;
-    const ai = gameState.players[aiIdx];
-    const hasLiving = ai.ships.some(s => !s.sunk && s.type !== 'submarine');
-    if (!hasLiving) { endTurn(); return; }
-
+  if (preferFire && (!preferScan || Math.random() < 0.7)) {
+    // FIRE action
     const sz = gameState.settings.fieldSize;
     const shotSet = new Set(ai.radarData.shots.map(s => s.x + ',' + s.y));
 
-    // 1. Try special weapons first (PCR, ASROC, torpedo, striker, nuke)
+    // 1. Try special weapons first
     if (aiTrySpecialWeapons(aiIdx, ai, shotSet, sz)) {
-      setTimeout(() => endTurn(), 800);
-      return;
-    }
+      didAction = true;
+    } else if (hasLiving) {
+      // 2. Smart shot using probability map (boosted by detected ships)
+      const prob = aiBuildProbabilityMap(aiIdx);
 
-    // 2. Smart shot using probability map
-    const prob = aiBuildProbabilityMap(aiIdx);
-    const best = aiPickBestShot(prob, sz);
-
-    if (best) {
-      regularShot(aiIdx, best.x, best.y);
-    } else {
-      // Absolute fallback: any unshot cell
-      for (let y = 0; y < sz; y++)
-        for (let x = 0; x < sz; x++)
-          if (!shotSet.has(x + ',' + y)) {
-            regularShot(aiIdx, x, y);
-            y = sz; break; // exit both loops
+      // Boost probability for detected ship cells
+      for (const det of freshDetections) {
+        for (const c of det.cells) {
+          if (c.x >= 0 && c.y >= 0 && c.x < sz && c.y < sz && prob[c.y]) {
+            prob[c.y][c.x] += 50;
           }
+        }
+      }
+
+      const best = aiPickBestShot(prob, sz);
+      if (best) {
+        regularShot(aiIdx, best.x, best.y);
+        didAction = true;
+      } else {
+        for (let y = 0; y < sz; y++)
+          for (let x = 0; x < sz; x++)
+            if (!shotSet.has(x + ',' + y)) {
+              regularShot(aiIdx, x, y);
+              didAction = true;
+              y = sz; break;
+            }
+      }
     }
+  }
 
-    // 3. Occasionally move a detected ship (after firing since fire is the action)
-    // Movement doesn't happen this turn — AI fires. But we consider it for future.
+  if (!didAction) {
+    // SCAN action
+    aiReconPhase(ai, human);
+    didAction = true;
+  }
 
-    setTimeout(() => endTurn(), 800);
+  gameState.actionDone = true;
+  updateTopBar();
+
+  // AI spends movement points
+  setTimeout(() => {
+    if (gameState.gameOver) return;
+    aiSpendMovePoints(aiIdx, ai, human);
+    setTimeout(() => endTurn(), 400);
   }, 400);
+}
+
+// AI movement point spending (9 pts available)
+function aiSpendMovePoints(aiIdx, ai, human) {
+  let pts = gameState.movePoints;
+  // Move ships that have been detected by enemy (escape)
+  for (const ship of ai.ships) {
+    if (pts <= 0) break;
+    if (ship.sunk || (ship.type === 'submarine' && !ship.deployed)) continue;
+    const detected = human.radarData.detectedShips.some(d =>
+      d.cells.some(dc => ship.cells.some(sc => sc.x === dc.x && sc.y === dc.y)) &&
+      gameState.currentTurn - d.turnDetected <= 1
+    );
+    if (detected && Math.random() < 0.7) {
+      const opts = getMovementOptions(aiIdx, ship);
+      const slideOpts = opts.filter(o => o.type === 'slide').sort((a, b) => (b.dist || 0) - (a.dist || 0));
+      if (slideOpts.length > 0) {
+        const pick = slideOpts[0];
+        const cost = getMoveCost(pick);
+        if (pts >= cost) {
+          executeMove(aiIdx, ship, pick);
+          pts -= cost;
+        }
+      }
+    }
+  }
+  // Spend remaining points randomly moving ships near enemy shots
+  if (pts >= 3 && Math.random() < 0.3) {
+    for (const ship of ai.ships) {
+      if (pts <= 0) break;
+      if (ship.sunk || (ship.type === 'submarine' && !ship.deployed)) continue;
+      const opts = getMovementOptions(aiIdx, ship);
+      if (opts.length > 0 && Math.random() < 0.2) {
+        const pick = opts[Math.floor(Math.random() * opts.length)];
+        const cost = getMoveCost(pick);
+        if (pts >= cost) {
+          executeMove(aiIdx, ship, pick);
+          pts -= cost;
+        }
+      }
+    }
+  }
+  gameState.movePoints = pts;
 }
 
 // ══════════════════════════════════════════════
@@ -3422,6 +3604,22 @@ function renderFleetMap() {
     drawShipSprite(ctx, ship);
   }
 
+  // REB flash: ships scanned by enemy flash yellow/orange
+  const now = Date.now();
+  gameState.rebFlashes = gameState.rebFlashes.filter(f => f.expireTime > now);
+  for (const flash of gameState.rebFlashes) {
+    const t = (flash.expireTime - now) / 3000; // 1.0 → 0.0
+    const pulse = 0.3 + 0.4 * Math.abs(Math.sin(now / 150));
+    const alpha = t * pulse;
+    ctx.fillStyle = `rgba(255,200,0,${alpha * 0.3})`;
+    ctx.strokeStyle = `rgba(255,180,0,${alpha})`;
+    ctx.lineWidth = 2;
+    for (const c of flash.cells) {
+      ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
+      ctx.strokeRect(c.x * CELL_PX - 1, c.y * CELL_PX - 1, CELL_PX + 2, CELL_PX + 2);
+    }
+  }
+
   // Enemy misses on our field (white dots)
   const enemy = gameState.players[1];
   for (const shot of enemy.radarData.shots) {
@@ -3434,7 +3632,7 @@ function renderFleetMap() {
   }
 
   // Radar select highlights: pulse eligible ships in blue
-  if (battle.radarSelectMode && gameState.phase === 'recon') {
+  if (battle.radarSelectMode && !gameState.actionDone) {
     for (const ship of player.ships) {
       if (ship.sunk || ship.radarCooldown > 0 || ship.size < 3 || ship.type === 'submarine') continue;
       const pulse = 0.4 + 0.3 * Math.sin(Date.now() / 300);
@@ -3447,7 +3645,7 @@ function renderFleetMap() {
   }
 
   // Movement highlights
-  if (battle.selectedShip && gameState.actionMode === 'move') {
+  if (battle.selectedShip && gameState.movePoints > 0) {
     for (const c of battle.selectedShip.cells) {
       ctx.strokeStyle = '#66bb6a'; ctx.lineWidth = 2;
       ctx.strokeRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
@@ -3467,7 +3665,7 @@ function renderFleetMap() {
   }
 
   // Sonar select highlights: pulse destroyers
-  if (battle.sonarSelectMode && gameState.phase === 'recon') {
+  if (battle.sonarSelectMode && !gameState.actionDone) {
     for (const ship of player.ships) {
       if (ship.type !== 'destroyer' || ship.sunk || ship.sonarCooldown > 0) continue;
       const pulse = 0.4 + 0.3 * Math.sin(Date.now() / 300);
@@ -3651,8 +3849,8 @@ function renderRadar() {
     for (const c of det.cells) {
       ctx.strokeRect(c.x * CELL_PX + 1, c.y * CELL_PX + 1, CELL_PX - 2, CELL_PX - 2);
     }
-    // Ghost "?" marker for very old detections
-    if (age >= 3 && det.cells.length > 0) {
+    // Ghost "?" marker for very old detections (radar/sonar only)
+    if (age >= 3 && det.cells.length > 0 && det.source !== 'air') {
       const fc2 = det.cells[0];
       const lc2 = det.cells[det.cells.length - 1];
       ctx.fillStyle = `rgba(0,255,100,${opacity})`;
@@ -3660,8 +3858,8 @@ function renderRadar() {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('?', ((fc2.x + lc2.x) / 2 + 0.5) * CELL_PX, ((fc2.y + lc2.y) / 2 + 0.5) * CELL_PX);
     }
-    // Label for fresh detections
-    if (age <= 1 && cam.zoom > 0.3 && det.cells.length > 0) {
+    // Label ONLY for air recon detections (fading with age)
+    if (det.source === 'air' && cam.zoom > 0.3 && det.cells.length > 0) {
       const fc2 = det.cells[0];
       const lc2 = det.cells[det.cells.length - 1];
       ctx.fillStyle = `rgba(0,255,100,${opacity * 0.7})`;
@@ -3728,7 +3926,7 @@ function renderRadar() {
   }
 
   // Crosshair on mouse position during fire mode
-  if (gameState.currentPlayer === 0 && gameState.actionMode === 'fire' && battle.radarMouseCell) {
+  if (gameState.currentPlayer === 0 && !gameState.actionDone && battle.radarMouseCell) {
     const mc = battle.radarMouseCell;
     if (mc.x >= 0 && mc.y >= 0 && mc.x < sz && mc.y < sz) {
       ctx.strokeStyle = 'rgba(0,255,0,0.6)'; ctx.lineWidth = 1;
@@ -4034,7 +4232,7 @@ function setupBattleInput() {
     const player = gameState.players[0];
 
     // Radar ship selection mode
-    if (battle.radarSelectMode && gameState.phase === 'recon') {
+    if (battle.radarSelectMode && !gameState.actionDone) {
       for (const ship of player.ships) {
         if (ship.sunk || ship.radarCooldown > 0 || ship.size < 3 || ship.type === 'submarine') continue;
         for (const c of ship.cells) {
@@ -4049,7 +4247,7 @@ function setupBattleInput() {
     }
 
     // Sonar ship selection mode
-    if (battle.sonarSelectMode && gameState.phase === 'recon') {
+    if (battle.sonarSelectMode && !gameState.actionDone) {
       for (const ship of player.ships) {
         if (ship.type !== 'destroyer' || ship.sunk || ship.sonarCooldown > 0) continue;
         for (const c of ship.cells) {
@@ -4064,7 +4262,7 @@ function setupBattleInput() {
     }
 
     // Sub deploy mode
-    if (battle.subDeployMode && gameState.actionMode === 'move') {
+    if (battle.subDeployMode && !gameState.actionDone) {
       if (battle.subGhostValid && battle.subGhostCells.length === 3) {
         deploySubmarine(0, battle.subGhostCells, battle.subGhostOrientation);
       } else {
@@ -4074,7 +4272,7 @@ function setupBattleInput() {
     }
 
     // Movement mode
-    if (gameState.actionMode !== 'move') return;
+    if (gameState.movePoints <= 0) return;
     for (const ship of player.ships) {
       if (ship.sunk) continue;
       if (ship.type === 'submarine' && !ship.deployed) continue;
@@ -4114,51 +4312,56 @@ function setupBattleInput() {
     if (radarCam.dragMoved) { radarCam.dragging = false; radarCam.dragMoved = false; return; }
     radarCam.dragging = false; radarCam.dragMoved = false;
     if (e.button !== 0) return;
-    if (gameState.currentPlayer !== 0 || gameState.actionMode !== 'fire') return;
+    if (gameState.currentPlayer !== 0 || gameState.actionDone) return;
 
     const cell = screenToCell(e.clientX, e.clientY, rc, radarCam);
     const sz = gameState.settings.fieldSize;
     if (cell.x < 0 || cell.y < 0 || cell.x >= sz || cell.y >= sz) return;
 
+    const markActionDone = () => {
+      gameState.actionDone = true;
+      resetFireModes();
+      updateTopBar();
+      updateActionBar();
+    };
+
     if (battle.torpedoMode) {
       const result = fireTorpedo(0, cell.x, cell.y);
-      if (result) setTimeout(() => endTurn(), 1000);
+      if (result) setTimeout(markActionDone, 600);
       return;
     }
 
     if (battle.asrocMode) {
       const result = fireAsroc(0, cell.x, cell.y);
-      if (result) setTimeout(() => endTurn(), 1000);
+      if (result) setTimeout(markActionDone, 600);
       return;
     }
 
     if (battle.nuclearStrikeMode) {
       const result = launchNuclearStrike(0, cell.x, cell.y);
-      if (result) setTimeout(() => endTurn(), 1500);
+      if (result) setTimeout(markActionDone, 1000);
       return;
     }
 
     if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) {
       const result = firePCR(0, cell.x, cell.y);
-      if (result) setTimeout(() => endTurn(), 2000);
+      if (result) setTimeout(markActionDone, 1500);
       return;
     }
 
     if (battle.strikerMode) {
       const result = strikerAttack(0, cell.x, cell.y);
       if (result === 'end') {
-        setTimeout(() => endTurn(), 1500);
+        setTimeout(markActionDone, 1000);
       }
       // 'continue' — chain continues, player clicks next target
-      // updateActionBar will show "Striker (chain)"
       updateActionBar();
       return;
     }
 
     const result = regularShot(0, cell.x, cell.y);
     if (result) {
-      // Shot taken, end turn
-      setTimeout(() => endTurn(), 1000);
+      setTimeout(markActionDone, 600);
     }
   });
 
@@ -4166,6 +4369,352 @@ function setupBattleInput() {
 
   fc.style.cursor = 'crosshair';
   rc.style.cursor = 'crosshair';
+}
+
+// ══════════════════════════════════════════════
+//  GAME RULES
+// ══════════════════════════════════════════════
+
+let currentRulesLang = 'ru';
+
+function showRules() {
+  document.getElementById('rules-overlay').style.display = 'flex';
+  renderRules(currentRulesLang);
+}
+
+function hideRules() {
+  document.getElementById('rules-overlay').style.display = 'none';
+}
+
+function switchRulesLang(lang) {
+  currentRulesLang = lang;
+  document.getElementById('rules-lang-ru').className = 'rules-lang-btn' + (lang === 'ru' ? ' active' : '');
+  document.getElementById('rules-lang-en').className = 'rules-lang-btn' + (lang === 'en' ? ' active' : '');
+  document.getElementById('rules-title').textContent = lang === 'ru' ? 'Правила игры' : 'Game Rules';
+  renderRules(lang);
+}
+
+function renderRules(lang) {
+  const el = document.getElementById('rules-content');
+  el.innerHTML = lang === 'ru' ? getRulesRU() : getRulesEN();
+}
+
+function getRulesRU() {
+  return `
+<h3>Обзор</h3>
+<p>Naval Battle: Strategic Edition — пошаговая морская стратегия. Два игрока (или игрок против ИИ) размещают корабли на карте и ведут бой, используя разведку, огневые средства и манёвр.</p>
+
+<h3>Режимы поля</h3>
+<table>
+<tr><th>Размер</th><th>Режим</th><th>Особенности</th></tr>
+<tr><td>30 &times; 30</td><td>Стычка</td><td>Без капитальных кораблей и подводных лодок. Нет ядерного оружия.</td></tr>
+<tr><td>50 &times; 50</td><td>Сражение</td><td>Выбор ТАРКР или АВ. Подводная лодка. Все системы вооружения.</td></tr>
+<tr><td>100 &times; 100</td><td>Полная война</td><td>Полный флот: ТАРКР, АВ, ПЛ. Все системы.</td></tr>
+</table>
+
+<h3>Состав флота</h3>
+<table>
+<tr><th>Тип</th><th>Обозн.</th><th>Размер</th><th>30x30</th><th>50x50</th><th>100x100</th></tr>
+<tr><td>Ракетный катер</td><td>МК</td><td>1</td><td>2</td><td>3</td><td>5</td></tr>
+<tr><td>МРК</td><td>МРК</td><td>2</td><td>2</td><td>3</td><td>4</td></tr>
+<tr><td>Эсминец</td><td>ЭМ</td><td>3</td><td>1</td><td>2</td><td>3</td></tr>
+<tr><td>Крейсер</td><td>КР</td><td>4</td><td>1</td><td>1</td><td>3</td></tr>
+<tr><td>ТАРКР</td><td>ТАРКР</td><td>5</td><td>&mdash;</td><td>0 или 1*</td><td>1</td></tr>
+<tr><td>Авианосец</td><td>АВ</td><td>5</td><td>&mdash;</td><td>0 или 1*</td><td>1</td></tr>
+<tr><td>Подводная лодка</td><td>ПЛ</td><td>3</td><td>&mdash;</td><td>1</td><td>1</td></tr>
+</table>
+<p>* На поле 50x50 выбирается один из двух: ТАРКР или Авианосец.</p>
+
+<h3>Структура хода</h3>
+<p>Каждый ход состоит из:</p>
+<ul>
+<li><b>Одного действия</b> (сканирование ИЛИ стрельба ИЛИ развёртывание ПЛ). Сканирование и стрельба в одном ходу несовместимы.</li>
+<li><b>Движения</b> — 9 очков хода. Смещение на 1 клетку = 1 очко. Поворот на 90° = 3 очка. Можно распределить между несколькими кораблями.</li>
+</ul>
+<p>После использования действия и/или очков хода нажмите «End Turn».</p>
+
+<h3>Разведка (сканирование)</h3>
+
+<h4>Радар</h4>
+<ul>
+<li>Корабль размером 3+ активирует радар (не ПЛ).</li>
+<li>Шанс обнаружения зависит от типа: ЭМ 25%, КР 50%, ТАРКР/АВ 75%.</li>
+<li>Перезарядка: 3 хода.</li>
+<li>Цена: позиция корабля-источника раскрывается противнику.</li>
+<li>Обнаруженные корабли отображаются зелёными контурами на радаре (без подписей типа).</li>
+</ul>
+
+<h4>Сонар (ЭМ)</h4>
+<ul>
+<li>Только эсминцы. Обнаруживает подводные лодки с шансом 60%.</li>
+<li>Перезарядка: 2 хода.</li>
+<li>Цена: позиция эсминца раскрывается противнику.</li>
+<li>Обнаруженная ПЛ получает уведомление (системы РЭБ фиксируют облучение).</li>
+</ul>
+
+<h4>Авиаразведка</h4>
+<ul>
+<li>Только с авианосца. Расходует 1 самолёт-разведчик (начальное кол-во: 3).</li>
+<li>Шанс обнаружения: 55% + 5% × размер корабля (от 5% до 95%).</li>
+<li>При промахе: 30% шанс сбития самолёта.</li>
+<li>Обнаруженные корабли показываются с подписями типа (подписи затухают с возрастом).</li>
+</ul>
+
+<h4>РЭБ (радиоэлектронная борьба)</h4>
+<p>Когда противник сканирует ваши корабли, обнаруженные корабли моргают жёлтым на карте флота ~3 секунды. Это сигнал системы РЭБ о том, что корабль был «подсвечен».</p>
+
+<h3>Стрельба</h3>
+
+<h4>Обычный выстрел</h4>
+<ul>
+<li>Одна клетка на радаре. Попадание (красный X) или промах (синие штрихи).</li>
+<li>Если все клетки корабля поражены — корабль потоплен.</li>
+</ul>
+
+<h4>Торпеда (ПЛ)</h4>
+<ul>
+<li>3 торпеды на ПЛ. Выбирается цель на радаре.</li>
+<li>Торпеда движется 3 хода к цели (1 клетка/ход).</li>
+<li>Гарантированное уничтожение при попадании. Если цель ушла — промах.</li>
+<li>ПЛ всплывает на 1 ход (видна противнику).</li>
+<li>Торпеда уничтожается при столкновении с островом.</li>
+</ul>
+
+<h4>АСРОК (ЭМ)</h4>
+<ul>
+<li>1 ракета на эсминец. Стреляет по клетке на радаре.</li>
+<li>Если в клетке ПЛ — мгновенное уничтожение.</li>
+<li>Если надводный корабль — обычное попадание (1 клетка).</li>
+<li><b>Нельзя стрелять в тот же ход, что и сонар</b> — у ПЛ должен быть шанс уклониться.</li>
+</ul>
+
+<h4>ПКР П-1000 «Вулкан» (ТАРКР)</h4>
+<ul>
+<li>4 пусковые установки (ПУ). Каждая — одноразовая.</li>
+<li>Повреждённая ПУ (если клетка ПУ поражена) — не стреляет.</li>
+<li>Цель выбирается на радаре. Ракета пролетает через ПВО цели.</li>
+<li>Шанс перехвата зависит от типа цели (МК 0%, ЭМ 25%, КР 40%, ТАРКР 50%).</li>
+<li>Если ПВО не перехватила — <b>корабль мгновенно уничтожен</b>.</li>
+<li>ПЛ не может быть целью ПКР (подводная цель).</li>
+</ul>
+
+<h4>Штурмовик (АВ)</h4>
+<ul>
+<li>6 штурмовиков на авианосец.</li>
+<li>Механика цепочки ударов: D100 дуэль «атака vs ПВО».</li>
+<li>Если атака > ПВО — попадание, штурмовик атакует следующую клетку того же корабля.</li>
+<li>Если ПВО > атака — штурмовик сбит.</li>
+<li>Цепочка продолжается до сбития или уничтожения корабля.</li>
+<li>Авианосец блокируется на 1 ход после получения попадания.</li>
+</ul>
+
+<h4>Торпеда Т-10 (ядерный удар)</h4>
+<ul>
+<li>1 на игру. Запускается с подводной лодки.</li>
+<li>Недоступно в режиме 30x30 (Стычка).</li>
+<li>Зона поражения: 11 &times; 11 клеток.</li>
+<li>Корабли полностью в зоне — мгновенно уничтожены.</li>
+<li>Корабли частично в зоне — получают радиационный урон (1 клетка/ход, 3 хода).</li>
+<li>ПЛ всплывает при пуске (видна противнику).</li>
+</ul>
+
+<h3>Подводная лодка</h3>
+<ul>
+<li>Размещается отдельно: развёртывание в ходах 1-10 как действие.</li>
+<li>Если не развёрнута к ходу 11 — автоматически потеряна.</li>
+<li>Невидима для обычных выстрелов (кроме АСРОК и торпед).</li>
+<li>Всплывает при пуске торпеды (видна 1 ход).</li>
+<li>Сонар обнаруживает с 60% шансом.</li>
+</ul>
+
+<h3>Реактор (ТАРКР и АВ)</h3>
+<ul>
+<li>ТАРКР и АВ имеют реакторный отсек (клетка 2 из 5).</li>
+<li>При 2 попаданиях в реактор — цепная реакция: взрыв 5 &times; 5 вокруг корабля.</li>
+<li>Все корабли и клетки в зоне взрыва поражаются.</li>
+<li>Зона взрыва отображается как обугленная зона на карте.</li>
+</ul>
+
+<h3>Ландшафт</h3>
+<ul>
+<li><b>Острова</b> — блокируют размещение, движение, торпеды. Видны на радаре.</li>
+<li><b>Затонувшие корабли (рэки)</b> — блокируют размещение и движение надводных кораблей. ПЛ может проходить через них. Не видны на радаре.</li>
+</ul>
+
+<h3>Движение</h3>
+<ul>
+<li>9 очков хода за ход.</li>
+<li>Смещение на 1 клетку (вперёд/назад вдоль оси корабля) = 1 очко.</li>
+<li>Поворот на 90° = 3 очка.</li>
+<li>Очки можно распределять между несколькими кораблями.</li>
+<li>Движение доступно как до, так и после использования действия.</li>
+</ul>
+
+<h3>Условие победы</h3>
+<p>Уничтожить все корабли противника (включая развёрнутую ПЛ). Неразвёрнутая ПЛ после хода 10 считается потерянной.</p>
+
+<h3>Устаревание разведданных</h3>
+<p>Обнаруженные корабли отображаются 4 хода, затем исчезают. Свежие данные — яркие, старые — тусклые. Противник может переместить корабль после обнаружения.</p>
+`;
+}
+
+function getRulesEN() {
+  return `
+<h3>Overview</h3>
+<p>Naval Battle: Strategic Edition is a turn-based naval strategy game. Two players (or player vs AI) place ships on a map and battle using reconnaissance, weapons, and maneuver.</p>
+
+<h3>Field Modes</h3>
+<table>
+<tr><th>Size</th><th>Mode</th><th>Features</th></tr>
+<tr><td>30 &times; 30</td><td>Skirmish</td><td>No capital ships or submarines. No nuclear weapons.</td></tr>
+<tr><td>50 &times; 50</td><td>Battle</td><td>Choose TARKR or Carrier. Submarine. All weapons systems.</td></tr>
+<tr><td>100 &times; 100</td><td>Full War</td><td>Full fleet: TARKR, Carrier, Submarine. All systems.</td></tr>
+</table>
+
+<h3>Fleet Composition</h3>
+<table>
+<tr><th>Type</th><th>Abbr.</th><th>Size</th><th>30x30</th><th>50x50</th><th>100x100</th></tr>
+<tr><td>Missile Boat</td><td>MK</td><td>1</td><td>2</td><td>3</td><td>5</td></tr>
+<tr><td>Missile Corvette</td><td>MRK</td><td>2</td><td>2</td><td>3</td><td>4</td></tr>
+<tr><td>Destroyer</td><td>DD</td><td>3</td><td>1</td><td>2</td><td>3</td></tr>
+<tr><td>Cruiser</td><td>CR</td><td>4</td><td>1</td><td>1</td><td>3</td></tr>
+<tr><td>Nuclear Cruiser</td><td>TARKR</td><td>5</td><td>&mdash;</td><td>0 or 1*</td><td>1</td></tr>
+<tr><td>Carrier</td><td>CV</td><td>5</td><td>&mdash;</td><td>0 or 1*</td><td>1</td></tr>
+<tr><td>Submarine</td><td>SS</td><td>3</td><td>&mdash;</td><td>1</td><td>1</td></tr>
+</table>
+<p>* In 50x50 mode, choose one: TARKR or Carrier.</p>
+
+<h3>Turn Structure</h3>
+<p>Each turn consists of:</p>
+<ul>
+<li><b>One action</b> (scan OR fire OR deploy submarine). Scanning and firing are mutually exclusive in a single turn.</li>
+<li><b>Movement</b> — 9 movement points per turn. Moving 1 cell = 1 point. Rotating 90° = 3 points. Points can be distributed among multiple ships.</li>
+</ul>
+<p>After using your action and/or movement points, click "End Turn".</p>
+
+<h3>Reconnaissance (Scanning)</h3>
+
+<h4>Radar</h4>
+<ul>
+<li>Ships of size 3+ can activate radar (not submarines).</li>
+<li>Detection chance depends on type: DD 25%, CR 50%, TARKR/CV 75%.</li>
+<li>Cooldown: 3 turns.</li>
+<li>Cost: source ship's position is revealed to the enemy.</li>
+<li>Detected ships appear as green outlines on radar (no type labels).</li>
+</ul>
+
+<h4>Sonar (Destroyers)</h4>
+<ul>
+<li>Destroyers only. Detects submarines with 60% chance.</li>
+<li>Cooldown: 2 turns.</li>
+<li>Cost: destroyer's position is revealed to the enemy.</li>
+<li>Detected submarine gets a warning (EW systems detect the scan).</li>
+</ul>
+
+<h4>Air Reconnaissance</h4>
+<ul>
+<li>Carrier only. Consumes 1 recon plane (starting count: 3).</li>
+<li>Detection chance: 55% + 5% &times; ship size (min 5%, max 95%).</li>
+<li>On miss: 30% chance the plane is shot down.</li>
+<li>Detected ships are shown with type labels (labels fade with age).</li>
+</ul>
+
+<h4>EW (Electronic Warfare) Flash</h4>
+<p>When the enemy scans your ships, detected ships flash yellow on your fleet map for ~3 seconds. This is your EW system alerting you that the ship was "lit up".</p>
+
+<h3>Weapons</h3>
+
+<h4>Regular Shot</h4>
+<ul>
+<li>Single cell on radar. Hit (red X) or miss (blue hatches).</li>
+<li>If all cells of a ship are hit — ship is sunk.</li>
+</ul>
+
+<h4>Torpedo (Submarine)</h4>
+<ul>
+<li>3 torpedoes per submarine. Select target on radar.</li>
+<li>Torpedo travels 3 turns to target (1 cell/turn).</li>
+<li>Guaranteed kill on impact. If target moved away — miss.</li>
+<li>Submarine surfaces for 1 turn (visible to enemy).</li>
+<li>Torpedo destroyed if it hits an island.</li>
+</ul>
+
+<h4>ASROC (Destroyers)</h4>
+<ul>
+<li>1 rocket per destroyer. Fires at a radar cell.</li>
+<li>If submarine present — instant kill.</li>
+<li>If surface ship — regular hit (1 cell damage).</li>
+<li><b>Cannot fire on the same turn as sonar</b> — the sub must have a chance to evade.</li>
+</ul>
+
+<h4>PCR P-1000 "Vulkan" (TARKR)</h4>
+<ul>
+<li>4 launchers. Each is single-use.</li>
+<li>Damaged launcher (if launcher cell was hit) — cannot fire.</li>
+<li>Target selected on radar. Missile passes through target's air defense (PVO).</li>
+<li>Intercept chance depends on target type (MK 0%, DD 25%, CR 40%, TARKR 50%).</li>
+<li>If PVO fails to intercept — <b>target ship instantly destroyed</b>.</li>
+<li>Submarines cannot be targeted by PCR (underwater target).</li>
+</ul>
+
+<h4>Striker Aircraft (Carrier)</h4>
+<ul>
+<li>6 strikers per carrier.</li>
+<li>Chain attack mechanic: D100 duel "attack vs PVO".</li>
+<li>If attack > PVO — hit, striker attacks next cell on same ship.</li>
+<li>If PVO > attack — striker is shot down.</li>
+<li>Chain continues until shot down or ship destroyed.</li>
+<li>Carrier is blocked for 1 turn after taking a hit.</li>
+</ul>
+
+<h4>T-10 Torpedo (Nuclear Strike)</h4>
+<ul>
+<li>1 per game. Launched from submarine.</li>
+<li>Not available in 30x30 mode (Skirmish).</li>
+<li>Blast zone: 11 &times; 11 cells.</li>
+<li>Ships fully inside zone — instantly destroyed.</li>
+<li>Ships partially inside — receive radiation damage (1 cell/turn for 3 turns).</li>
+<li>Submarine surfaces on launch (visible to enemy).</li>
+</ul>
+
+<h3>Submarine</h3>
+<ul>
+<li>Deployed separately: deployment during turns 1-10 as an action.</li>
+<li>If not deployed by turn 11 — automatically lost.</li>
+<li>Invisible to regular shots (except ASROC and torpedoes).</li>
+<li>Surfaces when firing a torpedo (visible for 1 turn).</li>
+<li>Sonar detects with 60% chance.</li>
+</ul>
+
+<h3>Reactor (TARKR and Carrier)</h3>
+<ul>
+<li>TARKR and Carrier have a reactor compartment (cell 2 of 5).</li>
+<li>2 hits on the reactor trigger a chain reaction: 5 &times; 5 explosion around the ship.</li>
+<li>All ships and cells in the blast zone are hit.</li>
+<li>Blast zone is displayed as charred area on the map.</li>
+</ul>
+
+<h3>Landscape</h3>
+<ul>
+<li><b>Islands</b> — block placement, movement, and torpedoes. Visible on radar.</li>
+<li><b>Wrecks</b> — block placement and movement of surface ships. Submarines can pass through. Not visible on radar.</li>
+</ul>
+
+<h3>Movement</h3>
+<ul>
+<li>9 movement points per turn.</li>
+<li>Moving 1 cell (forward/backward along ship axis) = 1 point.</li>
+<li>Rotating 90° = 3 points.</li>
+<li>Points can be distributed among multiple ships.</li>
+<li>Movement is available both before and after using your action.</li>
+</ul>
+
+<h3>Victory Condition</h3>
+<p>Destroy all enemy ships (including deployed submarine). Undeployed submarine after turn 10 is considered lost.</p>
+
+<h3>Intel Aging</h3>
+<p>Detected ships are displayed for 4 turns, then fade. Fresh data is bright, old data is dim. The enemy may have moved ships after detection.</p>
+`;
 }
 
 </script>
