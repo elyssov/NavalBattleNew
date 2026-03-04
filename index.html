@@ -1,0 +1,2910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naval Battle: Strategic Edition</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a1628;
+    color: #c0d8f0;
+    font-family: 'Segoe UI', 'Courier New', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  /* ── Main Menu ── */
+  #menu-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 30px;
+  }
+
+  #menu-screen h1 {
+    font-size: 48px;
+    color: #4fc3f7;
+    text-shadow: 0 0 20px rgba(79,195,247,0.5);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+  }
+
+  #menu-screen h2 {
+    font-size: 18px;
+    color: #78909c;
+    letter-spacing: 4px;
+    margin-top: -20px;
+  }
+
+  .menu-btn {
+    background: linear-gradient(180deg, #1a3a5c, #0d2137);
+    border: 1px solid #4fc3f7;
+    color: #4fc3f7;
+    padding: 14px 48px;
+    font-size: 20px;
+    cursor: pointer;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .menu-btn:hover {
+    background: linear-gradient(180deg, #254e78, #163050);
+    box-shadow: 0 0 15px rgba(79,195,247,0.3);
+  }
+
+  /* ── Settings Screen ── */
+  #settings-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 24px;
+  }
+
+  #settings-screen h2 {
+    font-size: 32px;
+    color: #4fc3f7;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .settings-group {
+    background: rgba(26,58,92,0.4);
+    border: 1px solid #1e3a5f;
+    padding: 20px 30px;
+    min-width: 500px;
+  }
+
+  .settings-group h3 {
+    font-size: 14px;
+    color: #78909c;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .radio-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .radio-option {
+    position: relative;
+  }
+
+  .radio-option input { display: none; }
+
+  .radio-option label {
+    display: block;
+    padding: 10px 20px;
+    background: #0d2137;
+    border: 1px solid #1e3a5f;
+    color: #78909c;
+    cursor: pointer;
+    font-size: 14px;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+
+  .radio-option input:checked + label {
+    background: #1a3a5c;
+    border-color: #4fc3f7;
+    color: #4fc3f7;
+    box-shadow: 0 0 8px rgba(79,195,247,0.2);
+  }
+
+  .radio-option label:hover {
+    border-color: #4fc3f7;
+    color: #b0d4f1;
+  }
+
+  .flavor-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0d2137;
+    border: 1px solid #4fc3f7;
+    color: #a0c4e8;
+    padding: 10px 14px;
+    font-size: 12px;
+    width: 260px;
+    text-align: center;
+    line-height: 1.5;
+    z-index: 10;
+    pointer-events: none;
+    margin-bottom: 6px;
+  }
+
+  .radio-option:hover .flavor-tooltip,
+  .radio-option input:checked ~ .flavor-tooltip {
+    display: block;
+  }
+
+  .start-btn {
+    background: linear-gradient(180deg, #1b5e20, #0d3b12);
+    border: 1px solid #4caf50;
+    color: #4caf50;
+    padding: 16px 64px;
+    font-size: 22px;
+    cursor: pointer;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    margin-top: 10px;
+  }
+
+  .start-btn:hover {
+    background: linear-gradient(180deg, #2e7d32, #1b5e20);
+    box-shadow: 0 0 20px rgba(76,175,80,0.3);
+  }
+
+  .back-btn {
+    background: none;
+    border: 1px solid #78909c;
+    color: #78909c;
+    padding: 8px 24px;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.15s;
+  }
+
+  .back-btn:hover {
+    border-color: #b0bec5;
+    color: #b0bec5;
+  }
+
+  /* ── Game Screen (Placement) ── */
+  #game-screen {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  #game-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  #game-hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(10,22,40,0.85);
+    border: 1px solid #1e3a5f;
+    padding: 10px 18px;
+    font-size: 13px;
+    color: #78909c;
+    pointer-events: none;
+  }
+
+  #game-hud span { color: #4fc3f7; }
+
+  #back-to-menu-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(10,22,40,0.85);
+    border: 1px solid #78909c;
+    color: #78909c;
+    padding: 6px 16px;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    z-index: 25;
+  }
+
+  #back-to-menu-btn:hover {
+    border-color: #b0bec5;
+    color: #b0bec5;
+  }
+
+  /* ── Loading overlay ── */
+  #loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,22,40,0.95);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: #4fc3f7;
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #1e3a5f;
+    border-top-color: #4fc3f7;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Minimap ── */
+  #minimap-container {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    border: 1px solid #4fc3f7;
+    background: rgba(10,22,40,0.8);
+    cursor: pointer;
+  }
+
+  #minimap-canvas {
+    display: block;
+  }
+
+  /* ── Placement Panel ── */
+  #placement-panel {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 240px;
+    height: 100vh;
+    background: rgba(10,22,40,0.92);
+    border-left: 1px solid #1e3a5f;
+    padding: 14px;
+    overflow-y: auto;
+    z-index: 20;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #placement-panel h3 {
+    color: #4fc3f7;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .ship-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: #0d2137;
+    border: 1px solid #1e3a5f;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 12px;
+    color: #78909c;
+  }
+
+  .ship-item:hover { border-color: #4fc3f7; color: #b0d4f1; }
+
+  .ship-item.selected {
+    border-color: #4fc3f7;
+    color: #4fc3f7;
+    background: #1a3a5c;
+    box-shadow: 0 0 8px rgba(79,195,247,0.2);
+  }
+
+  .ship-item.placed {
+    border-color: #2e7d32;
+    color: #4caf50;
+    background: rgba(46,125,50,0.15);
+  }
+
+  .ship-item.placed:hover { border-color: #4caf50; }
+
+  .ship-cells-preview {
+    display: flex;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+
+  .ship-cells-preview span {
+    display: block;
+    width: 10px;
+    height: 10px;
+    background: #546e7a;
+  }
+
+  .ship-item.placed .ship-cells-preview span { background: #4caf50; }
+  .ship-item.selected .ship-cells-preview span { background: #4fc3f7; }
+
+  .ship-name { flex: 1; }
+  .ship-size-label { color: #546e7a; font-size: 11px; }
+
+  .placement-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .placement-btn {
+    padding: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    transition: all 0.2s;
+    border: 1px solid;
+  }
+
+  #auto-place-btn {
+    background: linear-gradient(180deg, #1a3a5c, #0d2137);
+    border-color: #4fc3f7;
+    color: #4fc3f7;
+  }
+  #auto-place-btn:hover {
+    background: linear-gradient(180deg, #254e78, #163050);
+    box-shadow: 0 0 10px rgba(79,195,247,0.2);
+  }
+
+  #clear-btn {
+    background: linear-gradient(180deg, #3e2723, #1b0f0a);
+    border-color: #ff7043;
+    color: #ff7043;
+  }
+  #clear-btn:hover { box-shadow: 0 0 10px rgba(255,112,67,0.2); }
+
+  #ready-btn {
+    background: linear-gradient(180deg, #1b5e20, #0d3b12);
+    border-color: #4caf50;
+    color: #4caf50;
+    font-size: 16px;
+    padding: 12px;
+  }
+  #ready-btn:hover {
+    background: linear-gradient(180deg, #2e7d32, #1b5e20);
+    box-shadow: 0 0 15px rgba(76,175,80,0.3);
+  }
+  #ready-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+  .placement-hint {
+    font-size: 11px;
+    color: #546e7a;
+    text-align: center;
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+
+  /* ── Choice Dialog ── */
+  #choice-dialog {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,22,40,0.92);
+    z-index: 200;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  #choice-dialog h2 { color: #4fc3f7; font-size: 24px; letter-spacing: 3px; text-transform: uppercase; }
+  #choice-dialog p { color: #78909c; font-size: 14px; max-width: 500px; text-align: center; line-height: 1.6; }
+
+  .choice-options { display: flex; gap: 20px; }
+
+  .choice-card {
+    background: #0d2137;
+    border: 2px solid #1e3a5f;
+    padding: 20px 28px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    min-width: 200px;
+  }
+  .choice-card:hover { border-color: #4fc3f7; box-shadow: 0 0 15px rgba(79,195,247,0.2); }
+  .choice-card h3 { color: #4fc3f7; font-size: 18px; margin-bottom: 8px; letter-spacing: 1px; }
+  .choice-card .desc { color: #78909c; font-size: 12px; line-height: 1.5; }
+
+  /* ══════════════════════════════════════════════
+     BATTLE SCREEN (Phase 3)
+     ══════════════════════════════════════════════ */
+
+  #battle-screen {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    flex-direction: column;
+  }
+
+  /* ── Top Bar ── */
+  #top-bar {
+    height: 44px;
+    background: #0d1b2a;
+    border-bottom: 1px solid #1e3a5f;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 20px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .tb-item {
+    font-size: 13px;
+    color: #78909c;
+  }
+  .tb-item span { color: #4fc3f7; }
+
+  .tb-phase {
+    padding: 4px 14px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .tb-phase.recon { border-color: #42a5f5; color: #42a5f5; background: rgba(66,165,245,0.1); }
+  .action-btn.recon-btn { border-color: #42a5f5; color: #42a5f5; }
+  .action-btn.recon-btn:hover:not(:disabled) { background: rgba(66,165,245,0.15); }
+  .action-btn.recon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .tb-phase.move { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+  .tb-phase.fire { border-color: #ef5350; color: #ef5350; background: rgba(239,83,80,0.1); }
+  .tb-phase.waiting { border-color: #78909c; color: #78909c; background: rgba(120,144,156,0.05); }
+
+  #tb-menu-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid #546e7a;
+    color: #546e7a;
+    padding: 3px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  #tb-menu-btn:hover { border-color: #b0bec5; color: #b0bec5; }
+
+  /* ── Battle Area (split) ── */
+  #battle-area {
+    flex: 1;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .battle-panel {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .battle-panel canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  #fleet-panel { border-right: 2px solid #1e3a5f; }
+  #radar-panel { background: #050a05; }
+
+  .panel-label {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 5;
+    padding: 2px 10px;
+  }
+
+  #fleet-panel .panel-label { color: rgba(79,195,247,0.5); }
+  #radar-panel .panel-label { color: rgba(0,200,0,0.5); }
+
+  /* ── Bottom Bar (actions) ── */
+  #bottom-bar {
+    height: 52px;
+    background: #0d1b2a;
+    border-top: 1px solid #1e3a5f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+
+  .action-btn {
+    padding: 6px 18px;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    border: 1px solid;
+    background: #0d2137;
+  }
+
+  .action-btn:hover { box-shadow: 0 0 8px rgba(79,195,247,0.2); }
+  .action-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+
+  .action-btn.recon-btn { border-color: #42a5f5; color: #42a5f5; }
+  .action-btn.move-btn { border-color: #66bb6a; color: #66bb6a; }
+  .action-btn.fire-btn { border-color: #ef5350; color: #ef5350; }
+  .action-btn.skip-btn { border-color: #78909c; color: #78909c; }
+  .action-btn.active { box-shadow: 0 0 12px rgba(79,195,247,0.3); background: #1a3a5c; }
+
+  .action-separator {
+    width: 1px;
+    height: 28px;
+    background: #1e3a5f;
+    margin: 0 4px;
+  }
+
+  /* ── Notification Toast ── */
+  #toast {
+    position: fixed;
+    top: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,22,40,0.95);
+    border: 1px solid #4fc3f7;
+    color: #c0d8f0;
+    padding: 10px 24px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    z-index: 300;
+    display: none;
+    text-align: center;
+    max-width: 500px;
+  }
+
+  #toast.hit { border-color: #ef5350; color: #ef5350; }
+  #toast.miss { border-color: #78909c; color: #78909c; }
+  #toast.sunk { border-color: #ff9800; color: #ff9800; }
+  #toast.info { border-color: #42a5f5; color: #42a5f5; }
+  #toast.move-toast { border-color: #66bb6a; color: #66bb6a; }
+
+  /* ── Movement Options Overlay ── */
+  #move-options {
+    display: none;
+    position: absolute;
+    background: rgba(10,22,40,0.95);
+    border: 1px solid #66bb6a;
+    padding: 8px;
+    z-index: 50;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .move-opt-btn {
+    padding: 5px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid #2e7d32;
+    background: #0d2137;
+    color: #66bb6a;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .move-opt-btn:hover { background: #1a3a5c; border-color: #66bb6a; }
+  .move-opt-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── Victory Overlay ── */
+  #victory-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,22,40,0.92);
+    z-index: 500;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  #victory-overlay h1 {
+    font-size: 48px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+  }
+
+  #victory-overlay.win h1 { color: #4caf50; text-shadow: 0 0 30px rgba(76,175,80,0.5); }
+  #victory-overlay.lose h1 { color: #ef5350; text-shadow: 0 0 30px rgba(239,83,80,0.5); }
+
+  #victory-overlay p { color: #78909c; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<!-- Main Menu -->
+<div id="menu-screen">
+  <h1>Naval Battle</h1>
+  <h2>Strategic Edition</h2>
+  <button class="menu-btn" onclick="showSettings()">New Game</button>
+</div>
+
+<!-- Settings Screen -->
+<div id="settings-screen">
+  <h2>Game Setup</h2>
+
+  <div class="settings-group">
+    <h3>Field Size</h3>
+    <div class="radio-group">
+      <div class="radio-option">
+        <input type="radio" name="fieldSize" id="fs30" value="30">
+        <label for="fs30">30 &times; 30</label>
+      </div>
+      <div class="radio-option">
+        <input type="radio" name="fieldSize" id="fs50" value="50" checked>
+        <label for="fs50">50 &times; 50</label>
+      </div>
+      <div class="radio-option">
+        <input type="radio" name="fieldSize" id="fs100" value="100">
+        <label for="fs100">100 &times; 100</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <h3>Landscape</h3>
+    <div class="radio-group">
+      <div class="radio-option">
+        <input type="radio" name="landscape" id="lsOcean" value="ocean" checked>
+        <label for="lsOcean">Ocean</label>
+        <div class="flavor-tooltip">Open waters. No obstacles — pure tactics and firepower decide the battle.</div>
+      </div>
+      <div class="radio-option">
+        <input type="radio" name="landscape" id="lsWrecks" value="wrecks">
+        <label for="lsWrecks">Wrecks</label>
+        <div class="flavor-tooltip">Scattered hulks of sunken vessels litter the seabed. Submarines slip beneath them unseen; torpedoes may not be so lucky. ~10% coverage.</div>
+      </div>
+      <div class="radio-option">
+        <input type="radio" name="landscape" id="lsIslands" value="islands">
+        <label for="lsIslands">Islands</label>
+        <div class="flavor-tooltip">Rocky island chains rise from the deep, visible on radar and impassable to all. Use them as cover — or get trapped. ~20% coverage.</div>
+      </div>
+      <div class="radio-option">
+        <input type="radio" name="landscape" id="lsArchipelago" value="archipelago">
+        <label for="lsArchipelago">Archipelago</label>
+        <div class="flavor-tooltip">Dense island formations carve the battlefield into narrow straits and hidden bays. Navigation is treacherous — but so is ambush. ~30% coverage.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <h3>Game Mode</h3>
+    <div class="radio-group">
+      <div class="radio-option">
+        <input type="radio" name="gameMode" id="gmAI" value="ai" checked>
+        <label for="gmAI">vs AI</label>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:16px; align-items:center;">
+    <button class="back-btn" onclick="showMenu()">Back</button>
+    <button class="start-btn" onclick="startGame()">Start</button>
+  </div>
+</div>
+
+<!-- Game Screen (Placement) -->
+<div id="game-screen">
+  <canvas id="game-canvas"></canvas>
+  <div id="game-hud">
+    Field: <span id="hud-size"></span> &nbsp;|&nbsp;
+    Landscape: <span id="hud-landscape"></span> &nbsp;|&nbsp;
+    Zoom: <span id="hud-zoom">100%</span> &nbsp;|&nbsp;
+    <span id="hud-phase">PLACEMENT</span>
+  </div>
+  <button id="back-to-menu-btn" onclick="backToMenu()">Menu</button>
+
+  <div id="placement-panel">
+    <h3>Fleet Roster</h3>
+    <div id="ship-roster"></div>
+    <div class="placement-hint">
+      Click ship to select, then click field to place.<br>
+      Right-click to rotate before placing.<br>
+      Click a placed ship on the field to rotate it.
+    </div>
+    <div class="placement-buttons">
+      <button class="placement-btn" id="auto-place-btn" onclick="autoPlace()">Auto-Place</button>
+      <button class="placement-btn" id="clear-btn" onclick="clearPlacement()">Clear All</button>
+      <button class="placement-btn" id="ready-btn" onclick="confirmReady()" disabled>Ready</button>
+    </div>
+  </div>
+
+  <div id="minimap-container">
+    <canvas id="minimap-canvas"></canvas>
+  </div>
+</div>
+
+<!-- TARKR vs Carrier Choice Dialog -->
+<div id="choice-dialog">
+  <h2>Choose Your Capital Ship</h2>
+  <p>Squadron doctrine allows one capital ship. Choose wisely — this decision is permanent.</p>
+  <div class="choice-options">
+    <div class="choice-card" onclick="chooseTarkrOrCarrier('tarkr')">
+      <h3>TARKR</h3>
+      <div class="desc">Heavy Nuclear Missile Cruiser<br>5 cells &bull; 4 Vulkan missiles<br>Nuclear reactor (center cell)<br>Raw firepower, high risk</div>
+    </div>
+    <div class="choice-card" onclick="chooseTarkrOrCarrier('carrier')">
+      <h3>Carrier</h3>
+      <div class="desc">Aircraft Carrier<br>5 cells &bull; 3 recon planes + strikers<br>Nuclear reactor (center cell)<br>Intel advantage, versatile</div>
+    </div>
+  </div>
+</div>
+
+<!-- Battle Screen (Phase 3) -->
+<div id="battle-screen">
+  <div id="top-bar">
+    <div class="tb-item">Turn: <span id="tb-turn">1</span></div>
+    <div class="tb-item">Player: <span id="tb-player">You</span></div>
+    <div class="tb-phase recon" id="tb-phase">RECON</div>
+    <div class="tb-item" id="tb-info"></div>
+    <button id="tb-menu-btn" onclick="backToMenu()">Menu</button>
+  </div>
+  <div id="battle-area">
+    <div class="battle-panel" id="fleet-panel">
+      <div class="panel-label">Fleet Map</div>
+      <canvas id="fleet-canvas"></canvas>
+    </div>
+    <div class="battle-panel" id="radar-panel">
+      <div class="panel-label">Radar</div>
+      <canvas id="radar-canvas"></canvas>
+    </div>
+  </div>
+  <div id="bottom-bar" id="action-bar"></div>
+  <div id="move-options"></div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast"></div>
+
+<!-- Victory Overlay -->
+<div id="victory-overlay">
+  <h1 id="victory-text"></h1>
+  <p id="victory-sub"></p>
+  <button class="menu-btn" onclick="backToMenu()">Main Menu</button>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div id="loading-text">Generating landscape...</div>
+</div>
+
+<script>
+// ============================================================
+//  NAVAL BATTLE: STRATEGIC EDITION
+//  Phase 1 (Menu/Landscape) + Phase 2 (Placement) + Phase 3 (Combat)
+// ============================================================
+
+// ── Screen management ──
+
+function showMenu() {
+  cancelAnimationFrame(renderFrameId);
+  document.getElementById('menu-screen').style.display = 'flex';
+  document.getElementById('settings-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('battle-screen').style.display = 'none';
+  document.getElementById('choice-dialog').style.display = 'none';
+  document.getElementById('victory-overlay').style.display = 'none';
+  placement.phase = 'none';
+  battle.active = false;
+}
+
+function showSettings() {
+  document.getElementById('menu-screen').style.display = 'none';
+  document.getElementById('settings-screen').style.display = 'flex';
+}
+
+function showGame() {
+  document.getElementById('menu-screen').style.display = 'none';
+  document.getElementById('settings-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+  document.getElementById('battle-screen').style.display = 'none';
+}
+
+function showBattle() {
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('battle-screen').style.display = 'flex';
+}
+
+function backToMenu() {
+  cancelAnimationFrame(renderFrameId);
+  showMenu();
+}
+
+// ── Game State ──
+
+const gameState = {
+  settings: { fieldSize: 50, landscape: 'ocean', gameMode: 'ai' },
+  landscape: { islands: [], wrecks: [] },
+  players: [
+    { id: 0, ships: [], radarData: { shots: [], detectedShips: [], sunkShips: [] }, nuclearUsed: false },
+    { id: 1, ships: [], radarData: { shots: [], detectedShips: [], sunkShips: [] }, nuclearUsed: false }
+  ],
+  currentTurn: 1,
+  currentPlayer: 0,
+  phase: 'recon', // 'recon' | 'action'
+  actionMode: null, // null | 'move' | 'fire'
+  activeTorpedoes: [],
+  gameOver: false
+};
+
+// ── Camera ──
+
+function makeCamera() {
+  return { x: 0, y: 0, zoom: 1, minZoom: 0.15, maxZoom: 3, dragging: false, dragMoved: false, lastMouse: { x: 0, y: 0 } };
+}
+
+const camera = makeCamera(); // placement camera
+const fleetCam = makeCamera();
+const radarCam = makeCamera();
+
+let renderFrameId = 0;
+const CELL_PX = 16;
+
+// ── Sprite Preloading ──
+
+const SPRITES = {};
+const SPRITE_PATHS = {
+  missile_boat: 'sprites/patrol.png',
+  mrk: 'sprites/mrk.png',
+  destroyer: 'sprites/dstr.png',
+  cruiser: 'sprites/crsr.png',
+  tarkr: 'sprites/hwcrsr.png',
+  carrier: 'sprites/carrier.png',
+  submarine: 'sprites/submarine.png'
+};
+let spritesLoaded = false;
+
+function preloadSprites() {
+  return new Promise((resolve) => {
+    const keys = Object.keys(SPRITE_PATHS);
+    let loaded = 0;
+    for (const key of keys) {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded >= keys.length) { spritesLoaded = true; resolve(); }
+      };
+      img.src = SPRITE_PATHS[key];
+      SPRITES[key] = img;
+    }
+  });
+}
+
+// Start preloading immediately
+preloadSprites();
+
+// ── Fleet Definitions ──
+
+const SHIP_DEFS = {
+  missile_boat: { name: 'Missile Boat', size: 1, type: 'missile_boat' },
+  mrk:          { name: 'MRK',          size: 2, type: 'mrk' },
+  destroyer:    { name: 'Destroyer',    size: 3, type: 'destroyer' },
+  cruiser:      { name: 'Cruiser',      size: 4, type: 'cruiser' },
+  tarkr:        { name: 'TARKR',        size: 5, type: 'tarkr' },
+  carrier:      { name: 'Carrier',      size: 5, type: 'carrier' },
+  submarine:    { name: 'Submarine',    size: 3, type: 'submarine' }
+};
+
+function getFleetForSize(fieldSize, capitalChoice) {
+  const fleet = [];
+  const add = (type, count) => {
+    for (let i = 0; i < count; i++) {
+      const def = SHIP_DEFS[type];
+      fleet.push({
+        ...def, id: type + '_' + i, cells: [], orientation: 'horizontal',
+        placed: false, hits: null, sunk: false,
+        // Special fields
+        reactor: (type === 'tarkr' || type === 'carrier') ? 2 : -1,
+        launchers: type === 'tarkr' ? [
+          { index: 0, loaded: true, damaged: false },
+          { index: 1, loaded: true, damaged: false },
+          { index: 3, loaded: true, damaged: false },
+          { index: 4, loaded: true, damaged: false }
+        ] : null,
+        planes: type === 'carrier' ? 3 : 0,
+        blocked: false,
+        deployed: type === 'submarine' ? false : true,
+        surfaced: false,
+        torpedoes: type === 'submarine' ? 3 : 0,
+        radarCooldown: 0
+      });
+    }
+  };
+
+  if (fieldSize === 30) {
+    add('missile_boat', 2); add('mrk', 2); add('destroyer', 1); add('cruiser', 1);
+  } else if (fieldSize === 50) {
+    add('missile_boat', 3); add('mrk', 3); add('destroyer', 2); add('cruiser', 1);
+    add(capitalChoice, 1); add('submarine', 1);
+  } else {
+    add('missile_boat', 5); add('mrk', 4); add('destroyer', 3); add('cruiser', 3);
+    add('tarkr', 1); add('carrier', 1); add('submarine', 1);
+  }
+  return fleet;
+}
+
+// ── Placement State ──
+
+const placement = {
+  phase: 'none',
+  fleet: [],
+  allShips: [],
+  selectedIndex: -1,
+  ghostCells: [],
+  ghostValid: false,
+  ghostOrientation: 'horizontal',
+  mouseCell: { x: -1, y: -1 }
+};
+
+// ── Battle State ──
+
+const battle = {
+  active: false,
+  selectedShip: null, // ship selected for movement
+  moveHighlights: [], // [{x,y,action}] possible move destinations
+  scanLineAngle: 0,
+  radarSelectMode: false, // true when waiting for player to click a ship for radar
+  subDeployMode: false,
+  subGhostCells: [],
+  subGhostValid: false,
+  subGhostOrientation: 'horizontal',
+  subMouseCell: { x: -1, y: -1 }
+};
+
+// ── Placement Functions ──
+
+function chooseTarkrOrCarrier(choice) {
+  document.getElementById('choice-dialog').style.display = 'none';
+  initPlacementWithFleet(choice);
+}
+
+function initPlacementWithFleet(capitalChoice) {
+  const allShips = getFleetForSize(gameState.settings.fieldSize, capitalChoice);
+  placement.allShips = allShips;
+  placement.fleet = allShips.filter(s => s.type !== 'submarine');
+  placement.selectedIndex = -1;
+  placement.ghostCells = [];
+  placement.ghostValid = false;
+  placement.ghostOrientation = 'horizontal';
+  placement.phase = 'placing';
+  buildShipRoster();
+  document.getElementById('placement-panel').style.display = 'flex';
+  document.getElementById('hud-phase').textContent = 'PLACEMENT';
+  updateReadyButton();
+}
+
+function buildShipRoster() {
+  const container = document.getElementById('ship-roster');
+  container.innerHTML = '';
+  placement.fleet.forEach((ship, idx) => {
+    const div = document.createElement('div');
+    div.className = 'ship-item' + (ship.placed ? ' placed' : '');
+    div.onclick = () => selectShipFromRoster(idx);
+    let cells = '<div class="ship-cells-preview">';
+    for (let i = 0; i < ship.size; i++) cells += '<span></span>';
+    cells += '</div>';
+    div.innerHTML = cells + '<span class="ship-name">' + ship.name + '</span><span class="ship-size-label">' + ship.size + '</span>';
+    container.appendChild(div);
+  });
+}
+
+function refreshRosterUI() {
+  const items = document.querySelectorAll('.ship-item');
+  items.forEach((div, idx) => {
+    const ship = placement.fleet[idx];
+    div.className = 'ship-item' + (ship.placed ? ' placed' : '') + (idx === placement.selectedIndex && !ship.placed ? ' selected' : '');
+  });
+}
+
+function selectShipFromRoster(idx) {
+  if (placement.fleet[idx].placed) return;
+  placement.selectedIndex = idx;
+  placement.ghostOrientation = 'horizontal';
+  placement.ghostCells = [];
+  refreshRosterUI();
+}
+
+function getShipCells(x, y, size, orientation) {
+  const cells = [];
+  for (let i = 0; i < size; i++) {
+    cells.push(orientation === 'horizontal' ? { x: x + i, y } : { x, y: y + i });
+  }
+  return cells;
+}
+
+function isValidPlacement(cells, excludeShipId) {
+  const sz = gameState.settings.fieldSize;
+  for (const c of cells) {
+    if (c.x < 0 || c.y < 0 || c.x >= sz || c.y >= sz) return false;
+    if (gridCache[c.y][c.x] !== 0) return false;
+  }
+  for (const other of placement.fleet) {
+    if (!other.placed || (excludeShipId && other.id === excludeShipId)) continue;
+    for (const oc of other.cells) {
+      for (const nc of cells) {
+        if (Math.abs(nc.x - oc.x) <= 1 && Math.abs(nc.y - oc.y) <= 1) return false;
+      }
+    }
+  }
+  return true;
+}
+
+function updateGhost() {
+  if (placement.selectedIndex < 0 || placement.mouseCell.x < 0) {
+    placement.ghostCells = []; placement.ghostValid = false; return;
+  }
+  const ship = placement.fleet[placement.selectedIndex];
+  if (ship.placed) { placement.ghostCells = []; placement.ghostValid = false; return; }
+  const cells = getShipCells(placement.mouseCell.x, placement.mouseCell.y, ship.size, placement.ghostOrientation);
+  placement.ghostCells = cells;
+  placement.ghostValid = isValidPlacement(cells, null);
+}
+
+function placeShipAt(idx, cells, orientation) {
+  const ship = placement.fleet[idx];
+  ship.cells = cells.map(c => ({ ...c }));
+  ship.orientation = orientation;
+  ship.placed = true;
+  ship.hits = new Array(ship.size).fill(false);
+  placement.selectedIndex = -1;
+  placement.ghostCells = [];
+  refreshRosterUI();
+  updateReadyButton();
+}
+
+function rotateShipOnField(ship) {
+  let pivotIdx;
+  if (ship.size % 2 === 1) pivotIdx = Math.floor(ship.size / 2);
+  else pivotIdx = Math.random() < 0.5 ? (ship.size / 2 - 1) : (ship.size / 2);
+  const pivot = ship.cells[pivotIdx];
+  const newOri = ship.orientation === 'horizontal' ? 'vertical' : 'horizontal';
+  const newCells = [];
+  for (let i = 0; i < ship.size; i++) {
+    newCells.push(newOri === 'horizontal'
+      ? { x: pivot.x - pivotIdx + i, y: pivot.y }
+      : { x: pivot.x, y: pivot.y - pivotIdx + i });
+  }
+  if (isValidPlacement(newCells, ship.id)) {
+    ship.cells = newCells;
+    ship.orientation = newOri;
+  }
+}
+
+function findShipAtCell(cx, cy) {
+  for (const ship of placement.fleet) {
+    if (!ship.placed) continue;
+    for (const c of ship.cells) { if (c.x === cx && c.y === cy) return ship; }
+  }
+  return null;
+}
+
+function handlePlacementClick(cellX, cellY) {
+  if (placement.phase !== 'placing') return;
+  if (placement.selectedIndex >= 0) {
+    const ship = placement.fleet[placement.selectedIndex];
+    if (!ship.placed && placement.ghostValid && placement.ghostCells.length > 0) {
+      placeShipAt(placement.selectedIndex, placement.ghostCells, placement.ghostOrientation);
+      return;
+    }
+  }
+  const clickedShip = findShipAtCell(cellX, cellY);
+  if (clickedShip) { rotateShipOnField(clickedShip); return; }
+  placement.selectedIndex = -1;
+  refreshRosterUI();
+}
+
+function handlePlacementRightClick() {
+  if (placement.selectedIndex < 0) return;
+  if (placement.fleet[placement.selectedIndex].placed) return;
+  placement.ghostOrientation = placement.ghostOrientation === 'horizontal' ? 'vertical' : 'horizontal';
+  updateGhost();
+}
+
+function autoPlace() {
+  for (const ship of placement.fleet) { ship.cells = []; ship.placed = false; ship.hits = null; }
+  const sz = gameState.settings.fieldSize;
+  const sorted = [...placement.fleet].sort((a, b) => b.size - a.size);
+  for (const ship of sorted) {
+    let placed = false;
+    for (let attempt = 0; attempt < 2000; attempt++) {
+      const ori = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+      const maxX = ori === 'horizontal' ? sz - ship.size : sz - 1;
+      const maxY = ori === 'vertical' ? sz - ship.size : sz - 1;
+      const x = Math.floor(Math.random() * (maxX + 1));
+      const y = Math.floor(Math.random() * (maxY + 1));
+      const cells = getShipCells(x, y, ship.size, ori);
+      if (isValidPlacement(cells, null)) {
+        ship.cells = cells.map(c => ({ ...c })); ship.orientation = ori;
+        ship.placed = true; ship.hits = new Array(ship.size).fill(false);
+        placed = true; break;
+      }
+    }
+    if (!placed) {
+      for (const s of placement.fleet) { s.cells = []; s.placed = false; s.hits = null; }
+      return autoPlace();
+    }
+  }
+  placement.selectedIndex = -1; placement.ghostCells = [];
+  buildShipRoster(); updateReadyButton();
+}
+
+function clearPlacement() {
+  for (const ship of placement.fleet) { ship.cells = []; ship.placed = false; ship.hits = null; }
+  placement.selectedIndex = -1; placement.ghostCells = [];
+  buildShipRoster(); updateReadyButton();
+}
+
+function updateReadyButton() {
+  document.getElementById('ready-btn').disabled = !placement.fleet.every(s => s.placed);
+}
+
+function confirmReady() {
+  if (!placement.fleet.every(s => s.placed)) return;
+  placement.phase = 'done';
+  document.getElementById('placement-panel').style.display = 'none';
+
+  // Copy ships into gameState
+  gameState.players[0].ships = placement.allShips.map(s => ({
+    ...s, cells: s.cells.map(c => ({ ...c })),
+    hits: s.hits ? [...s.hits] : null,
+    launchers: s.launchers ? s.launchers.map(l => ({ ...l })) : null
+  }));
+
+  autoPlaceAI();
+  startBattle();
+}
+
+function autoPlaceAI() {
+  const sz = gameState.settings.fieldSize;
+  let capitalChoice = 'tarkr';
+  if (sz === 50) capitalChoice = Math.random() < 0.5 ? 'tarkr' : 'carrier';
+  const aiShips = getFleetForSize(sz, capitalChoice);
+  const toPlace = aiShips.filter(s => s.type !== 'submarine');
+  const sorted = [...toPlace].sort((a, b) => b.size - a.size);
+
+  const savedFleet = placement.fleet;
+  placement.fleet = [];
+
+  for (const ship of sorted) {
+    let placed = false;
+    for (let attempt = 0; attempt < 3000; attempt++) {
+      const ori = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+      const maxX = ori === 'horizontal' ? sz - ship.size : sz - 1;
+      const maxY = ori === 'vertical' ? sz - ship.size : sz - 1;
+      const x = Math.floor(Math.random() * (maxX + 1));
+      const y = Math.floor(Math.random() * (maxY + 1));
+      const cells = getShipCells(x, y, ship.size, ori);
+      if (isValidPlacement(cells, null)) {
+        ship.cells = cells.map(c => ({ ...c })); ship.orientation = ori;
+        ship.placed = true; ship.hits = new Array(ship.size).fill(false);
+        placement.fleet.push(ship); placed = true; break;
+      }
+    }
+    if (!placed) { placement.fleet = []; return autoPlaceAI(); }
+  }
+
+  gameState.players[1].ships = aiShips;
+  placement.fleet = savedFleet;
+}
+
+// ── Landscape Generation ──
+
+function generateLandscape(fieldSize, type) {
+  if (type === 'ocean') return { islands: [], wrecks: [] };
+  const grid = Array.from({ length: fieldSize }, () => new Uint8Array(fieldSize));
+  const coverageTarget = { wrecks: 0.10, islands: 0.20, archipelago: 0.30 }[type];
+  const totalCells = fieldSize * fieldSize;
+  const targetCells = Math.floor(totalCells * coverageTarget);
+  let filledCells = 0;
+  const isIslandType = (type === 'islands' || type === 'archipelago');
+  const cellType = isIslandType ? 1 : 2;
+  const islands = [], wrecks = [];
+  let attempts = 0;
+  const maxAttempts = targetCells * 20;
+
+  while (filledCells < targetCells && attempts < maxAttempts) {
+    attempts++;
+    let w, h;
+    if (isIslandType) {
+      const s = weightedRandom([{ value: 2, weight: 4 }, { value: 3, weight: 3 }, { value: 4, weight: 1 }]);
+      w = s; h = s;
+    } else {
+      const ch = weightedRandom([{ value: 'a', weight: 5 }, { value: 'b', weight: 4 }, { value: 'c', weight: 1 }]);
+      if (ch === 'a') { w = 1; h = 1; }
+      else if (ch === 'b') { w = 2; h = 1; if (Math.random() < 0.5) { w = 1; h = 2; } }
+      else { w = 2; h = 2; }
+    }
+    const x = Math.floor(Math.random() * (fieldSize - w));
+    const y = Math.floor(Math.random() * (fieldSize - h));
+    let canPlace = true;
+    for (let dy = 0; dy < h && canPlace; dy++)
+      for (let dx = 0; dx < w && canPlace; dx++)
+        if (grid[y + dy][x + dx] !== 0) canPlace = false;
+    if (!canPlace) continue;
+    for (let dy = 0; dy < h; dy++)
+      for (let dx = 0; dx < w; dx++) grid[y + dy][x + dx] = cellType;
+    filledCells += w * h;
+    (isIslandType ? islands : wrecks).push({ x, y, w, h });
+  }
+  if (!isConnected(grid, fieldSize)) return generateLandscape(fieldSize, type);
+  return { islands, wrecks };
+}
+
+function isConnected(grid, size) {
+  let sx = -1, sy = -1, free = 0;
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++)
+      if (grid[y][x] === 0) { free++; if (sx < 0) { sx = x; sy = y; } }
+  if (free === 0) return false;
+  const vis = Array.from({ length: size }, () => new Uint8Array(size));
+  const q = [[sx, sy]]; vis[sy][sx] = 1; let reached = 0;
+  while (q.length > 0) {
+    const [cx, cy] = q.shift(); reached++;
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx >= 0 && nx < size && ny >= 0 && ny < size && !vis[ny][nx] && grid[ny][nx] === 0) {
+        vis[ny][nx] = 1; q.push([nx, ny]);
+      }
+    }
+  }
+  return reached === free;
+}
+
+function weightedRandom(opts) {
+  const total = opts.reduce((s, o) => s + o.weight, 0);
+  let r = Math.random() * total;
+  for (const o of opts) { r -= o.weight; if (r <= 0) return o.value; }
+  return opts[opts.length - 1].value;
+}
+
+// ── Grid Cache ──
+
+let gridCache = null;
+
+function buildGridCache() {
+  const sz = gameState.settings.fieldSize;
+  gridCache = Array.from({ length: sz }, () => new Uint8Array(sz));
+  for (const isl of gameState.landscape.islands)
+    for (let dy = 0; dy < isl.h; dy++)
+      for (let dx = 0; dx < isl.w; dx++) gridCache[isl.y + dy][isl.x + dx] = 1;
+  for (const wr of gameState.landscape.wrecks)
+    for (let dy = 0; dy < wr.h; dy++)
+      for (let dx = 0; dx < wr.w; dx++) gridCache[wr.y + dy][wr.x + dx] = 2;
+}
+
+// ── Start Game ──
+
+function startGame() {
+  gameState.settings.fieldSize = parseInt(document.querySelector('input[name="fieldSize"]:checked').value);
+  gameState.settings.landscape = document.querySelector('input[name="landscape"]:checked').value;
+  gameState.settings.gameMode = document.querySelector('input[name="gameMode"]:checked').value;
+
+  // Reset state
+  gameState.currentTurn = 1; gameState.currentPlayer = 0;
+  gameState.phase = 'recon'; gameState.actionMode = null;
+  gameState.activeTorpedoes = []; gameState.gameOver = false;
+  for (let p = 0; p < 2; p++) {
+    gameState.players[p].ships = [];
+    gameState.players[p].radarData = { shots: [], detectedShips: [], sunkShips: [] };
+    gameState.players[p].nuclearUsed = false;
+  }
+
+  const overlay = document.getElementById('loading-overlay');
+  overlay.style.display = 'flex';
+
+  requestAnimationFrame(() => {
+    gameState.landscape = generateLandscape(gameState.settings.fieldSize, gameState.settings.landscape);
+    buildGridCache();
+
+    const sz = gameState.settings.fieldSize;
+    document.getElementById('hud-size').textContent = sz + '\u00d7' + sz;
+    document.getElementById('hud-landscape').textContent =
+      gameState.settings.landscape.charAt(0).toUpperCase() + gameState.settings.landscape.slice(1);
+
+    const worldSize = sz * CELL_PX;
+    const canvas = document.getElementById('game-canvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const fitZoom = Math.min(canvas.width / worldSize, canvas.height / worldSize) * 0.9;
+    camera.zoom = Math.max(camera.minZoom, Math.min(camera.maxZoom, fitZoom));
+    camera.x = (canvas.width - worldSize * camera.zoom) / 2;
+    camera.y = (canvas.height - worldSize * camera.zoom) / 2;
+
+    overlay.style.display = 'none';
+    showGame();
+    initMinimap();
+    setupInputHandlers();
+    renderLoop();
+
+    if (sz === 50) {
+      document.getElementById('choice-dialog').style.display = 'flex';
+      placement.phase = 'choosing';
+    } else {
+      initPlacementWithFleet(null);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  BATTLE (Phase 3)
+// ══════════════════════════════════════════════
+
+function startBattle() {
+  battle.active = true;
+  battle.selectedShip = null;
+  battle.moveHighlights = [];
+
+  // Init cameras to fit field
+  const sz = gameState.settings.fieldSize;
+  const worldSize = sz * CELL_PX;
+
+  showBattle();
+
+  // Size canvases
+  const fc = document.getElementById('fleet-canvas');
+  const rc = document.getElementById('radar-canvas');
+  const fp = document.getElementById('fleet-panel');
+  const rp = document.getElementById('radar-panel');
+
+  function sizeCanvases() {
+    fc.width = fp.clientWidth; fc.height = fp.clientHeight;
+    rc.width = rp.clientWidth; rc.height = rp.clientHeight;
+  }
+  sizeCanvases();
+
+  // Fit cameras
+  function fitCam(cam, canvasW, canvasH) {
+    const fit = Math.min(canvasW / worldSize, canvasH / worldSize) * 0.85;
+    cam.zoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, fit));
+    cam.x = (canvasW - worldSize * cam.zoom) / 2;
+    cam.y = (canvasH - worldSize * cam.zoom) / 2;
+  }
+  fitCam(fleetCam, fc.width, fc.height);
+  fitCam(radarCam, rc.width, rc.height);
+
+  setupBattleInput();
+  window.addEventListener('resize', () => {
+    if (!battle.active) return;
+    sizeCanvases();
+  });
+
+  gameState.currentTurn = 1;
+  gameState.currentPlayer = 0;
+  beginPlayerTurn();
+}
+
+// ── Turn Management ──
+
+function beginPlayerTurn() {
+  if (gameState.gameOver) return;
+  gameState.phase = 'recon';
+  gameState.actionMode = null;
+  battle.selectedShip = null;
+  battle.moveHighlights = [];
+  battle.radarSelectMode = false;
+  battle.subDeployMode = false;
+  battle.subGhostCells = [];
+  hideMoveOptions();
+  ageReconData(gameState.currentPlayer);
+
+  // Turn 11: auto-sink undeployed subs
+  if (gameState.currentTurn === 11) {
+    for (let p = 0; p < 2; p++) {
+      const sub = gameState.players[p].ships.find(s => s.type === 'submarine' && !s.deployed);
+      if (sub) {
+        sub.sunk = true;
+        if (p === 0) showToast('Submarine lost — not deployed within 10 turns!', 'miss', 4000);
+      }
+    }
+  }
+
+  updateTopBar();
+  updateActionBar();
+
+  if (gameState.currentPlayer === 1) {
+    // AI turn
+    setTimeout(() => aiTakeTurn(), 600);
+  }
+}
+
+function endPhaseRecon() {
+  gameState.phase = 'action';
+  gameState.actionMode = null;
+  battle.radarSelectMode = false;
+  updateTopBar();
+  updateActionBar();
+}
+
+function selectActionMode(mode) {
+  gameState.actionMode = mode; // 'move' or 'fire'
+  battle.selectedShip = null;
+  battle.moveHighlights = [];
+  hideMoveOptions();
+  updateTopBar();
+  updateActionBar();
+}
+
+function endTurn() {
+  if (gameState.gameOver) return;
+
+  // End-of-turn processing
+  decrementCooldowns(gameState.currentPlayer);
+
+  // Check victory
+  if (checkVictory()) return;
+
+  // Switch player
+  gameState.currentPlayer = 1 - gameState.currentPlayer;
+  if (gameState.currentPlayer === 0) gameState.currentTurn++;
+
+  beginPlayerTurn();
+}
+
+function decrementCooldowns(playerIdx) {
+  for (const ship of gameState.players[playerIdx].ships) {
+    if (ship.radarCooldown > 0) ship.radarCooldown--;
+    if (ship.blocked && ship.type === 'carrier') ship.blocked = false;
+  }
+}
+
+function checkVictory() {
+  for (let p = 0; p < 2; p++) {
+    const allSunk = gameState.players[p].ships
+      .filter(s => s.type !== 'submarine' || s.deployed)
+      .every(s => s.sunk);
+    const subNotDeployed = gameState.players[p].ships.find(s => s.type === 'submarine' && !s.deployed);
+    const subDeadline = subNotDeployed && gameState.currentTurn > 10;
+    if (subDeadline && subNotDeployed) { subNotDeployed.sunk = true; }
+
+    const trulySunk = gameState.players[p].ships
+      .filter(s => s.placed || s.deployed || s.type !== 'submarine')
+      .filter(s => s.type !== 'submarine' || s.deployed || gameState.currentTurn > 10)
+      .every(s => s.sunk);
+
+    if (trulySunk) {
+      gameState.gameOver = true;
+      const winner = 1 - p;
+      showVictory(winner);
+      return true;
+    }
+  }
+  return false;
+}
+
+function showVictory(winner) {
+  const overlay = document.getElementById('victory-overlay');
+  overlay.className = winner === 0 ? 'win' : 'lose';
+  overlay.style.display = 'flex';
+  document.getElementById('victory-text').textContent = winner === 0 ? 'VICTORY' : 'DEFEAT';
+  document.getElementById('victory-sub').textContent =
+    winner === 0 ? 'Enemy fleet destroyed.' : 'Your fleet has been destroyed.';
+}
+
+// ── UI Updates ──
+
+function updateTopBar() {
+  document.getElementById('tb-turn').textContent = gameState.currentTurn;
+  document.getElementById('tb-player').textContent = gameState.currentPlayer === 0 ? 'You' : 'AI';
+
+  const phaseEl = document.getElementById('tb-phase');
+  if (gameState.phase === 'recon') {
+    phaseEl.className = 'tb-phase recon';
+    phaseEl.textContent = 'RECON';
+  } else if (gameState.actionMode === 'move') {
+    phaseEl.className = 'tb-phase move';
+    phaseEl.textContent = 'MOVE';
+  } else if (gameState.actionMode === 'fire') {
+    phaseEl.className = 'tb-phase fire';
+    phaseEl.textContent = 'FIRE';
+  } else {
+    phaseEl.className = 'tb-phase waiting';
+    phaseEl.textContent = gameState.currentPlayer === 1 ? 'AI THINKING...' : 'MOVE / FIRE';
+  }
+
+  document.getElementById('tb-info').textContent = '';
+}
+
+function updateActionBar() {
+  const bar = document.getElementById('bottom-bar');
+  bar.innerHTML = '';
+  const isHuman = gameState.currentPlayer === 0;
+  if (!isHuman) return;
+
+  if (gameState.phase === 'recon') {
+    const player = gameState.players[0];
+    const hasRadarShip = player.ships.some(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine');
+    const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
+    const hasAirRecon = carrier && carrier.planes > 0 && !carrier.blocked;
+
+    bar.innerHTML = `
+      <button class="action-btn recon-btn" onclick="startRadarSelect()" ${!hasRadarShip ? 'disabled title="No ships with radar ready"' : ''}>
+        Radar${battle.radarSelectMode ? ' (select ship)' : ''}
+      </button>
+      <div class="action-separator"></div>
+      <button class="action-btn recon-btn" onclick="useAirRecon()" ${!hasAirRecon ? 'disabled title="' + (!carrier ? 'No carrier' : carrier && carrier.planes === 0 ? 'No planes left' : 'Carrier blocked') + '"' : ''}>
+        Air Recon${carrier ? ' (' + carrier.planes + ' planes)' : ''}
+      </button>
+      <div class="action-separator"></div>
+      <button class="action-btn skip-btn" onclick="endPhaseRecon()">Skip Recon</button>
+    `;
+  } else if (!gameState.actionMode) {
+    bar.innerHTML = `
+      <button class="action-btn move-btn" onclick="selectActionMode('move')">Move</button>
+      <div class="action-separator"></div>
+      <button class="action-btn fire-btn" onclick="selectActionMode('fire')">Fire</button>
+      <div class="action-separator"></div>
+      <button class="action-btn skip-btn" onclick="endTurn()">Skip</button>
+    `;
+  } else if (gameState.actionMode === 'fire') {
+    const hasLiving = gameState.players[0].ships.some(s => !s.sunk && s.type !== 'submarine');
+    bar.innerHTML = `
+      <button class="action-btn fire-btn active">Shot</button>
+      <div class="action-separator"></div>
+      <button class="action-btn fire-btn" onclick="showToast('PCR Vulkan — not yet implemented', 'info', 2000)">PCR Vulkan</button>
+      <button class="action-btn fire-btn" onclick="showToast('Striker — not yet implemented', 'info', 2000)">Striker</button>
+      <div class="action-separator"></div>
+      <button class="action-btn skip-btn" onclick="endTurn()">End Turn</button>
+    `;
+    if (!hasLiving) {
+      showToast('No living surface ships — cannot fire.', 'info');
+      setTimeout(() => endTurn(), 1200);
+    }
+  } else if (gameState.actionMode === 'move') {
+    const sub = gameState.players[0].ships.find(s => s.type === 'submarine' && !s.deployed);
+    const canDeploySub = sub && gameState.currentTurn <= 10;
+    bar.innerHTML = `
+      <span style="color:#66bb6a; font-size:12px; letter-spacing:1px;">${battle.subDeployMode ? 'Click Fleet Map to place sub. Right-click to rotate.' : 'Click a ship on Fleet Map to move it'}</span>
+      ${canDeploySub ? '<div class="action-separator"></div><button class="action-btn move-btn" onclick="startSubDeploy()"' + (battle.subDeployMode ? ' disabled' : '') + '>Deploy Sub</button>' : ''}
+      <div class="action-separator"></div>
+      <button class="action-btn skip-btn" onclick="endTurn()">End Turn</button>
+    `;
+  }
+}
+
+// ── Toast Notifications ──
+
+let toastTimer = null;
+function showToast(msg, type, duration) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = type || '';
+  el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.display = 'none'; }, duration || 2000);
+}
+
+// ── RECON: Radar ──
+
+function startRadarSelect() {
+  if (gameState.phase !== 'recon' || gameState.currentPlayer !== 0) return;
+  battle.radarSelectMode = true;
+  showToast('Click a destroyer or larger ship on the Fleet Map to use as radar source.', 'info', 3000);
+  updateActionBar();
+}
+
+function cancelRadarSelect() {
+  battle.radarSelectMode = false;
+  updateActionBar();
+}
+
+function useRadar(sourceShip) {
+  const playerIdx = gameState.currentPlayer;
+  const player = gameState.players[playerIdx];
+  const enemyIdx = 1 - playerIdx;
+  const enemy = gameState.players[enemyIdx];
+
+  if (sourceShip.radarCooldown > 0 || sourceShip.sunk) return false;
+
+  // Set cooldown
+  sourceShip.radarCooldown = 3;
+
+  // Cost: reveal source ship to enemy
+  enemy.radarData.detectedShips.push({
+    cells: sourceShip.cells.map(c => ({ ...c })),
+    type: sourceShip.type,
+    size: sourceShip.size,
+    turnDetected: gameState.currentTurn
+  });
+
+  // Flat scanner-class-based detection chance
+  const RADAR_CHANCE = { destroyer: 25, cruiser: 50, tarkr: 75, carrier: 75 };
+  const chance = RADAR_CHANCE[sourceShip.type] || 25;
+  let detected = 0;
+  for (const eShip of enemy.ships) {
+    if (eShip.sunk) continue;
+    if (eShip.type === 'submarine' && !eShip.deployed) continue;
+
+    const roll = Math.floor(Math.random() * 100) + 1;
+    if (roll <= chance) {
+      player.radarData.detectedShips.push({
+        cells: eShip.cells.map(c => ({ ...c })),
+        type: eShip.type,
+        size: eShip.size,
+        turnDetected: gameState.currentTurn
+      });
+      detected++;
+    }
+  }
+
+  battle.radarSelectMode = false;
+  const shipName = sourceShip.name || sourceShip.type.toUpperCase();
+  showToast(`Radar scan from ${shipName}: ${detected} ship${detected !== 1 ? 's' : ''} detected. Ship position revealed to enemy.`, detected > 0 ? 'hit' : 'info', 3000);
+  endPhaseRecon();
+  return true;
+}
+
+// ── RECON: Air Recon ──
+
+function useAirRecon() {
+  if (gameState.phase !== 'recon' || gameState.currentPlayer !== 0) return;
+
+  const playerIdx = gameState.currentPlayer;
+  const player = gameState.players[playerIdx];
+  const enemyIdx = 1 - playerIdx;
+  const enemy = gameState.players[enemyIdx];
+
+  const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
+  if (!carrier || carrier.planes <= 0 || carrier.blocked) return;
+
+  carrier.planes--;
+
+  let detected = 0;
+  let planeLost = false;
+
+  for (const eShip of enemy.ships) {
+    if (eShip.sunk) continue;
+    if (eShip.type === 'submarine' && !eShip.deployed) continue;
+
+    const baseChance = 55;
+    const sizeBonus = eShip.size * 5;
+    const chance = Math.max(5, Math.min(95, baseChance + sizeBonus));
+
+    const roll = Math.floor(Math.random() * 100) + 1;
+    if (roll <= chance) {
+      player.radarData.detectedShips.push({
+        cells: eShip.cells.map(c => ({ ...c })),
+        type: eShip.type,
+        size: eShip.size,
+        turnDetected: gameState.currentTurn
+      });
+      detected++;
+    } else {
+      // Plane shot down check: 30% on missed detection
+      const shootDown = Math.floor(Math.random() * 100) + 1;
+      if (shootDown <= 30) {
+        planeLost = true;
+        break;
+      }
+    }
+  }
+
+  let msg = `Air recon: ${detected} ship${detected !== 1 ? 's' : ''} detected.`;
+  if (planeLost) msg += ' Plane was shot down!';
+  else msg += ` (${carrier.planes} planes remaining)`;
+  showToast(msg, detected > 0 ? 'hit' : (planeLost ? 'miss' : 'info'), 3500);
+  endPhaseRecon();
+}
+
+// ── RECON: Data Aging ──
+
+function ageReconData(playerIdx) {
+  const player = gameState.players[playerIdx];
+  player.radarData.detectedShips = player.radarData.detectedShips.filter(d => {
+    const age = gameState.currentTurn - d.turnDetected;
+    return age < 4;
+  });
+}
+
+// ── Combat: Regular Shot ──
+
+function getShipAt(playerIdx, x, y) {
+  for (const ship of gameState.players[playerIdx].ships) {
+    if (ship.sunk) continue;
+    if (ship.type === 'submarine' && !ship.deployed) continue;
+    for (let i = 0; i < ship.cells.length; i++) {
+      if (ship.cells[i].x === x && ship.cells[i].y === y) return { ship, cellIndex: i };
+    }
+  }
+  return null;
+}
+
+function checkReactorDetonation(attackerIdx, ship, cellIndex, ownerIdx) {
+  const roll = Math.floor(Math.random() * 100) + 1;
+  const center = ship.cells[cellIndex];
+
+  // Reactor hit (center cell, index 2) on TARKR or Carrier
+  if (ship.reactor === 2 && cellIndex === 2) {
+    if (roll <= 50) {
+      showToast('HIT! REACTOR CRITICAL — NUCLEAR DETONATION!', 'sunk', 4000);
+      triggerNuclearExplosion(attackerIdx, ownerIdx, center.x, center.y);
+      return true;
+    }
+  }
+
+  // TARKR launcher hit: loaded & undamaged launcher at this cell
+  if (ship.launchers) {
+    const launcher = ship.launchers.find(l => l.index === cellIndex);
+    if (launcher) {
+      if (launcher.loaded && !launcher.damaged) {
+        if (roll <= 15) {
+          launcher.damaged = true;
+          showToast('HIT! LAUNCHER DETONATION!', 'sunk', 4000);
+          triggerNuclearExplosion(attackerIdx, ownerIdx, center.x, center.y);
+          return true;
+        }
+      }
+      launcher.damaged = true;
+    }
+  }
+
+  // Carrier fuel hit (any cell except reactor)
+  if (ship.type === 'carrier' && cellIndex !== 2) {
+    if (roll <= 15) {
+      showToast('HIT! AVIATION FUEL EXPLOSION!', 'sunk', 4000);
+      triggerNuclearExplosion(attackerIdx, ownerIdx, center.x, center.y);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function triggerNuclearExplosion(attackerIdx, ownerIdx, centerX, centerY) {
+  const attacker = gameState.players[attackerIdx];
+  const owner = gameState.players[ownerIdx];
+  const sz = gameState.settings.fieldSize;
+
+  // 5x5 zone centered on explosion
+  const x0 = Math.max(0, centerX - 2), x1 = Math.min(sz - 1, centerX + 2);
+  const y0 = Math.max(0, centerY - 2), y1 = Math.min(sz - 1, centerY + 2);
+
+  // Destroy all owner ships in the blast zone
+  for (const ship of owner.ships) {
+    if (ship.sunk) continue;
+    if (ship.type === 'submarine' && !ship.deployed) continue;
+    let inBlast = false;
+    for (const c of ship.cells) {
+      if (c.x >= x0 && c.x <= x1 && c.y >= y0 && c.y <= y1) { inBlast = true; break; }
+    }
+    if (inBlast) {
+      for (let i = 0; i < ship.hits.length; i++) ship.hits[i] = true;
+      ship.sunk = true;
+      attacker.radarData.sunkShips.push({
+        type: ship.type,
+        cells: ship.cells.map(c => ({ ...c }))
+      });
+    }
+  }
+
+  // Mark all blast cells as shots for visual
+  for (let by = y0; by <= y1; by++) {
+    for (let bx = x0; bx <= x1; bx++) {
+      if (!attacker.radarData.shots.some(s => s.x === bx && s.y === by)) {
+        const target = getShipAt(ownerIdx, bx, by);
+        attacker.radarData.shots.push({ x: bx, y: by, hit: !!target });
+      }
+    }
+  }
+}
+
+function regularShot(attackerIdx, x, y) {
+  const defender = gameState.players[1 - attackerIdx];
+  const attacker = gameState.players[attackerIdx];
+
+  // Check already shot here
+  if (attacker.radarData.shots.some(s => s.x === x && s.y === y)) {
+    showToast('Already fired at this cell.', 'info', 1500);
+    return false;
+  }
+
+  // Check has living surface ship
+  if (!attacker.ships.some(s => !s.sunk && s.type !== 'submarine')) {
+    showToast('No living surface ships.', 'info');
+    return false;
+  }
+
+  const target = getShipAt(1 - attackerIdx, x, y);
+
+  // Submarine invisibility: regular shot misses even if sub is there
+  if (target && target.ship.type === 'submarine' && !target.ship.surfaced) {
+    attacker.radarData.shots.push({ x, y, hit: false });
+    showToast('MISS', 'miss');
+    return true;
+  }
+
+  if (target) {
+    // HIT
+    target.ship.hits[target.cellIndex] = true;
+    attacker.radarData.shots.push({ x, y, hit: true });
+
+    // Check reactor/launcher/fuel detonation
+    const detonation = checkReactorDetonation(attackerIdx, target.ship, target.cellIndex, 1 - attackerIdx);
+    if (detonation) return true; // explosion handled everything
+
+    // Check sunk
+    if (target.ship.hits.every(h => h)) {
+      target.ship.sunk = true;
+      attacker.radarData.sunkShips.push({
+        type: target.ship.type,
+        cells: target.ship.cells.map(c => ({ ...c }))
+      });
+      showToast('HIT & SUNK! ' + target.ship.name, 'sunk', 3000);
+    } else {
+      showToast('HIT!', 'hit');
+    }
+    return true;
+  } else {
+    // MISS
+    attacker.radarData.shots.push({ x, y, hit: false });
+    showToast('MISS', 'miss');
+    return true;
+  }
+}
+
+// ── Movement ──
+
+function getMovementOptions(playerIdx, ship) {
+  if (ship.sunk || (ship.type === 'submarine' && !ship.deployed)) return [];
+  const sz = gameState.settings.fieldSize;
+  const opts = [];
+
+  // Slide along axis: forward and backward, 1-3 cells
+  const isH = ship.orientation === 'horizontal';
+  for (const dir of [-1, 1]) {
+    for (let dist = 1; dist <= 3; dist++) {
+      const newCells = ship.cells.map(c => {
+        return isH ? { x: c.x + dir * dist, y: c.y } : { x: c.x, y: c.y + dir * dist };
+      });
+      // Validate path: check every cell along path
+      let valid = true;
+      for (let d = 1; d <= dist && valid; d++) {
+        const pathCells = ship.cells.map(c =>
+          isH ? { x: c.x + dir * d, y: c.y } : { x: c.x, y: c.y + dir * d });
+        for (const pc of pathCells) {
+          if (pc.x < 0 || pc.y < 0 || pc.x >= sz || pc.y >= sz) { valid = false; break; }
+          if (gridCache[pc.y][pc.x] !== 0) {
+            if (ship.type === 'submarine' && gridCache[pc.y][pc.x] === 2) continue; // sub passes wrecks
+            valid = false; break;
+          }
+          // Check other ships (not self)
+          for (const other of gameState.players[playerIdx].ships) {
+            if (other === ship || other.sunk) continue;
+            if (other.type === 'submarine' && !other.deployed) continue;
+            for (const oc of other.cells) {
+              if (oc.x === pc.x && oc.y === pc.y) { valid = false; break; }
+            }
+            if (!valid) break;
+          }
+          if (!valid) break;
+        }
+      }
+      if (valid) {
+        const label = (dir === 1 ? '+' : '') + (dir * dist) + (isH ? ' \u2192' : ' \u2193');
+        opts.push({ type: 'slide', cells: newCells, label: (dir < 0 ? (isH ? '\u2190' : '\u2191') : (isH ? '\u2192' : '\u2193')) + dist, dir, dist });
+      }
+    }
+  }
+
+  // Rotate
+  let pivotIdx;
+  if (ship.size % 2 === 1) pivotIdx = Math.floor(ship.size / 2);
+  else pivotIdx = Math.random() < 0.5 ? (ship.size / 2 - 1) : (ship.size / 2);
+
+  const pivot = ship.cells[pivotIdx];
+  const newOri = isH ? 'vertical' : 'horizontal';
+  const rotCells = [];
+  for (let i = 0; i < ship.size; i++) {
+    rotCells.push(newOri === 'horizontal'
+      ? { x: pivot.x - pivotIdx + i, y: pivot.y }
+      : { x: pivot.x, y: pivot.y - pivotIdx + i });
+  }
+  let rotValid = true;
+  for (const c of rotCells) {
+    if (c.x < 0 || c.y < 0 || c.x >= sz || c.y >= sz) { rotValid = false; break; }
+    if (gridCache[c.y][c.x] !== 0) { rotValid = false; break; }
+    for (const other of gameState.players[playerIdx].ships) {
+      if (other === ship || other.sunk) continue;
+      if (other.type === 'submarine' && !other.deployed) continue;
+      for (const oc of other.cells) {
+        if (oc.x === c.x && oc.y === c.y) { rotValid = false; break; }
+      }
+      if (!rotValid) break;
+    }
+    if (!rotValid) break;
+  }
+  if (rotValid) {
+    opts.push({ type: 'rotate', cells: rotCells, label: '\u21BB Rotate', newOri });
+  }
+
+  return opts;
+}
+
+function executeMove(playerIdx, ship, option) {
+  ship.cells = option.cells.map(c => ({ ...c }));
+  if (option.type === 'rotate') {
+    ship.orientation = option.newOri;
+  }
+}
+
+function showMoveOptions(ship, screenX, screenY) {
+  const opts = getMovementOptions(gameState.currentPlayer, ship);
+  if (opts.length === 0) { showToast('No valid moves for this ship.', 'info'); return; }
+
+  battle.selectedShip = ship;
+  const container = document.getElementById('move-options');
+  container.innerHTML = '';
+  container.style.display = 'flex';
+  container.style.left = screenX + 'px';
+  container.style.top = screenY + 'px';
+
+  for (const opt of opts) {
+    const btn = document.createElement('button');
+    btn.className = 'move-opt-btn';
+    btn.textContent = opt.label;
+    btn.onclick = () => {
+      executeMove(gameState.currentPlayer, ship, opt);
+      hideMoveOptions();
+      showToast(ship.name + ' moved.', 'move-toast', 1500);
+      endTurn();
+    };
+    container.appendChild(btn);
+  }
+
+  // Cancel button
+  const cancel = document.createElement('button');
+  cancel.className = 'move-opt-btn';
+  cancel.textContent = 'Cancel';
+  cancel.style.borderColor = '#78909c';
+  cancel.style.color = '#78909c';
+  cancel.onclick = () => hideMoveOptions();
+  container.appendChild(cancel);
+}
+
+function hideMoveOptions() {
+  document.getElementById('move-options').style.display = 'none';
+  battle.selectedShip = null;
+}
+
+// ── Submarine Deployment ──
+
+function startSubDeploy() {
+  if (gameState.currentPlayer !== 0) return;
+  const sub = gameState.players[0].ships.find(s => s.type === 'submarine' && !s.deployed);
+  if (!sub) return;
+  battle.subDeployMode = true;
+  battle.subGhostCells = [];
+  battle.subGhostValid = false;
+  battle.subGhostOrientation = 'horizontal';
+  showToast('Click on Fleet Map to place submarine. Right-click to rotate.', 'info', 3000);
+  updateActionBar();
+}
+
+function isValidSubPlacement(cells, playerIdx) {
+  const sz = gameState.settings.fieldSize;
+  for (const c of cells) {
+    if (c.x < 0 || c.y < 0 || c.x >= sz || c.y >= sz) return false;
+    if (gridCache[c.y][c.x] === 1) return false; // island blocks
+    // wrecks (2) are allowed for subs
+  }
+  // 1-cell gap from own ships (excluding sub itself)
+  const sub = gameState.players[playerIdx].ships.find(s => s.type === 'submarine');
+  for (const c of cells) {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const nx = c.x + dx, ny = c.y + dy;
+        for (const ship of gameState.players[playerIdx].ships) {
+          if (ship === sub || ship.sunk) continue;
+          if (ship.type === 'submarine' && !ship.deployed) continue;
+          for (const sc of ship.cells) {
+            if (sc.x === nx && sc.y === ny) return false;
+          }
+        }
+      }
+    }
+  }
+  // Cannot overlap own ship cells directly
+  for (const c of cells) {
+    for (const ship of gameState.players[playerIdx].ships) {
+      if (ship === sub || ship.sunk) continue;
+      if (ship.type === 'submarine' && !ship.deployed) continue;
+      for (const sc of ship.cells) {
+        if (sc.x === c.x && sc.y === c.y) return false;
+      }
+    }
+  }
+  return true;
+}
+
+function updateSubGhost() {
+  const mc = battle.subMouseCell;
+  if (mc.x < 0 || mc.y < 0) { battle.subGhostCells = []; return; }
+  battle.subGhostCells = getShipCells(mc.x, mc.y, 3, battle.subGhostOrientation);
+  battle.subGhostValid = isValidSubPlacement(battle.subGhostCells, 0);
+}
+
+function deploySubmarine(playerIdx, cells, orientation) {
+  const sub = gameState.players[playerIdx].ships.find(s => s.type === 'submarine' && !s.deployed);
+  if (!sub) return;
+  sub.cells = cells.map(c => ({ ...c }));
+  sub.orientation = orientation;
+  sub.deployed = true;
+  sub.placed = true;
+  sub.hits = Array(3).fill(false);
+  battle.subDeployMode = false;
+  battle.subGhostCells = [];
+  showToast(sub.name + ' deployed!', 'move-toast', 2000);
+  endTurn();
+}
+
+function aiDeploySub() {
+  const ai = gameState.players[1];
+  const sub = ai.ships.find(s => s.type === 'submarine' && !s.deployed);
+  if (!sub) return false;
+  const sz = gameState.settings.fieldSize;
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const x = Math.floor(Math.random() * sz);
+    const y = Math.floor(Math.random() * sz);
+    const ori = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+    const cells = getShipCells(x, y, 3, ori);
+    if (isValidSubPlacement(cells, 1)) {
+      sub.cells = cells.map(c => ({ ...c }));
+      sub.orientation = ori;
+      sub.deployed = true;
+      sub.placed = true;
+      sub.hits = Array(3).fill(false);
+      return true;
+    }
+  }
+  return false;
+}
+
+// ── AI (Easy) ──
+
+function aiUseRadar(sourceShip) {
+  const aiIdx = 1;
+  const ai = gameState.players[aiIdx];
+  const human = gameState.players[0];
+
+  sourceShip.radarCooldown = 3;
+
+  // Cost: reveal source to human
+  human.radarData.detectedShips.push({
+    cells: sourceShip.cells.map(c => ({ ...c })),
+    type: sourceShip.type, size: sourceShip.size,
+    turnDetected: gameState.currentTurn
+  });
+
+  const RADAR_CHANCE = { destroyer: 25, cruiser: 50, tarkr: 75, carrier: 75 };
+  const chance = RADAR_CHANCE[sourceShip.type] || 25;
+  for (const hShip of human.ships) {
+    if (hShip.sunk) continue;
+    if (hShip.type === 'submarine' && !hShip.deployed) continue;
+    if (Math.floor(Math.random() * 100) + 1 <= chance) {
+      ai.radarData.detectedShips.push({
+        cells: hShip.cells.map(c => ({ ...c })),
+        type: hShip.type, size: hShip.size,
+        turnDetected: gameState.currentTurn
+      });
+    }
+  }
+}
+
+function aiUseAirRecon(carrier) {
+  const aiIdx = 1;
+  const ai = gameState.players[aiIdx];
+  const human = gameState.players[0];
+
+  carrier.planes--;
+  for (const hShip of human.ships) {
+    if (hShip.sunk) continue;
+    if (hShip.type === 'submarine' && !hShip.deployed) continue;
+    const chance = Math.max(5, Math.min(95, 55 + hShip.size * 5));
+    if (Math.floor(Math.random() * 100) + 1 <= chance) {
+      ai.radarData.detectedShips.push({
+        cells: hShip.cells.map(c => ({ ...c })),
+        type: hShip.type, size: hShip.size,
+        turnDetected: gameState.currentTurn
+      });
+    } else {
+      if (Math.floor(Math.random() * 100) + 1 <= 30) break; // plane shot down
+    }
+  }
+}
+
+function aiTakeTurn() {
+  if (gameState.gameOver) return;
+
+  const ai = gameState.players[1];
+
+  // AI submarine deployment: 50% chance per turn within turns 1-10
+  const aiSub = ai.ships.find(s => s.type === 'submarine' && !s.deployed);
+  if (aiSub && gameState.currentTurn <= 10 && Math.random() < 0.5) {
+    if (aiDeploySub()) {
+      endTurn();
+      return; // sub deploy counts as the AI's move action
+    }
+  }
+
+  // AI RECON: 30% chance to use radar if a ship is available
+  const radarShips = ai.ships.filter(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine');
+  if (radarShips.length > 0 && Math.random() < 0.3) {
+    const source = radarShips[Math.floor(Math.random() * radarShips.length)];
+    aiUseRadar(source);
+  }
+
+  // AI Air Recon: 40% chance if carrier available with planes
+  const aiCarrier = ai.ships.find(s => s.type === 'carrier' && !s.sunk && s.planes > 0 && !s.blocked);
+  if (aiCarrier && Math.random() < 0.4) {
+    aiUseAirRecon(aiCarrier);
+  }
+
+  gameState.phase = 'action';
+  gameState.actionMode = 'fire';
+  updateTopBar();
+
+  setTimeout(() => {
+    // Try to fire
+    const aiIdx = 1;
+    const ai = gameState.players[aiIdx];
+    const hasLiving = ai.ships.some(s => !s.sunk && s.type !== 'submarine');
+
+    if (!hasLiving) { endTurn(); return; }
+
+    // Build shot candidates using heatmap
+    const sz = gameState.settings.fieldSize;
+    const shotSet = new Set(ai.radarData.shots.map(s => s.x + ',' + s.y));
+
+    // Priority 1: finish off near known hits
+    const hitCells = ai.radarData.shots.filter(s => s.hit);
+    for (const hc of hitCells) {
+      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nx = hc.x + dx, ny = hc.y + dy;
+        if (nx >= 0 && ny >= 0 && nx < sz && ny < sz && !shotSet.has(nx + ',' + ny)) {
+          if (regularShot(aiIdx, nx, ny)) { endTurn(); return; }
+        }
+      }
+    }
+
+    // Priority 2: random shot (prefer center, skip edges slightly)
+    let bestX = -1, bestY = -1, bestScore = -1;
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const x = Math.floor(Math.random() * sz);
+      const y = Math.floor(Math.random() * sz);
+      if (shotSet.has(x + ',' + y)) continue;
+      // Checkerboard pattern for efficiency
+      if ((x + y) % 2 !== gameState.currentTurn % 2) continue;
+      const centerDist = Math.abs(x - sz / 2) + Math.abs(y - sz / 2);
+      const score = sz - centerDist + Math.random() * 10;
+      if (score > bestScore) { bestScore = score; bestX = x; bestY = y; }
+    }
+
+    if (bestX < 0) {
+      // Fallback: any unshot cell
+      for (let y = 0; y < sz && bestX < 0; y++)
+        for (let x = 0; x < sz && bestX < 0; x++)
+          if (!shotSet.has(x + ',' + y)) { bestX = x; bestY = y; }
+    }
+
+    if (bestX >= 0) {
+      regularShot(aiIdx, bestX, bestY);
+    }
+
+    setTimeout(() => endTurn(), 800);
+  }, 400);
+}
+
+// ══════════════════════════════════════════════
+//  RENDERING
+// ══════════════════════════════════════════════
+
+function renderLoop() {
+  if (battle.active) {
+    renderFleetMap();
+    renderRadar();
+  } else if (placement.phase === 'placing' || placement.phase === 'done') {
+    renderPlacementField();
+    renderPlacementMinimap();
+  }
+  renderFrameId = requestAnimationFrame(renderLoop);
+}
+
+// ── Placement Rendering (from Phase 2) ──
+
+function renderPlacementField() {
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+  const sz = gameState.settings.fieldSize;
+  const worldSize = sz * CELL_PX;
+
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(camera.x, camera.y);
+  ctx.scale(camera.zoom, camera.zoom);
+
+  ctx.fillStyle = '#1a5276';
+  ctx.fillRect(0, 0, worldSize, worldSize);
+
+  const vx0 = Math.max(0, Math.floor(-camera.x / (camera.zoom * CELL_PX)));
+  const vy0 = Math.max(0, Math.floor(-camera.y / (camera.zoom * CELL_PX)));
+  const vx1 = Math.min(sz, Math.ceil((-camera.x + canvas.width) / (camera.zoom * CELL_PX)));
+  const vy1 = Math.min(sz, Math.ceil((-camera.y + canvas.height) / (camera.zoom * CELL_PX)));
+
+  drawLandscape(ctx, vx0, vy0, vx1, vy1, 'fleet');
+  drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(100,180,255,0.12)');
+
+  // Placed ships
+  for (const ship of placement.fleet) {
+    if (!ship.placed) continue;
+    drawShipSprite(ctx, ship);
+  }
+
+  // Ghost
+  if (placement.phase === 'placing' && placement.ghostCells.length > 0) {
+    const color = placement.ghostValid ? 'rgba(76,175,80,0.45)' : 'rgba(244,67,54,0.45)';
+    const border = placement.ghostValid ? 'rgba(76,175,80,0.8)' : 'rgba(244,67,54,0.8)';
+    for (const c of placement.ghostCells) {
+      ctx.fillStyle = color;
+      ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
+      ctx.strokeStyle = border; ctx.lineWidth = 1;
+      ctx.strokeRect(c.x * CELL_PX + 0.5, c.y * CELL_PX + 0.5, CELL_PX - 1, CELL_PX - 1);
+    }
+  }
+
+  drawCoordLabels(ctx, vx0, vy0, vx1, vy1, sz);
+  ctx.restore();
+  document.getElementById('hud-zoom').textContent = Math.round(camera.zoom * 100) + '%';
+}
+
+// ── Fleet Map Rendering ──
+
+function renderFleetMap() {
+  const canvas = document.getElementById('fleet-canvas');
+  const ctx = canvas.getContext('2d');
+  const sz = gameState.settings.fieldSize;
+  const worldSize = sz * CELL_PX;
+  const cam = fleetCam;
+
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(cam.x, cam.y);
+  ctx.scale(cam.zoom, cam.zoom);
+
+  // Ocean
+  ctx.fillStyle = '#1a5276';
+  ctx.fillRect(0, 0, worldSize, worldSize);
+
+  const vx0 = Math.max(0, Math.floor(-cam.x / (cam.zoom * CELL_PX)));
+  const vy0 = Math.max(0, Math.floor(-cam.y / (cam.zoom * CELL_PX)));
+  const vx1 = Math.min(sz, Math.ceil((-cam.x + canvas.width) / (cam.zoom * CELL_PX)));
+  const vy1 = Math.min(sz, Math.ceil((-cam.y + canvas.height) / (cam.zoom * CELL_PX)));
+
+  drawLandscape(ctx, vx0, vy0, vx1, vy1, 'fleet');
+  drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(100,180,255,0.12)');
+
+  // Player's own ships (player 0)
+  const player = gameState.players[0];
+  for (const ship of player.ships) {
+    if (ship.type === 'submarine' && !ship.deployed) continue;
+    drawShipSprite(ctx, ship);
+  }
+
+  // Enemy misses on our field (white dots)
+  const enemy = gameState.players[1];
+  for (const shot of enemy.radarData.shots) {
+    if (!shot.hit) {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.beginPath();
+      ctx.arc(shot.x * CELL_PX + CELL_PX / 2, shot.y * CELL_PX + CELL_PX / 2, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Radar select highlights: pulse eligible ships in blue
+  if (battle.radarSelectMode && gameState.phase === 'recon') {
+    for (const ship of player.ships) {
+      if (ship.sunk || ship.radarCooldown > 0 || ship.size < 3 || ship.type === 'submarine') continue;
+      const pulse = 0.4 + 0.3 * Math.sin(Date.now() / 300);
+      ctx.strokeStyle = `rgba(66,165,245,${pulse})`;
+      ctx.lineWidth = 2;
+      for (const c of ship.cells) {
+        ctx.strokeRect(c.x * CELL_PX - 1, c.y * CELL_PX - 1, CELL_PX + 2, CELL_PX + 2);
+      }
+    }
+  }
+
+  // Movement highlights
+  if (battle.selectedShip && gameState.actionMode === 'move') {
+    for (const c of battle.selectedShip.cells) {
+      ctx.strokeStyle = '#66bb6a'; ctx.lineWidth = 2;
+      ctx.strokeRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
+    }
+  }
+
+  // Sub deploy ghost
+  if (battle.subDeployMode && battle.subGhostCells.length > 0) {
+    const color = battle.subGhostValid ? 'rgba(76,175,80,0.45)' : 'rgba(244,67,54,0.45)';
+    const border = battle.subGhostValid ? 'rgba(76,175,80,0.8)' : 'rgba(244,67,54,0.8)';
+    for (const c of battle.subGhostCells) {
+      ctx.fillStyle = color;
+      ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
+      ctx.strokeStyle = border; ctx.lineWidth = 1;
+      ctx.strokeRect(c.x * CELL_PX + 0.5, c.y * CELL_PX + 0.5, CELL_PX - 1, CELL_PX - 1);
+    }
+  }
+
+  drawCoordLabels(ctx, vx0, vy0, vx1, vy1, sz);
+  ctx.restore();
+}
+
+// ── Radar Rendering ──
+
+function renderRadar() {
+  const canvas = document.getElementById('radar-canvas');
+  const ctx = canvas.getContext('2d');
+  const sz = gameState.settings.fieldSize;
+  const worldSize = sz * CELL_PX;
+  const cam = radarCam;
+
+  // Black background
+  ctx.fillStyle = '#050a05';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(cam.x, cam.y);
+  ctx.scale(cam.zoom, cam.zoom);
+
+  // Dark green field
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, worldSize, worldSize);
+
+  const vx0 = Math.max(0, Math.floor(-cam.x / (cam.zoom * CELL_PX)));
+  const vy0 = Math.max(0, Math.floor(-cam.y / (cam.zoom * CELL_PX)));
+  const vx1 = Math.min(sz, Math.ceil((-cam.x + canvas.width) / (cam.zoom * CELL_PX)));
+  const vy1 = Math.min(sz, Math.ceil((-cam.y + canvas.height) / (cam.zoom * CELL_PX)));
+
+  // Islands visible on radar, wrecks NOT visible
+  drawLandscape(ctx, vx0, vy0, vx1, vy1, 'radar');
+  drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(0,80,0,0.2)');
+
+  // Scan line (rotating)
+  battle.scanLineAngle = (battle.scanLineAngle + 0.008) % (Math.PI * 2);
+  const centerX = worldSize / 2;
+  const centerY = worldSize / 2;
+  const scanLen = worldSize * 0.7;
+  ctx.strokeStyle = 'rgba(0,255,0,0.15)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+  ctx.lineTo(
+    centerX + Math.cos(battle.scanLineAngle) * scanLen,
+    centerY + Math.sin(battle.scanLineAngle) * scanLen
+  );
+  ctx.stroke();
+  // Fading trail
+  for (let i = 1; i <= 5; i++) {
+    const a = battle.scanLineAngle - i * 0.04;
+    ctx.strokeStyle = `rgba(0,255,0,${0.08 - i * 0.015})`;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX + Math.cos(a) * scanLen, centerY + Math.sin(a) * scanLen);
+    ctx.stroke();
+  }
+
+  // Player 0's radar data
+  const player = gameState.players[0];
+
+  // Shots: hits (red X) and misses (blue hand-drawn strokes)
+  for (const shot of player.radarData.shots) {
+    const cx = shot.x * CELL_PX + CELL_PX / 2;
+    const cy = shot.y * CELL_PX + CELL_PX / 2;
+    if (shot.hit) {
+      ctx.strokeStyle = '#ff1744';
+      ctx.lineWidth = 1.8;
+      const r = CELL_PX * 0.3;
+      ctx.beginPath();
+      ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r);
+      ctx.moveTo(cx + r, cy - r); ctx.lineTo(cx - r, cy + r);
+      ctx.stroke();
+    } else {
+      // Blue hand-drawn hatches (seeded by coords for consistency)
+      ctx.strokeStyle = '#29b6f6';
+      ctx.lineWidth = 1.2;
+      const seed = (shot.x * 7 + shot.y * 13) % 17;
+      for (let i = 0; i < 3; i++) {
+        const ang = ((seed + i * 5) % 11) * 0.6 - 3.3;
+        const ox = ((seed + i * 3) % 5 - 2) * 0.8;
+        const oy = ((seed + i * 7) % 5 - 2) * 0.8;
+        const len = 2.5 + (seed % 3);
+        ctx.beginPath();
+        ctx.moveTo(cx + ox - Math.cos(ang) * len, cy + oy - Math.sin(ang) * len);
+        ctx.lineTo(cx + ox + Math.cos(ang) * len, cy + oy + Math.sin(ang) * len);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Sunk ships: red outlines
+  for (const sunk of player.radarData.sunkShips) {
+    ctx.strokeStyle = '#ff1744';
+    ctx.lineWidth = 1.5;
+    for (const c of sunk.cells) {
+      ctx.strokeRect(c.x * CELL_PX + 1, c.y * CELL_PX + 1, CELL_PX - 2, CELL_PX - 2);
+    }
+    // Label
+    if (cam.zoom > 0.4 && sunk.cells.length > 0) {
+      const fc = sunk.cells[0];
+      const lc = sunk.cells[sunk.cells.length - 1];
+      ctx.fillStyle = 'rgba(255,23,68,0.7)';
+      ctx.font = '6px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(sunk.type === 'tarkr' ? 'TARKR' : sunk.type === 'carrier' ? 'CVN' : sunk.cells.length.toString(),
+        ((fc.x + lc.x) / 2 + 0.5) * CELL_PX, ((fc.y + lc.y) / 2 + 0.5) * CELL_PX);
+    }
+  }
+
+  // Detected ships from recon (green outlines with aging)
+  const opacityByAge = [1.0, 0.7, 0.4, 0.15];
+  for (const det of player.radarData.detectedShips) {
+    const age = gameState.currentTurn - det.turnDetected;
+    if (age >= 4) continue;
+    const opacity = opacityByAge[age];
+    ctx.strokeStyle = `rgba(0,255,100,${opacity})`;
+    ctx.lineWidth = 1.5;
+    for (const c of det.cells) {
+      ctx.strokeRect(c.x * CELL_PX + 1, c.y * CELL_PX + 1, CELL_PX - 2, CELL_PX - 2);
+    }
+    // Ghost "?" marker for very old detections
+    if (age >= 3 && det.cells.length > 0) {
+      const fc2 = det.cells[0];
+      const lc2 = det.cells[det.cells.length - 1];
+      ctx.fillStyle = `rgba(0,255,100,${opacity})`;
+      ctx.font = '7px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('?', ((fc2.x + lc2.x) / 2 + 0.5) * CELL_PX, ((fc2.y + lc2.y) / 2 + 0.5) * CELL_PX);
+    }
+    // Label for fresh detections
+    if (age <= 1 && cam.zoom > 0.3 && det.cells.length > 1) {
+      const fc2 = det.cells[0];
+      const lc2 = det.cells[det.cells.length - 1];
+      ctx.fillStyle = `rgba(0,255,100,${opacity * 0.7})`;
+      ctx.font = '5px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const label = det.type === 'tarkr' ? 'TARKR' : det.type === 'carrier' ? 'CVN' : det.size.toString();
+      ctx.fillText(label, ((fc2.x + lc2.x) / 2 + 0.5) * CELL_PX, ((fc2.y + lc2.y) / 2 + 0.5) * CELL_PX);
+    }
+  }
+
+  // Crosshair on mouse position during fire mode
+  if (gameState.currentPlayer === 0 && gameState.actionMode === 'fire' && battle.radarMouseCell) {
+    const mc = battle.radarMouseCell;
+    if (mc.x >= 0 && mc.y >= 0 && mc.x < sz && mc.y < sz) {
+      ctx.strokeStyle = 'rgba(0,255,0,0.6)'; ctx.lineWidth = 1;
+      ctx.strokeRect(mc.x * CELL_PX, mc.y * CELL_PX, CELL_PX, CELL_PX);
+      // Crosshair lines
+      ctx.strokeStyle = 'rgba(0,255,0,0.2)'; ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(mc.x * CELL_PX + CELL_PX / 2, 0);
+      ctx.lineTo(mc.x * CELL_PX + CELL_PX / 2, worldSize);
+      ctx.moveTo(0, mc.y * CELL_PX + CELL_PX / 2);
+      ctx.lineTo(worldSize, mc.y * CELL_PX + CELL_PX / 2);
+      ctx.stroke();
+    }
+  }
+
+  drawCoordLabels(ctx, vx0, vy0, vx1, vy1, sz);
+  ctx.restore();
+}
+
+// ── Shared Draw Helpers ──
+
+function drawLandscape(ctx, vx0, vy0, vx1, vy1, mode) {
+  for (let y = vy0; y < vy1; y++) {
+    for (let x = vx0; x < vx1; x++) {
+      const cell = gridCache[y][x];
+      if (cell === 1) {
+        // Islands: visible on both
+        ctx.fillStyle = mode === 'radar' ? '#0d3d0d' : '#2e7d32';
+        ctx.fillRect(x * CELL_PX, y * CELL_PX, CELL_PX, CELL_PX);
+        ctx.fillStyle = mode === 'radar' ? '#092a09' : '#1b5e20';
+        ctx.fillRect(x * CELL_PX, y * CELL_PX, CELL_PX, 1);
+        ctx.fillRect(x * CELL_PX, y * CELL_PX, 1, CELL_PX);
+      } else if (cell === 2 && mode !== 'radar') {
+        // Wrecks: visible on fleet only, NOT radar
+        ctx.fillStyle = '#455a64';
+        ctx.fillRect(x * CELL_PX, y * CELL_PX, CELL_PX, CELL_PX);
+        ctx.fillStyle = '#37474f';
+        ctx.fillRect(x * CELL_PX + 2, y * CELL_PX + 2, CELL_PX - 4, CELL_PX - 4);
+      }
+    }
+  }
+}
+
+function drawGridLines(ctx, vx0, vy0, vx1, vy1, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  for (let i = vx0; i <= vx1; i++) { ctx.moveTo(i * CELL_PX, vy0 * CELL_PX); ctx.lineTo(i * CELL_PX, vy1 * CELL_PX); }
+  for (let j = vy0; j <= vy1; j++) { ctx.moveTo(vx0 * CELL_PX, j * CELL_PX); ctx.lineTo(vx1 * CELL_PX, j * CELL_PX); }
+  ctx.stroke();
+}
+
+// drawShipCells: fallback rectangles (used for ghost preview, radar sunk outlines)
+function drawShipCells(ctx, cells, fill, border) {
+  for (const c of cells) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(c.x * CELL_PX + 0.5, c.y * CELL_PX + 0.5, CELL_PX - 1, CELL_PX - 1);
+    ctx.strokeStyle = border; ctx.lineWidth = 1;
+    ctx.strokeRect(c.x * CELL_PX + 0.5, c.y * CELL_PX + 0.5, CELL_PX - 1, CELL_PX - 1);
+  }
+}
+
+// drawShipSprite: render ship using sprite image with damage/sunk overlays
+function drawShipSprite(ctx, ship) {
+  if (ship.cells.length === 0) return;
+  const sprite = spritesLoaded ? SPRITES[ship.type] : null;
+  const isVertical = ship.orientation === 'vertical';
+  const first = ship.cells[0];
+
+  // Sprite dimensions: width = size * CELL_PX, height = CELL_PX
+  const sprW = ship.size * CELL_PX;
+  const sprH = CELL_PX;
+
+  if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+    ctx.save();
+    if (isVertical) {
+      // Translate to top-left of the ship bounding box, rotate 90° CW
+      const px = first.x * CELL_PX;
+      const py = first.y * CELL_PX;
+      ctx.translate(px + CELL_PX, py);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(sprite, 0, 0, sprW, sprH);
+    } else {
+      ctx.drawImage(sprite, first.x * CELL_PX, first.y * CELL_PX, sprW, sprH);
+    }
+    ctx.restore();
+  } else {
+    // Fallback: colored rectangles
+    drawShipCells(ctx, ship.cells, '#546e7a', '#37474f');
+  }
+
+  // Damage overlay: red tint on hit cells
+  if (ship.hits) {
+    for (let i = 0; i < ship.cells.length; i++) {
+      if (ship.hits[i]) {
+        const c = ship.cells[i];
+        ctx.fillStyle = 'rgba(183,28,28,0.55)';
+        ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
+        // X marker
+        ctx.strokeStyle = '#ff5252'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(c.x * CELL_PX + 3, c.y * CELL_PX + 3);
+        ctx.lineTo((c.x + 1) * CELL_PX - 3, (c.y + 1) * CELL_PX - 3);
+        ctx.moveTo((c.x + 1) * CELL_PX - 3, c.y * CELL_PX + 3);
+        ctx.lineTo(c.x * CELL_PX + 3, (c.y + 1) * CELL_PX - 3);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Sunk overlay: dark semi-transparent covering entire ship
+  if (ship.sunk) {
+    for (const c of ship.cells) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
+    }
+  }
+}
+
+function drawCoordLabels(ctx, vx0, vy0, vx1, vy1, sz) {
+  ctx.fillStyle = 'rgba(160,196,232,0.5)';
+  ctx.font = '6px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  const step = sz <= 30 ? 1 : sz <= 50 ? 5 : 10;
+  for (let x = vx0; x < vx1; x++) {
+    if (x % step === 0) ctx.fillText(colLabel(x), x * CELL_PX + CELL_PX / 2, -2);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let y = vy0; y < vy1; y++) {
+    if (y % step === 0) ctx.fillText(String(y + 1), -4, y * CELL_PX + CELL_PX / 2);
+  }
+}
+
+function colLabel(index) {
+  let s = '', n = index;
+  do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; } while (n >= 0);
+  return s;
+}
+
+// ── Minimap (Placement only) ──
+
+const MINIMAP_SIZE = 150;
+
+function initMinimap() {
+  const mc = document.getElementById('minimap-canvas');
+  mc.width = MINIMAP_SIZE; mc.height = MINIMAP_SIZE;
+}
+
+function renderPlacementMinimap() {
+  const mc = document.getElementById('minimap-canvas');
+  const mctx = mc.getContext('2d');
+  const sz = gameState.settings.fieldSize;
+  const scale = MINIMAP_SIZE / sz;
+
+  mctx.fillStyle = '#1a5276';
+  mctx.fillRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
+
+  for (const isl of gameState.landscape.islands) {
+    mctx.fillStyle = '#2e7d32';
+    mctx.fillRect(isl.x * scale, isl.y * scale, isl.w * scale, isl.h * scale);
+  }
+  for (const wr of gameState.landscape.wrecks) {
+    mctx.fillStyle = '#455a64';
+    mctx.fillRect(wr.x * scale, wr.y * scale, wr.w * scale, wr.h * scale);
+  }
+
+  for (const ship of placement.fleet) {
+    if (!ship.placed) continue;
+    mctx.fillStyle = '#90a4ae';
+    for (const c of ship.cells) mctx.fillRect(c.x * scale, c.y * scale, scale, scale);
+  }
+
+  const canvas = document.getElementById('game-canvas');
+  const vx = (-camera.x / camera.zoom) / CELL_PX * scale;
+  const vy = (-camera.y / camera.zoom) / CELL_PX * scale;
+  const vw = (canvas.width / camera.zoom) / CELL_PX * scale;
+  const vh = (canvas.height / camera.zoom) / CELL_PX * scale;
+  mctx.strokeStyle = '#4fc3f7'; mctx.lineWidth = 1.5;
+  mctx.strokeRect(vx, vy, vw, vh);
+}
+
+// ══════════════════════════════════════════════
+//  INPUT HANDLING
+// ══════════════════════════════════════════════
+
+let inputInitialized = false;
+battle.radarMouseCell = null;
+
+function screenToCell(clientX, clientY, canvasEl, cam) {
+  const rect = canvasEl.getBoundingClientRect();
+  const sx = clientX - rect.left;
+  const sy = clientY - rect.top;
+  const worldX = (sx - cam.x) / cam.zoom;
+  const worldY = (sy - cam.y) / cam.zoom;
+  return { x: Math.floor(worldX / CELL_PX), y: Math.floor(worldY / CELL_PX) };
+}
+
+function setupCameraHandlers(canvasEl, cam) {
+  canvasEl.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const newZoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, cam.zoom * factor));
+    const rect = canvasEl.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    cam.x = mx - (mx - cam.x) * (newZoom / cam.zoom);
+    cam.y = my - (my - cam.y) * (newZoom / cam.zoom);
+    cam.zoom = newZoom;
+  }, { passive: false });
+
+  canvasEl.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { cam.dragging = true; cam.dragMoved = false; cam.lastMouse.x = e.clientX; cam.lastMouse.y = e.clientY; }
+  });
+
+  canvasEl.addEventListener('mousemove', (e) => {
+    if (cam.dragging) {
+      const dx = e.clientX - cam.lastMouse.x, dy = e.clientY - cam.lastMouse.y;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) cam.dragMoved = true;
+      cam.x += dx; cam.y += dy;
+      cam.lastMouse.x = e.clientX; cam.lastMouse.y = e.clientY;
+    }
+  });
+
+  canvasEl.addEventListener('mouseup', (e) => {
+    const moved = cam.dragMoved;
+    cam.dragging = false; cam.dragMoved = false;
+    return moved;
+  });
+}
+
+function setupInputHandlers() {
+  if (inputInitialized) return;
+  inputInitialized = true;
+
+  const canvas = document.getElementById('game-canvas');
+
+  // Placement camera
+  setupCameraHandlers(canvas, camera);
+
+  canvas.addEventListener('mouseup', (e) => {
+    if (camera.dragMoved) { camera.dragging = false; camera.dragMoved = false; return; }
+    camera.dragging = false; camera.dragMoved = false;
+    if (e.button === 0) {
+      const cell = screenToCell(e.clientX, e.clientY, canvas, camera);
+      const sz = gameState.settings.fieldSize;
+      if (cell.x >= 0 && cell.y >= 0 && cell.x < sz && cell.y < sz) {
+        handlePlacementClick(cell.x, cell.y);
+      }
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!battle.active) {
+      const cell = screenToCell(e.clientX, e.clientY, canvas, camera);
+      placement.mouseCell = cell;
+      if (placement.phase === 'placing') updateGhost();
+    }
+  });
+
+  canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); handlePlacementRightClick(); });
+  canvas.style.cursor = 'crosshair';
+
+  // Minimap click
+  const mc = document.getElementById('minimap-canvas');
+  mc.addEventListener('click', (e) => {
+    const rect = mc.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const sz = gameState.settings.fieldSize;
+    const scale = MINIMAP_SIZE / sz;
+    camera.x = canvas.width / 2 - (mx / scale) * CELL_PX * camera.zoom;
+    camera.y = canvas.height / 2 - (my / scale) * CELL_PX * camera.zoom;
+  });
+
+  window.addEventListener('resize', () => {
+    if (document.getElementById('game-screen').style.display !== 'none') {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    }
+  });
+}
+
+let battleInputInitialized = false;
+
+function setupBattleInput() {
+  if (battleInputInitialized) return;
+  battleInputInitialized = true;
+
+  const fc = document.getElementById('fleet-canvas');
+  const rc = document.getElementById('radar-canvas');
+
+  setupCameraHandlers(fc, fleetCam);
+  setupCameraHandlers(rc, radarCam);
+
+  // Fleet canvas click (for movement or radar ship selection)
+  fc.addEventListener('mouseup', (e) => {
+    if (fleetCam.dragMoved) { fleetCam.dragging = false; fleetCam.dragMoved = false; return; }
+    fleetCam.dragging = false; fleetCam.dragMoved = false;
+    if (e.button !== 0) return;
+    if (gameState.currentPlayer !== 0) return;
+
+    const cell = screenToCell(e.clientX, e.clientY, fc, fleetCam);
+    const sz = gameState.settings.fieldSize;
+    if (cell.x < 0 || cell.y < 0 || cell.x >= sz || cell.y >= sz) return;
+
+    const player = gameState.players[0];
+
+    // Radar ship selection mode
+    if (battle.radarSelectMode && gameState.phase === 'recon') {
+      for (const ship of player.ships) {
+        if (ship.sunk || ship.radarCooldown > 0 || ship.size < 3 || ship.type === 'submarine') continue;
+        for (const c of ship.cells) {
+          if (c.x === cell.x && c.y === cell.y) {
+            useRadar(ship);
+            return;
+          }
+        }
+      }
+      showToast('Click a ship with radar ready (no cooldown).', 'info', 2000);
+      return;
+    }
+
+    // Sub deploy mode
+    if (battle.subDeployMode && gameState.actionMode === 'move') {
+      if (battle.subGhostValid && battle.subGhostCells.length === 3) {
+        deploySubmarine(0, battle.subGhostCells, battle.subGhostOrientation);
+      } else {
+        showToast('Invalid placement for submarine.', 'info', 1500);
+      }
+      return;
+    }
+
+    // Movement mode
+    if (gameState.actionMode !== 'move') return;
+    for (const ship of player.ships) {
+      if (ship.sunk) continue;
+      if (ship.type === 'submarine' && !ship.deployed) continue;
+      for (const c of ship.cells) {
+        if (c.x === cell.x && c.y === cell.y) {
+          showMoveOptions(ship, e.clientX, e.clientY);
+          return;
+        }
+      }
+    }
+  });
+
+  // Fleet canvas mousemove for sub ghost
+  fc.addEventListener('mousemove', (e) => {
+    if (battle.subDeployMode) {
+      battle.subMouseCell = screenToCell(e.clientX, e.clientY, fc, fleetCam);
+      updateSubGhost();
+    }
+  });
+
+  fc.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (battle.subDeployMode) {
+      battle.subGhostOrientation = battle.subGhostOrientation === 'horizontal' ? 'vertical' : 'horizontal';
+      updateSubGhost();
+    }
+  });
+
+  // Radar canvas: track mouse for crosshair + click to fire
+  rc.addEventListener('mousemove', (e) => {
+    battle.radarMouseCell = screenToCell(e.clientX, e.clientY, rc, radarCam);
+  });
+
+  rc.addEventListener('mouseleave', () => { battle.radarMouseCell = null; });
+
+  rc.addEventListener('mouseup', (e) => {
+    if (radarCam.dragMoved) { radarCam.dragging = false; radarCam.dragMoved = false; return; }
+    radarCam.dragging = false; radarCam.dragMoved = false;
+    if (e.button !== 0) return;
+    if (gameState.currentPlayer !== 0 || gameState.actionMode !== 'fire') return;
+
+    const cell = screenToCell(e.clientX, e.clientY, rc, radarCam);
+    const sz = gameState.settings.fieldSize;
+    if (cell.x < 0 || cell.y < 0 || cell.x >= sz || cell.y >= sz) return;
+
+    const result = regularShot(0, cell.x, cell.y);
+    if (result) {
+      // Shot taken, end turn
+      setTimeout(() => endTurn(), 1000);
+    }
+  });
+
+  rc.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  fc.style.cursor = 'crosshair';
+  rc.style.cursor = 'crosshair';
+}
+
+</script>
+</body>
+</html>
