@@ -622,6 +622,26 @@
   .move-opt-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
   /* ── Victory Overlay ── */
+  #confirm-dialog {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  .confirm-content {
+    background: linear-gradient(180deg, #1a1a0a, #0d0d05);
+    border: 2px solid #ff9800;
+    padding: 30px 40px; text-align: center;
+    box-shadow: 0 0 40px rgba(255,152,0,0.3);
+  }
+  .confirm-content h2 { color: #ff9800; font-size: 22px; margin-bottom: 12px; letter-spacing: 2px; }
+  .confirm-content p { color: #bdbdbd; font-size: 14px; margin-bottom: 24px; }
+  .confirm-buttons { display: flex; gap: 16px; justify-content: center; }
+  .confirm-buttons .menu-btn { padding: 10px 32px; font-size: 16px; }
+  #confirm-yes { border-color: #ef5350; color: #ef5350; }
+  #confirm-yes:hover { background: rgba(239,83,80,0.15); }
+  #confirm-no { border-color: #78909c; color: #78909c; }
+
   #victory-overlay {
     display: none;
     position: fixed;
@@ -789,6 +809,18 @@
   <div id="move-options"></div>
 </div>
 
+<!-- Confirmation Dialog -->
+<div id="confirm-dialog" style="display:none">
+  <div class="confirm-content">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-text"></p>
+    <div class="confirm-buttons">
+      <button class="menu-btn" id="confirm-yes">Confirm</button>
+      <button class="menu-btn" id="confirm-no">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Notification -->
 <div id="toast"></div>
 
@@ -861,6 +893,9 @@ const gameState = {
   phase: 'recon', // 'recon' | 'action'
   actionMode: null, // null | 'move' | 'fire'
   activeTorpedoes: [],
+  blastZones: [],
+  nuclearZones: [],
+  sonarDetections: [],
   gameOver: false
 };
 
@@ -910,6 +945,13 @@ function preloadSprites() {
 // Start preloading immediately
 preloadSprites();
 
+// ── Ship Type Labels (Russian abbreviations) ──
+
+const SHIP_LABELS = {
+  missile_boat: '\u041C\u041A', mrk: '\u041C\u0420\u041A', destroyer: '\u042D\u041C',
+  cruiser: '\u041A\u0420', tarkr: '\u0422\u0410\u0420\u041A\u0420', carrier: '\u0410\u0412', submarine: '\u041F\u041B'
+};
+
 // ── Fleet Definitions ──
 
 const SHIP_DEFS = {
@@ -943,7 +985,11 @@ function getFleetForSize(fieldSize, capitalChoice) {
         deployed: type === 'submarine' ? false : true,
         surfaced: false,
         torpedoes: type === 'submarine' ? 3 : 0,
-        radarCooldown: 0
+        radarCooldown: 0,
+        sonarCooldown: 0,
+        asroc: type === 'destroyer' ? 1 : 0,
+        radiationDamage: false,
+        surfacedUntilTurn: -1
       });
     }
   };
@@ -985,7 +1031,11 @@ const battle = {
   subGhostCells: [],
   subGhostValid: false,
   subGhostOrientation: 'horizontal',
-  subMouseCell: { x: -1, y: -1 }
+  subMouseCell: { x: -1, y: -1 },
+  torpedoMode: false,
+  asrocMode: false,
+  sonarSelectMode: false,
+  nuclearStrikeMode: false
 };
 
 // ── Placement Functions ──
@@ -1371,6 +1421,14 @@ function startBattle() {
   battle.active = true;
   battle.selectedShip = null;
   battle.moveHighlights = [];
+  battle.torpedoMode = false;
+  battle.asrocMode = false;
+  battle.sonarSelectMode = false;
+  battle.nuclearStrikeMode = false;
+  gameState.blastZones = [];
+  gameState.nuclearZones = [];
+  gameState.sonarDetections = [];
+  gameState.activeTorpedoes = [];
 
   // Init cameras to fit field
   const sz = gameState.settings.fieldSize;
@@ -1422,8 +1480,26 @@ function beginPlayerTurn() {
   battle.radarSelectMode = false;
   battle.subDeployMode = false;
   battle.subGhostCells = [];
+  battle.torpedoMode = false;
+  battle.asrocMode = false;
+  battle.sonarSelectMode = false;
+  battle.nuclearStrikeMode = false;
   hideMoveOptions();
   ageReconData(gameState.currentPlayer);
+
+  // Sub surfacing timeout
+  for (const ship of gameState.players[gameState.currentPlayer].ships) {
+    if (ship.type === 'submarine' && ship.surfaced && ship.surfacedUntilTurn >= 0 && gameState.currentTurn >= ship.surfacedUntilTurn) {
+      ship.surfaced = false;
+      ship.surfacedUntilTurn = -1;
+    }
+  }
+
+  // Torpedo incoming warnings
+  const incoming = gameState.activeTorpedoes.filter(t => t.attackerIdx !== gameState.currentPlayer);
+  if (incoming.length > 0 && gameState.currentPlayer === 0) {
+    showToast('TORPEDO INCOMING! ' + incoming.length + ' torpedo' + (incoming.length > 1 ? 'es' : '') + ' approaching!', 'sunk', 3000);
+  }
 
   // Turn 11: auto-sink undeployed subs
   if (gameState.currentTurn === 11) {
@@ -1449,6 +1525,7 @@ function endPhaseRecon() {
   gameState.phase = 'action';
   gameState.actionMode = null;
   battle.radarSelectMode = false;
+  battle.sonarSelectMode = false;
   updateTopBar();
   updateActionBar();
 }
@@ -1457,6 +1534,9 @@ function selectActionMode(mode) {
   gameState.actionMode = mode; // 'move' or 'fire'
   battle.selectedShip = null;
   battle.moveHighlights = [];
+  battle.torpedoMode = false;
+  battle.asrocMode = false;
+  battle.nuclearStrikeMode = false;
   hideMoveOptions();
   updateTopBar();
   updateActionBar();
@@ -1467,6 +1547,9 @@ function endTurn() {
 
   // End-of-turn processing
   decrementCooldowns(gameState.currentPlayer);
+  advanceTorpedoes();
+  applyRadiationDamage();
+  decrementNuclearZones();
 
   // Check victory
   if (checkVictory()) return;
@@ -1481,6 +1564,7 @@ function endTurn() {
 function decrementCooldowns(playerIdx) {
   for (const ship of gameState.players[playerIdx].ships) {
     if (ship.radarCooldown > 0) ship.radarCooldown--;
+    if (ship.sonarCooldown > 0) ship.sonarCooldown--;
     if (ship.blocked && ship.type === 'carrier') ship.blocked = false;
   }
 }
@@ -1551,12 +1635,17 @@ function updateActionBar() {
   if (gameState.phase === 'recon') {
     const player = gameState.players[0];
     const hasRadarShip = player.ships.some(s => !s.sunk && s.radarCooldown === 0 && s.size >= 3 && s.type !== 'submarine');
+    const hasSonar = player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.sonarCooldown === 0);
     const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
     const hasAirRecon = carrier && carrier.planes > 0 && !carrier.blocked;
 
     bar.innerHTML = `
       <button class="action-btn recon-btn" onclick="startRadarSelect()" ${!hasRadarShip ? 'disabled title="No ships with radar ready"' : ''}>
         Radar${battle.radarSelectMode ? ' (select ship)' : ''}
+      </button>
+      <div class="action-separator"></div>
+      <button class="action-btn recon-btn${battle.sonarSelectMode ? ' active' : ''}" onclick="startSonarSelect()" ${!hasSonar ? 'disabled title="No destroyer with sonar ready"' : ''}>
+        Sonar${battle.sonarSelectMode ? ' (select DD)' : ''}
       </button>
       <div class="action-separator"></div>
       <button class="action-btn recon-btn" onclick="useAirRecon()" ${!hasAirRecon ? 'disabled title="' + (!carrier ? 'No carrier' : carrier && carrier.planes === 0 ? 'No planes left' : 'Carrier blocked') + '"' : ''}>
@@ -1574,12 +1663,28 @@ function updateActionBar() {
       <button class="action-btn skip-btn" onclick="endTurn()">Skip</button>
     `;
   } else if (gameState.actionMode === 'fire') {
-    const hasLiving = gameState.players[0].ships.some(s => !s.sunk && s.type !== 'submarine');
+    const player = gameState.players[0];
+    const hasLiving = player.ships.some(s => !s.sunk && s.type !== 'submarine');
+    const hasTorpedo = player.ships.some(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
+    const hasAsroc = player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
+    const canNuke = !player.nuclearUsed && gameState.settings.fieldSize > 30;
+    const noFireModeActive = !battle.torpedoMode && !battle.asrocMode && !battle.nuclearStrikeMode;
+
     bar.innerHTML = `
-      <button class="action-btn fire-btn active">Shot</button>
+      <button class="action-btn fire-btn${noFireModeActive ? ' active' : ''}" onclick="battle.torpedoMode=false;battle.asrocMode=false;battle.nuclearStrikeMode=false;updateActionBar()">Shot</button>
+      <button class="action-btn fire-btn${battle.torpedoMode ? ' active' : ''}" onclick="startTorpedoMode()" ${!hasTorpedo ? 'disabled title="No sub with torpedoes"' : ''}>
+        Torpedo
+      </button>
+      <button class="action-btn fire-btn${battle.asrocMode ? ' active' : ''}" onclick="startAsrocMode()" ${!hasAsroc ? 'disabled title="No ASROC available"' : ''}>
+        ASROC
+      </button>
       <div class="action-separator"></div>
       <button class="action-btn fire-btn" onclick="showToast('PCR Vulkan — not yet implemented', 'info', 2000)">PCR Vulkan</button>
       <button class="action-btn fire-btn" onclick="showToast('Striker — not yet implemented', 'info', 2000)">Striker</button>
+      <div class="action-separator"></div>
+      <button class="action-btn fire-btn${battle.nuclearStrikeMode ? ' active' : ''}" onclick="startNuclearStrikeMode()" ${!canNuke ? 'disabled title="' + (player.nuclearUsed ? 'Already used' : 'Not available in Skirmish') + '"' : ''} style="${canNuke ? 'border-color:#ff9800;color:#ff9800;' : ''}">
+        Nuclear Strike
+      </button>
       <div class="action-separator"></div>
       <button class="action-btn skip-btn" onclick="endTurn()">End Turn</button>
     `;
@@ -1813,6 +1918,15 @@ function triggerNuclearExplosion(attackerIdx, ownerIdx, centerX, centerY) {
       });
     }
   }
+
+  // Store blast zone for visual rendering
+  const blastCells = [];
+  for (let by = y0; by <= y1; by++) {
+    for (let bx = x0; bx <= x1; bx++) {
+      blastCells.push({ x: bx, y: by });
+    }
+  }
+  gameState.blastZones.push({ cells: blastCells, ownerIdx });
 
   // Mark all blast cells as shots for visual
   for (let by = y0; by <= y1; by++) {
@@ -2097,6 +2211,391 @@ function aiDeploySub() {
   return false;
 }
 
+// ── Sonar (Destroyer) ──
+
+function startSonarSelect() {
+  if (gameState.phase !== 'recon' || gameState.currentPlayer !== 0) return;
+  battle.sonarSelectMode = true;
+  showToast('Click a destroyer on the Fleet Map to ping sonar.', 'info', 3000);
+  updateActionBar();
+}
+
+function useSonar(sourceShip) {
+  if (sourceShip.type !== 'destroyer') { showToast('Only destroyers have sonar.', 'info'); return; }
+  if (sourceShip.sunk || sourceShip.sonarCooldown > 0) return;
+
+  sourceShip.sonarCooldown = 2;
+  const playerIdx = gameState.currentPlayer;
+  const player = gameState.players[playerIdx];
+  const enemyIdx = 1 - playerIdx;
+  const enemy = gameState.players[enemyIdx];
+
+  // Cost: reveal destroyer to enemy
+  enemy.radarData.detectedShips.push({
+    cells: sourceShip.cells.map(c => ({ ...c })),
+    type: sourceShip.type, size: sourceShip.size,
+    turnDetected: gameState.currentTurn
+  });
+
+  // D100 per deployed enemy sub: 60% detection
+  let detected = 0;
+  for (const eSub of enemy.ships) {
+    if (eSub.type !== 'submarine' || !eSub.deployed || eSub.sunk) continue;
+    if (Math.floor(Math.random() * 100) + 1 <= 60) {
+      player.radarData.detectedShips.push({
+        cells: eSub.cells.map(c => ({ ...c })),
+        type: eSub.type, size: eSub.size,
+        turnDetected: gameState.currentTurn
+      });
+      gameState.sonarDetections.push({
+        cells: eSub.cells.map(c => ({ ...c })),
+        turnDetected: gameState.currentTurn,
+        playerIdx
+      });
+      detected++;
+      // Notify sub owner if human
+      if (enemyIdx === 0) {
+        showToast('Your submarine has been pinged by sonar!', 'sunk', 3000);
+      }
+    }
+  }
+
+  battle.sonarSelectMode = false;
+  const msg = detected > 0 ? `Sonar ping: ${detected} submarine${detected > 1 ? 's' : ''} detected!` : 'Sonar ping: no submarines detected.';
+  showToast(msg, detected > 0 ? 'hit' : 'info', 3000);
+  endPhaseRecon();
+}
+
+// ── ASROC (Anti-Submarine Rocket) ──
+
+function startAsrocMode() {
+  battle.asrocMode = true;
+  showToast('Click target cell on Radar to launch ASROC.', 'info', 3000);
+  updateActionBar();
+}
+
+function fireAsroc(attackerIdx, x, y) {
+  const attacker = gameState.players[attackerIdx];
+  const defenderIdx = 1 - attackerIdx;
+
+  // Find destroyer with ASROC available
+  const dd = attacker.ships.find(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
+  if (!dd) { showToast('No ASROC available.', 'info'); return false; }
+
+  // Already shot here?
+  if (attacker.radarData.shots.some(s => s.x === x && s.y === y)) {
+    showToast('Already fired at this cell.', 'info', 1500);
+    return false;
+  }
+
+  dd.asroc--;
+  const target = getShipAt(defenderIdx, x, y);
+
+  if (target && target.ship.type === 'submarine' && target.ship.deployed) {
+    // Instant kill on submarine
+    for (let i = 0; i < target.ship.hits.length; i++) target.ship.hits[i] = true;
+    target.ship.sunk = true;
+    attacker.radarData.sunkShips.push({
+      type: target.ship.type,
+      cells: target.ship.cells.map(c => ({ ...c }))
+    });
+    for (const c of target.ship.cells) {
+      if (!attacker.radarData.shots.some(s => s.x === c.x && s.y === c.y)) {
+        attacker.radarData.shots.push({ x: c.x, y: c.y, hit: true });
+      }
+    }
+    showToast('ASROC HIT! Submarine destroyed!', 'sunk', 3000);
+  } else if (target) {
+    // Regular hit on surface ship
+    target.ship.hits[target.cellIndex] = true;
+    attacker.radarData.shots.push({ x, y, hit: true });
+    if (target.ship.hits.every(h => h)) {
+      target.ship.sunk = true;
+      attacker.radarData.sunkShips.push({
+        type: target.ship.type,
+        cells: target.ship.cells.map(c => ({ ...c }))
+      });
+      showToast('ASROC HIT & SUNK! ' + target.ship.name, 'sunk', 3000);
+    } else {
+      showToast('ASROC HIT! (surface ship)', 'hit');
+    }
+  } else {
+    attacker.radarData.shots.push({ x, y, hit: false });
+    showToast('ASROC MISS — no target found.', 'miss');
+  }
+
+  battle.asrocMode = false;
+  return true;
+}
+
+// ── Torpedo Mechanics ──
+
+function startTorpedoMode() {
+  battle.torpedoMode = true;
+  showToast('Click target cell on Radar to launch torpedo.', 'info', 3000);
+  updateActionBar();
+}
+
+function fireTorpedo(attackerIdx, targetX, targetY) {
+  const attacker = gameState.players[attackerIdx];
+  const sub = attacker.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
+  if (!sub) { showToast('No submarine with torpedoes available.', 'info'); return false; }
+
+  sub.torpedoes--;
+  // Surface the sub (visible for 1 turn)
+  sub.surfaced = true;
+  sub.surfacedUntilTurn = gameState.currentTurn + 1;
+
+  // Reveal sub to enemy
+  const enemyIdx = 1 - attackerIdx;
+  gameState.players[enemyIdx].radarData.detectedShips.push({
+    cells: sub.cells.map(c => ({ ...c })),
+    type: sub.type, size: sub.size,
+    turnDetected: gameState.currentTurn
+  });
+
+  // Choose spawn direction: pick direction with most open water
+  const sz = gameState.settings.fieldSize;
+  const directions = [
+    { name: 'up', dx: 0, dy: -1 },
+    { name: 'down', dx: 0, dy: 1 },
+    { name: 'left', dx: -1, dy: 0 },
+    { name: 'right', dx: 1, dy: 0 }
+  ];
+  let bestDir = directions[0];
+  let bestScore = -1;
+  for (const dir of directions) {
+    let score = 0;
+    for (let d = 1; d <= 3; d++) {
+      const cx = targetX + dir.dx * d;
+      const cy = targetY + dir.dy * d;
+      if (cx >= 0 && cy >= 0 && cx < sz && cy < sz && gridCache[cy][cx] === 0) score++;
+    }
+    if (score > bestScore) { bestScore = score; bestDir = dir; }
+  }
+
+  const spawnX = targetX + bestDir.dx * 3;
+  const spawnY = targetY + bestDir.dy * 3;
+
+  // Check path for obstacles
+  let blocked = false;
+  for (let d = 1; d <= 3; d++) {
+    const cx = targetX + bestDir.dx * d;
+    const cy = targetY + bestDir.dy * d;
+    if (cx < 0 || cy < 0 || cx >= sz || cy >= sz || gridCache[cy][cx] === 1) {
+      blocked = true; break;
+    }
+  }
+
+  if (blocked) {
+    showToast('Torpedo blocked by obstacle!', 'miss', 2000);
+    battle.torpedoMode = false;
+    return true; // still counts as action (sub surfaced)
+  }
+
+  gameState.activeTorpedoes.push({
+    attackerIdx,
+    targetX, targetY,
+    spawnX, spawnY,
+    currentX: spawnX, currentY: spawnY,
+    turnsRemaining: 3,
+    direction: bestDir.name
+  });
+
+  showToast('Torpedo launched! 3 turns to impact.', 'hit', 3000);
+  battle.torpedoMode = false;
+  return true;
+}
+
+function advanceTorpedoes() {
+  const toRemove = [];
+  for (let i = 0; i < gameState.activeTorpedoes.length; i++) {
+    const torp = gameState.activeTorpedoes[i];
+    torp.turnsRemaining--;
+
+    // Move 1 cell toward target
+    const dx = Math.sign(torp.targetX - torp.currentX);
+    const dy = Math.sign(torp.targetY - torp.currentY);
+    torp.currentX += dx;
+    torp.currentY += dy;
+
+    // Check landscape blocking
+    const sz = gameState.settings.fieldSize;
+    if (torp.currentX < 0 || torp.currentY < 0 || torp.currentX >= sz || torp.currentY >= sz ||
+        gridCache[torp.currentY][torp.currentX] === 1) {
+      toRemove.push(i);
+      continue;
+    }
+
+    if (torp.turnsRemaining <= 0) {
+      // Torpedo arrives
+      const defenderIdx = 1 - torp.attackerIdx;
+      const attacker = gameState.players[torp.attackerIdx];
+      const target = getShipAt(defenderIdx, torp.targetX, torp.targetY);
+      if (target) {
+        // Guaranteed kill
+        for (let h = 0; h < target.ship.hits.length; h++) target.ship.hits[h] = true;
+        target.ship.sunk = true;
+        attacker.radarData.sunkShips.push({
+          type: target.ship.type,
+          cells: target.ship.cells.map(c => ({ ...c }))
+        });
+        for (const c of target.ship.cells) {
+          if (!attacker.radarData.shots.some(s => s.x === c.x && s.y === c.y)) {
+            attacker.radarData.shots.push({ x: c.x, y: c.y, hit: true });
+          }
+        }
+        const msg = torp.attackerIdx === 0 ? 'Torpedo HIT! ' + target.ship.name + ' destroyed!' : 'Enemy torpedo destroyed your ' + target.ship.name + '!';
+        showToast(msg, 'sunk', 3000);
+      } else {
+        const msg = torp.attackerIdx === 0 ? 'Torpedo missed — target moved!' : 'Enemy torpedo missed!';
+        showToast(msg, 'miss', 2000);
+      }
+      toRemove.push(i);
+    }
+  }
+  for (let i = toRemove.length - 1; i >= 0; i--) {
+    gameState.activeTorpedoes.splice(toRemove[i], 1);
+  }
+}
+
+// ── Nuclear Strike ──
+
+function startNuclearStrikeMode() {
+  const player = gameState.players[0];
+  if (player.nuclearUsed) { showToast('Nuclear strike already used.', 'info'); return; }
+  if (gameState.settings.fieldSize === 30) { showToast('Not available in Skirmish mode.', 'info'); return; }
+
+  showConfirmDialog(
+    'LAUNCH NUCLEAR STRIKE?',
+    'This action cannot be undone. 11x11 zone will be devastated.',
+    () => {
+      battle.nuclearStrikeMode = true;
+      showToast('Select target zone center on Radar.', 'info', 3000);
+      updateActionBar();
+    },
+    () => { /* cancel */ }
+  );
+}
+
+function launchNuclearStrike(attackerIdx, centerX, centerY) {
+  const attacker = gameState.players[attackerIdx];
+  const defenderIdx = 1 - attackerIdx;
+  const defender = gameState.players[defenderIdx];
+  const sz = gameState.settings.fieldSize;
+
+  attacker.nuclearUsed = true;
+
+  const x0 = Math.max(0, centerX - 5), x1 = Math.min(sz - 1, centerX + 5);
+  const y0 = Math.max(0, centerY - 5), y1 = Math.min(sz - 1, centerY + 5);
+
+  // Destroy/damage ships in zone
+  for (const ship of defender.ships) {
+    if (ship.sunk) continue;
+    if (ship.type === 'submarine' && !ship.deployed) continue;
+    let cellsInZone = 0;
+    for (const c of ship.cells) {
+      if (c.x >= x0 && c.x <= x1 && c.y >= y0 && c.y <= y1) cellsInZone++;
+    }
+    if (cellsInZone === 0) continue;
+    if (cellsInZone === ship.cells.length) {
+      // Fully inside: instant destroy
+      for (let i = 0; i < ship.hits.length; i++) ship.hits[i] = true;
+      ship.sunk = true;
+      attacker.radarData.sunkShips.push({
+        type: ship.type,
+        cells: ship.cells.map(c => ({ ...c }))
+      });
+    } else {
+      // Partially inside: radiation damage
+      ship.radiationDamage = true;
+    }
+  }
+
+  // Nuclear zone for ongoing radiation
+  gameState.nuclearZones.push({ centerX, centerY, x0, y0, x1, y1, turnsRemaining: 3, attackerIdx });
+
+  // Record all zone cells as shots
+  for (let by = y0; by <= y1; by++) {
+    for (let bx = x0; bx <= x1; bx++) {
+      if (!attacker.radarData.shots.some(s => s.x === bx && s.y === by)) {
+        const target = getShipAt(defenderIdx, bx, by);
+        attacker.radarData.shots.push({ x: bx, y: by, hit: !!target });
+      }
+    }
+  }
+
+  battle.nuclearStrikeMode = false;
+  showToast('NUCLEAR STRIKE LAUNCHED!', 'sunk', 4000);
+  return true;
+}
+
+function applyRadiationDamage() {
+  for (let p = 0; p < 2; p++) {
+    for (const ship of gameState.players[p].ships) {
+      if (!ship.radiationDamage || ship.sunk) continue;
+      // Find first unhit cell and damage it
+      const idx = ship.hits ? ship.hits.findIndex(h => !h) : -1;
+      if (idx >= 0) {
+        ship.hits[idx] = true;
+        if (ship.hits.every(h => h)) {
+          ship.sunk = true;
+          // Notify the other player's radar
+          const enemyIdx = 1 - p;
+          gameState.players[enemyIdx].radarData.sunkShips.push({
+            type: ship.type,
+            cells: ship.cells.map(c => ({ ...c }))
+          });
+          if (p === 0) showToast(ship.name + ' destroyed by radiation!', 'sunk', 3000);
+        }
+      }
+    }
+  }
+
+  // Also damage ships currently sitting inside active nuclear zones
+  for (const zone of gameState.nuclearZones) {
+    const defenderIdx = 1 - zone.attackerIdx;
+    for (const ship of gameState.players[defenderIdx].ships) {
+      if (ship.sunk || ship.radiationDamage) continue;
+      if (ship.type === 'submarine' && !ship.deployed) continue;
+      for (const c of ship.cells) {
+        if (c.x >= zone.x0 && c.x <= zone.x1 && c.y >= zone.y0 && c.y <= zone.y1) {
+          ship.radiationDamage = true;
+          break;
+        }
+      }
+    }
+  }
+}
+
+function decrementNuclearZones() {
+  gameState.nuclearZones = gameState.nuclearZones.filter(z => {
+    z.turnsRemaining--;
+    return z.turnsRemaining > 0;
+  });
+}
+
+// ── Confirmation Dialog ──
+
+function showConfirmDialog(title, text, onConfirm, onCancel) {
+  const dialog = document.getElementById('confirm-dialog');
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  dialog.style.display = 'flex';
+
+  const yesBtn = document.getElementById('confirm-yes');
+  const noBtn = document.getElementById('confirm-no');
+
+  function cleanup() {
+    dialog.style.display = 'none';
+    yesBtn.onclick = null;
+    noBtn.onclick = null;
+  }
+
+  yesBtn.onclick = () => { cleanup(); if (onConfirm) onConfirm(); };
+  noBtn.onclick = () => { cleanup(); if (onCancel) onCancel(); };
+}
+
 // ── AI (Easy) ──
 
 function aiUseRadar(sourceShip) {
@@ -2171,6 +2670,37 @@ function aiTakeTurn() {
     aiUseRadar(source);
   }
 
+  // AI Sonar: 40% chance if destroyer available and human has a deployed sub
+  const sonarDDs = ai.ships.filter(s => s.type === 'destroyer' && !s.sunk && s.sonarCooldown === 0);
+  const humanSub = human.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk);
+  const freshSonarDetection = gameState.sonarDetections.some(d => d.playerIdx === 1 && gameState.currentTurn - d.turnDetected <= 1);
+  if (sonarDDs.length > 0 && humanSub && !freshSonarDetection && Math.random() < 0.4) {
+    const dd = sonarDDs[Math.floor(Math.random() * sonarDDs.length)];
+    // AI sonar: same logic as useSonar but for AI
+    dd.sonarCooldown = 2;
+    human.radarData.detectedShips.push({
+      cells: dd.cells.map(c => ({ ...c })),
+      type: dd.type, size: dd.size,
+      turnDetected: gameState.currentTurn
+    });
+    for (const hSub of human.ships) {
+      if (hSub.type !== 'submarine' || !hSub.deployed || hSub.sunk) continue;
+      if (Math.floor(Math.random() * 100) + 1 <= 60) {
+        ai.radarData.detectedShips.push({
+          cells: hSub.cells.map(c => ({ ...c })),
+          type: hSub.type, size: hSub.size,
+          turnDetected: gameState.currentTurn
+        });
+        gameState.sonarDetections.push({
+          cells: hSub.cells.map(c => ({ ...c })),
+          turnDetected: gameState.currentTurn,
+          playerIdx: 1
+        });
+        showToast('Your submarine has been pinged by sonar!', 'sunk', 3000);
+      }
+    }
+  }
+
   // AI Air Recon: 40% chance if carrier available with planes
   const aiCarrier = ai.ships.find(s => s.type === 'carrier' && !s.sunk && s.planes > 0 && !s.blocked);
   if (aiCarrier && Math.random() < 0.4) {
@@ -2189,9 +2719,46 @@ function aiTakeTurn() {
 
     if (!hasLiving) { endTurn(); return; }
 
-    // Build shot candidates using heatmap
     const sz = gameState.settings.fieldSize;
     const shotSet = new Set(ai.radarData.shots.map(s => s.x + ',' + s.y));
+
+    // AI ASROC: if fresh sonar detection of human sub, 70% chance
+    const freshSonarDet = gameState.sonarDetections.find(d => d.playerIdx === 1 && gameState.currentTurn - d.turnDetected <= 1);
+    const asrocDD = ai.ships.find(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
+    if (freshSonarDet && asrocDD && Math.random() < 0.7) {
+      const cell = freshSonarDet.cells[Math.floor(freshSonarDet.cells.length / 2)];
+      if (fireAsroc(aiIdx, cell.x, cell.y)) {
+        setTimeout(() => endTurn(), 800);
+        return;
+      }
+    }
+
+    // AI Torpedo: if sub with torpedoes and detected enemy ship, 30% chance
+    const aiSub2 = ai.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
+    const detectedTarget = ai.radarData.detectedShips.find(d => gameState.currentTurn - d.turnDetected <= 1);
+    if (aiSub2 && detectedTarget && Math.random() < 0.3) {
+      const midCell = detectedTarget.cells[Math.floor(detectedTarget.cells.length / 2)];
+      if (fireTorpedo(aiIdx, midCell.x, midCell.y)) {
+        setTimeout(() => endTurn(), 800);
+        return;
+      }
+    }
+
+    // AI Nuclear Strike: if 3+ ships clustered, 20% chance
+    if (!ai.nuclearUsed && sz > 30) {
+      const detShips = ai.radarData.detectedShips.filter(d => gameState.currentTurn - d.turnDetected <= 1);
+      if (detShips.length >= 3 && Math.random() < 0.2) {
+        // Find cluster center
+        let sumX = 0, sumY = 0, count = 0;
+        for (const ds of detShips) {
+          for (const c of ds.cells) { sumX += c.x; sumY += c.y; count++; }
+        }
+        const cx = Math.round(sumX / count), cy = Math.round(sumY / count);
+        launchNuclearStrike(aiIdx, cx, cy);
+        setTimeout(() => endTurn(), 800);
+        return;
+      }
+    }
 
     // Priority 1: finish off near known hits
     const hitCells = ai.radarData.shots.filter(s => s.hit);
@@ -2320,6 +2887,33 @@ function renderFleetMap() {
   const vy1 = Math.min(sz, Math.ceil((-cam.y + canvas.height) / (cam.zoom * CELL_PX)));
 
   drawLandscape(ctx, vx0, vy0, vx1, vy1, 'fleet');
+
+  // Blast zones (reactor explosions) on our field
+  for (const bz of gameState.blastZones) {
+    if (bz.ownerIdx !== 0) continue;
+    for (const c of bz.cells) {
+      ctx.fillStyle = 'rgba(20,20,20,0.85)';
+      ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
+      ctx.strokeStyle = 'rgba(200,60,20,0.6)'; ctx.lineWidth = 0.8;
+      ctx.strokeRect(c.x * CELL_PX + 0.5, c.y * CELL_PX + 0.5, CELL_PX - 1, CELL_PX - 1);
+    }
+  }
+
+  // Nuclear zones on our field
+  for (const nz of gameState.nuclearZones) {
+    if (nz.attackerIdx === 0) continue; // enemy nuked us
+    const pulse = 0.3 + 0.2 * Math.sin(Date.now() / 400);
+    for (let ny = nz.y0; ny <= nz.y1; ny++) {
+      for (let nx = nz.x0; nx <= nz.x1; nx++) {
+        ctx.fillStyle = `rgba(20,20,10,${0.7 * pulse + 0.3})`;
+        ctx.fillRect(nx * CELL_PX, ny * CELL_PX, CELL_PX, CELL_PX);
+        ctx.strokeStyle = `rgba(255,235,59,${pulse * 0.5})`;
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(nx * CELL_PX + 0.5, ny * CELL_PX + 0.5, CELL_PX - 1, CELL_PX - 1);
+      }
+    }
+  }
+
   drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(100,180,255,0.12)');
 
   // Player's own ships (player 0)
@@ -2373,6 +2967,44 @@ function renderFleetMap() {
     }
   }
 
+  // Sonar select highlights: pulse destroyers
+  if (battle.sonarSelectMode && gameState.phase === 'recon') {
+    for (const ship of player.ships) {
+      if (ship.type !== 'destroyer' || ship.sunk || ship.sonarCooldown > 0) continue;
+      const pulse = 0.4 + 0.3 * Math.sin(Date.now() / 300);
+      ctx.strokeStyle = `rgba(0,230,118,${pulse})`;
+      ctx.lineWidth = 2;
+      for (const c of ship.cells) {
+        ctx.strokeRect(c.x * CELL_PX - 1, c.y * CELL_PX - 1, CELL_PX + 2, CELL_PX + 2);
+      }
+    }
+  }
+
+  // Incoming torpedoes on our fleet map
+  for (const torp of gameState.activeTorpedoes) {
+    if (torp.attackerIdx === 0) continue; // only show incoming (from enemy)
+    const cx = torp.currentX * CELL_PX + CELL_PX / 2;
+    const cy = torp.currentY * CELL_PX + CELL_PX / 2;
+    // Red triangle
+    ctx.fillStyle = 'rgba(255,23,68,0.8)';
+    ctx.beginPath();
+    const r = CELL_PX * 0.4;
+    const angle = torp.direction === 'up' ? -Math.PI/2 : torp.direction === 'down' ? Math.PI/2 : torp.direction === 'left' ? Math.PI : 0;
+    ctx.moveTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+    ctx.lineTo(cx + Math.cos(angle + 2.4) * r * 0.6, cy + Math.sin(angle + 2.4) * r * 0.6);
+    ctx.lineTo(cx + Math.cos(angle - 2.4) * r * 0.6, cy + Math.sin(angle - 2.4) * r * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    // Faint red line to target
+    ctx.strokeStyle = 'rgba(255,23,68,0.3)'; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(torp.targetX * CELL_PX + CELL_PX / 2, torp.targetY * CELL_PX + CELL_PX / 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   drawCoordLabels(ctx, vx0, vy0, vx1, vy1, sz);
   ctx.restore();
 }
@@ -2404,6 +3036,33 @@ function renderRadar() {
 
   // Islands visible on radar, wrecks NOT visible
   drawLandscape(ctx, vx0, vy0, vx1, vy1, 'radar');
+
+  // Blast zones on radar (enemy's field that we know about)
+  for (const bz of gameState.blastZones) {
+    if (bz.ownerIdx !== 1) continue; // show blasts on enemy field
+    for (const c of bz.cells) {
+      ctx.fillStyle = 'rgba(20,20,20,0.85)';
+      ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
+      ctx.strokeStyle = 'rgba(200,60,20,0.5)'; ctx.lineWidth = 0.6;
+      ctx.strokeRect(c.x * CELL_PX + 0.5, c.y * CELL_PX + 0.5, CELL_PX - 1, CELL_PX - 1);
+    }
+  }
+
+  // Nuclear zones on radar (zones we nuked on enemy field)
+  for (const nz of gameState.nuclearZones) {
+    if (nz.attackerIdx !== 0) continue; // zones we created
+    const pulse = 0.3 + 0.2 * Math.sin(Date.now() / 400);
+    for (let ny = nz.y0; ny <= nz.y1; ny++) {
+      for (let nx = nz.x0; nx <= nz.x1; nx++) {
+        ctx.fillStyle = `rgba(20,20,10,${0.6 * pulse + 0.2})`;
+        ctx.fillRect(nx * CELL_PX, ny * CELL_PX, CELL_PX, CELL_PX);
+        ctx.strokeStyle = `rgba(255,235,59,${pulse * 0.4})`;
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(nx * CELL_PX + 0.5, ny * CELL_PX + 0.5, CELL_PX - 1, CELL_PX - 1);
+      }
+    }
+  }
+
   drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(0,80,0,0.2)');
 
   // Scan line (rotating)
@@ -2477,7 +3136,7 @@ function renderRadar() {
       ctx.fillStyle = 'rgba(255,23,68,0.7)';
       ctx.font = '6px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(sunk.type === 'tarkr' ? 'TARKR' : sunk.type === 'carrier' ? 'CVN' : sunk.cells.length.toString(),
+      ctx.fillText(SHIP_LABELS[sunk.type] || sunk.type,
         ((fc.x + lc.x) / 2 + 0.5) * CELL_PX, ((fc.y + lc.y) / 2 + 0.5) * CELL_PX);
     }
   }
@@ -2503,15 +3162,39 @@ function renderRadar() {
       ctx.fillText('?', ((fc2.x + lc2.x) / 2 + 0.5) * CELL_PX, ((fc2.y + lc2.y) / 2 + 0.5) * CELL_PX);
     }
     // Label for fresh detections
-    if (age <= 1 && cam.zoom > 0.3 && det.cells.length > 1) {
+    if (age <= 1 && cam.zoom > 0.3 && det.cells.length > 0) {
       const fc2 = det.cells[0];
       const lc2 = det.cells[det.cells.length - 1];
       ctx.fillStyle = `rgba(0,255,100,${opacity * 0.7})`;
       ctx.font = '5px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const label = det.type === 'tarkr' ? 'TARKR' : det.type === 'carrier' ? 'CVN' : det.size.toString();
-      ctx.fillText(label, ((fc2.x + lc2.x) / 2 + 0.5) * CELL_PX, ((fc2.y + lc2.y) / 2 + 0.5) * CELL_PX);
+      ctx.fillText(SHIP_LABELS[det.type] || det.type,
+        ((fc2.x + lc2.x) / 2 + 0.5) * CELL_PX, ((fc2.y + lc2.y) / 2 + 0.5) * CELL_PX);
     }
+  }
+
+  // Our launched torpedoes on radar (green triangles)
+  for (const torp of gameState.activeTorpedoes) {
+    if (torp.attackerIdx !== 0) continue; // only show our torpedoes
+    const cx = torp.currentX * CELL_PX + CELL_PX / 2;
+    const cy = torp.currentY * CELL_PX + CELL_PX / 2;
+    ctx.fillStyle = 'rgba(0,230,118,0.8)';
+    ctx.beginPath();
+    const r = CELL_PX * 0.4;
+    const angle = torp.direction === 'up' ? -Math.PI/2 : torp.direction === 'down' ? Math.PI/2 : torp.direction === 'left' ? Math.PI : 0;
+    ctx.moveTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+    ctx.lineTo(cx + Math.cos(angle + 2.4) * r * 0.6, cy + Math.sin(angle + 2.4) * r * 0.6);
+    ctx.lineTo(cx + Math.cos(angle - 2.4) * r * 0.6, cy + Math.sin(angle - 2.4) * r * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    // Trail line
+    ctx.strokeStyle = 'rgba(0,230,118,0.3)'; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(torp.targetX * CELL_PX + CELL_PX / 2, torp.targetY * CELL_PX + CELL_PX / 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   // Crosshair on mouse position during fire mode
@@ -2835,6 +3518,21 @@ function setupBattleInput() {
       return;
     }
 
+    // Sonar ship selection mode
+    if (battle.sonarSelectMode && gameState.phase === 'recon') {
+      for (const ship of player.ships) {
+        if (ship.type !== 'destroyer' || ship.sunk || ship.sonarCooldown > 0) continue;
+        for (const c of ship.cells) {
+          if (c.x === cell.x && c.y === cell.y) {
+            useSonar(ship);
+            return;
+          }
+        }
+      }
+      showToast('Click a destroyer with sonar ready.', 'info', 2000);
+      return;
+    }
+
     // Sub deploy mode
     if (battle.subDeployMode && gameState.actionMode === 'move') {
       if (battle.subGhostValid && battle.subGhostCells.length === 3) {
@@ -2891,6 +3589,24 @@ function setupBattleInput() {
     const cell = screenToCell(e.clientX, e.clientY, rc, radarCam);
     const sz = gameState.settings.fieldSize;
     if (cell.x < 0 || cell.y < 0 || cell.x >= sz || cell.y >= sz) return;
+
+    if (battle.torpedoMode) {
+      const result = fireTorpedo(0, cell.x, cell.y);
+      if (result) setTimeout(() => endTurn(), 1000);
+      return;
+    }
+
+    if (battle.asrocMode) {
+      const result = fireAsroc(0, cell.x, cell.y);
+      if (result) setTimeout(() => endTurn(), 1000);
+      return;
+    }
+
+    if (battle.nuclearStrikeMode) {
+      const result = launchNuclearStrike(0, cell.x, cell.y);
+      if (result) setTimeout(() => endTurn(), 1500);
+      return;
+    }
 
     const result = regularShot(0, cell.x, cell.y);
     if (result) {
