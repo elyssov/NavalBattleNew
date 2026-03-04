@@ -2653,6 +2653,7 @@ function aiTakeTurn() {
   if (gameState.gameOver) return;
 
   const ai = gameState.players[1];
+  const human = gameState.players[0];
 
   // AI submarine deployment: 50% chance per turn within turns 1-10
   const aiSub = ai.ships.find(s => s.type === 'submarine' && !s.deployed);
