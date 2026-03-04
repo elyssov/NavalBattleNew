@@ -952,6 +952,18 @@ const SHIP_LABELS = {
   cruiser: '\u041A\u0420', tarkr: '\u0422\u0410\u0420\u041A\u0420', carrier: '\u0410\u0412', submarine: '\u041F\u041B'
 };
 
+// ── PCR Intercept Chances (intact / damaged) ──
+
+const PCR_INTERCEPT = {
+  missile_boat: { intact: 0, damaged: 0 },
+  mrk: { intact: 10, damaged: 5 },
+  destroyer: { intact: 25, damaged: 12 },
+  cruiser: { intact: 40, damaged: 20 },
+  tarkr: { intact: 50, damaged: 25 },
+  carrier: { intact: 40, damaged: 20 },
+  submarine: { intact: -1, damaged: 0 } // -1 = invalid (submerged); surfaced = 0% guaranteed kill
+};
+
 // ── Fleet Definitions ──
 
 const SHIP_DEFS = {
@@ -1035,7 +1047,11 @@ const battle = {
   torpedoMode: false,
   asrocMode: false,
   sonarSelectMode: false,
-  nuclearStrikeMode: false
+  nuclearStrikeMode: false,
+  pcrMode: false,
+  pcrSelectedLauncher: -1,
+  strikerMode: false,
+  strikerChain: [] // [{x,y,result}] for visual trail
 };
 
 // ── Placement Functions ──
@@ -1425,6 +1441,10 @@ function startBattle() {
   battle.asrocMode = false;
   battle.sonarSelectMode = false;
   battle.nuclearStrikeMode = false;
+  battle.pcrMode = false;
+  battle.pcrSelectedLauncher = -1;
+  battle.strikerMode = false;
+  battle.strikerChain = [];
   gameState.blastZones = [];
   gameState.nuclearZones = [];
   gameState.sonarDetections = [];
@@ -1484,6 +1504,10 @@ function beginPlayerTurn() {
   battle.asrocMode = false;
   battle.sonarSelectMode = false;
   battle.nuclearStrikeMode = false;
+  battle.pcrMode = false;
+  battle.pcrSelectedLauncher = -1;
+  battle.strikerMode = false;
+  battle.strikerChain = [];
   hideMoveOptions();
   ageReconData(gameState.currentPlayer);
 
@@ -1537,6 +1561,10 @@ function selectActionMode(mode) {
   battle.torpedoMode = false;
   battle.asrocMode = false;
   battle.nuclearStrikeMode = false;
+  battle.pcrMode = false;
+  battle.pcrSelectedLauncher = -1;
+  battle.strikerMode = false;
+  battle.strikerChain = [];
   hideMoveOptions();
   updateTopBar();
   updateActionBar();
@@ -1668,10 +1696,18 @@ function updateActionBar() {
     const hasTorpedo = player.ships.some(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
     const hasAsroc = player.ships.some(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
     const canNuke = !player.nuclearUsed && gameState.settings.fieldSize > 30;
-    const noFireModeActive = !battle.torpedoMode && !battle.asrocMode && !battle.nuclearStrikeMode;
+    const tarkr = player.ships.find(s => s.type === 'tarkr' && !s.sunk);
+    const hasPcr = tarkr && tarkr.launchers.some(l => l.loaded && !l.damaged);
+    const carrierF = player.ships.find(s => s.type === 'carrier' && !s.sunk);
+    const hasStriker = carrierF && !carrierF.blocked;
+    const noFireModeActive = !battle.torpedoMode && !battle.asrocMode && !battle.nuclearStrikeMode && !battle.pcrMode && !battle.strikerMode;
+
+    let pcrLabel = 'PCR Vulkan';
+    if (hasPcr) { const cnt = tarkr.launchers.filter(l => l.loaded && !l.damaged).length; pcrLabel += ' (' + cnt + ')'; }
+    if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) pcrLabel = 'PCR PU-' + (battle.pcrSelectedLauncher + 1) + ' (aim)';
 
     bar.innerHTML = `
-      <button class="action-btn fire-btn${noFireModeActive ? ' active' : ''}" onclick="battle.torpedoMode=false;battle.asrocMode=false;battle.nuclearStrikeMode=false;updateActionBar()">Shot</button>
+      <button class="action-btn fire-btn${noFireModeActive ? ' active' : ''}" onclick="battle.torpedoMode=false;battle.asrocMode=false;battle.nuclearStrikeMode=false;battle.pcrMode=false;battle.pcrSelectedLauncher=-1;battle.strikerMode=false;battle.strikerChain=[];updateActionBar()">Shot</button>
       <button class="action-btn fire-btn${battle.torpedoMode ? ' active' : ''}" onclick="startTorpedoMode()" ${!hasTorpedo ? 'disabled title="No sub with torpedoes"' : ''}>
         Torpedo
       </button>
@@ -1679,8 +1715,12 @@ function updateActionBar() {
         ASROC
       </button>
       <div class="action-separator"></div>
-      <button class="action-btn fire-btn" onclick="showToast('PCR Vulkan — not yet implemented', 'info', 2000)">PCR Vulkan</button>
-      <button class="action-btn fire-btn" onclick="showToast('Striker — not yet implemented', 'info', 2000)">Striker</button>
+      <button class="action-btn fire-btn${battle.pcrMode ? ' active' : ''}" onclick="startPcrMode()" ${!hasPcr ? 'disabled title="' + (!tarkr ? 'No TARKR' : 'No loaded launchers') + '"' : ''}>
+        ${pcrLabel}
+      </button>
+      <button class="action-btn fire-btn${battle.strikerMode ? ' active' : ''}" onclick="startStrikerMode()" ${!hasStriker ? 'disabled title="' + (!carrierF ? 'No carrier' : 'Carrier blocked') + '"' : ''}>
+        Striker${battle.strikerMode ? ' (chain)' : ''}
+      </button>
       <div class="action-separator"></div>
       <button class="action-btn fire-btn${battle.nuclearStrikeMode ? ' active' : ''}" onclick="startNuclearStrikeMode()" ${!canNuke ? 'disabled title="' + (player.nuclearUsed ? 'Already used' : 'Not available in Skirmish') + '"' : ''} style="${canNuke ? 'border-color:#ff9800;color:#ff9800;' : ''}">
         Nuclear Strike
@@ -1968,6 +2008,9 @@ function regularShot(attackerIdx, x, y) {
     // HIT
     target.ship.hits[target.cellIndex] = true;
     attacker.radarData.shots.push({ x, y, hit: true });
+
+    // Block carrier if hit (prevents air recon and striker next turn)
+    if (target.ship.type === 'carrier') target.ship.blocked = true;
 
     // Check reactor/launcher/fuel detonation
     const detonation = checkReactorDetonation(attackerIdx, target.ship, target.cellIndex, 1 - attackerIdx);
@@ -2596,6 +2639,229 @@ function showConfirmDialog(title, text, onConfirm, onCancel) {
   noBtn.onclick = () => { cleanup(); if (onCancel) onCancel(); };
 }
 
+// ── PCR P-1000 "Vulkan" ──
+
+function startPcrMode() {
+  const player = gameState.players[0];
+  const tarkr = player.ships.find(s => s.type === 'tarkr' && !s.sunk);
+  if (!tarkr) { showToast('No TARKR available.', 'info'); return; }
+
+  const available = tarkr.launchers.filter(l => l.loaded && !l.damaged);
+  if (available.length === 0) { showToast('No loaded launchers remaining.', 'info'); return; }
+
+  // Reset other fire modes
+  battle.torpedoMode = false;
+  battle.asrocMode = false;
+  battle.nuclearStrikeMode = false;
+  battle.strikerMode = false;
+  battle.pcrMode = true;
+  battle.pcrSelectedLauncher = -1;
+
+  // Show launcher selection overlay
+  showLauncherSelect(tarkr);
+}
+
+function showLauncherSelect(tarkr) {
+  const dialog = document.getElementById('confirm-dialog');
+  const title = document.getElementById('confirm-title');
+  const text = document.getElementById('confirm-text');
+  title.textContent = 'SELECT LAUNCHER';
+
+  // Build launcher buttons
+  let html = '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">';
+  for (const l of tarkr.launchers) {
+    const cellLabel = l.index < 2 ? 'Bow-' + (l.index + 1) : 'Stern-' + (l.index - 2);
+    const avail = l.loaded && !l.damaged;
+    const status = l.damaged ? 'DAMAGED' : (!l.loaded ? 'EMPTY' : 'READY');
+    const color = avail ? '#4fc3f7' : '#555';
+    html += `<button class="menu-btn" style="padding:10px 20px;font-size:14px;border-color:${color};color:${color};${!avail ? 'opacity:0.4;cursor:not-allowed;' : ''}" `
+      + (avail ? `onclick="selectLauncher(${l.index})"` : 'disabled')
+      + `>PU-${l.index + 1}<br><span style="font-size:10px">${cellLabel}<br>${status}</span></button>`;
+  }
+  html += '</div>';
+  text.innerHTML = html;
+
+  // Repurpose confirm buttons
+  document.getElementById('confirm-yes').style.display = 'none';
+  document.getElementById('confirm-no').textContent = 'Cancel';
+  document.getElementById('confirm-no').onclick = () => {
+    dialog.style.display = 'none';
+    document.getElementById('confirm-yes').style.display = '';
+    document.getElementById('confirm-no').textContent = 'Cancel';
+    battle.pcrMode = false;
+    battle.pcrSelectedLauncher = -1;
+    updateActionBar();
+  };
+  dialog.style.display = 'flex';
+}
+
+function selectLauncher(index) {
+  const dialog = document.getElementById('confirm-dialog');
+  dialog.style.display = 'none';
+  document.getElementById('confirm-yes').style.display = '';
+  document.getElementById('confirm-no').textContent = 'Cancel';
+
+  battle.pcrSelectedLauncher = index;
+  showToast('PU-' + (index + 1) + ' selected. Click target on Radar.', 'info', 3000);
+  updateActionBar();
+}
+
+function firePCR(attackerIdx, x, y) {
+  const attacker = gameState.players[attackerIdx];
+  const defenderIdx = 1 - attackerIdx;
+  const tarkr = attacker.ships.find(s => s.type === 'tarkr' && !s.sunk);
+  if (!tarkr) return false;
+
+  const launcherIdx = battle.pcrSelectedLauncher;
+  const launcher = tarkr.launchers.find(l => l.index === launcherIdx);
+  if (!launcher || !launcher.loaded || launcher.damaged) return false;
+
+  launcher.loaded = false;
+  battle.pcrMode = false;
+  battle.pcrSelectedLauncher = -1;
+
+  const target = getShipAt(defenderIdx, x, y);
+
+  if (!target) {
+    attacker.radarData.shots.push({ x, y, hit: false });
+    showToast('Vulkan launched from PU-' + (launcherIdx + 1) + '... MISS! Missile wasted on empty water.', 'miss', 3000);
+    return true;
+  }
+
+  // Submerged sub = invalid
+  if (target.ship.type === 'submarine' && !target.ship.surfaced) {
+    attacker.radarData.shots.push({ x, y, hit: false });
+    showToast('Vulkan cannot target submerged submarines! Missile wasted.', 'miss', 3000);
+    return true;
+  }
+
+  // Determine intercept chance
+  const isDamaged = target.ship.hits && target.ship.hits.some(h => h);
+  let interceptChance;
+  if (target.ship.type === 'submarine' && target.ship.surfaced) {
+    interceptChance = 0; // surfaced sub has no PVO
+  } else {
+    const entry = PCR_INTERCEPT[target.ship.type];
+    interceptChance = isDamaged ? entry.damaged : entry.intact;
+  }
+
+  const roll = Math.floor(Math.random() * 100) + 1;
+  const shipLabel = SHIP_LABELS[target.ship.type] || target.ship.type;
+  const pvoStr = interceptChance + '%';
+
+  if (roll <= interceptChance) {
+    // Intercepted
+    attacker.radarData.shots.push({ x, y, hit: false });
+    showToast(`Vulkan launched! Target PVO: ${pvoStr}... Roll: ${roll}... MISSILE INTERCEPTED!`, 'miss', 4000);
+    return true;
+  }
+
+  // HIT — ship sunk entirely
+  for (let i = 0; i < target.ship.hits.length; i++) target.ship.hits[i] = true;
+  target.ship.sunk = true;
+  attacker.radarData.sunkShips.push({
+    type: target.ship.type,
+    cells: target.ship.cells.map(c => ({ ...c }))
+  });
+  for (const c of target.ship.cells) {
+    if (!attacker.radarData.shots.some(s => s.x === c.x && s.y === c.y)) {
+      attacker.radarData.shots.push({ x: c.x, y: c.y, hit: true });
+    }
+  }
+
+  // Check reactor detonation on TARKR/carrier kill
+  if (target.ship.reactor >= 0) {
+    const center = target.ship.cells[2]; // reactor cell
+    triggerNuclearExplosion(attackerIdx, defenderIdx, center.x, center.y);
+  }
+
+  showToast(`Vulkan launched! Target PVO: ${pvoStr}... Roll: ${roll}... PVO FAILED! ${shipLabel} DESTROYED!`, 'sunk', 5000);
+  return true;
+}
+
+// ── Striker Aircraft ──
+
+function startStrikerMode() {
+  const player = gameState.players[0];
+  const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
+  if (!carrier) { showToast('No carrier available.', 'info'); return; }
+  if (carrier.blocked) { showToast('Carrier blocked — hit recently.', 'info'); return; }
+
+  battle.torpedoMode = false;
+  battle.asrocMode = false;
+  battle.nuclearStrikeMode = false;
+  battle.pcrMode = false;
+  battle.strikerMode = true;
+  battle.strikerChain = [];
+  showToast('Striker launched! Click target on Radar.', 'info', 3000);
+  updateActionBar();
+}
+
+function strikerAttack(attackerIdx, x, y) {
+  const attacker = gameState.players[attackerIdx];
+  const defenderIdx = 1 - attackerIdx;
+  const target = getShipAt(defenderIdx, x, y);
+
+  if (!target) {
+    // Miss — striker returns safely
+    attacker.radarData.shots.push({ x, y, hit: false });
+    battle.strikerChain.push({ x, y, result: 'miss' });
+    showToast('Striker finds no target — returning to carrier.', 'info', 2000);
+    battle.strikerMode = false;
+    return 'end';
+  }
+
+  // Submerged sub — miss
+  if (target.ship.type === 'submarine' && !target.ship.surfaced) {
+    attacker.radarData.shots.push({ x, y, hit: false });
+    battle.strikerChain.push({ x, y, result: 'miss' });
+    showToast('Striker cannot hit submerged submarine — returning.', 'info', 2000);
+    battle.strikerMode = false;
+    return 'end';
+  }
+
+  // Both roll D100
+  let attackRoll, defenseRoll;
+  do {
+    attackRoll = Math.floor(Math.random() * 100) + 1;
+    defenseRoll = Math.floor(Math.random() * 100) + 1;
+  } while (attackRoll === defenseRoll); // reroll ties
+
+  if (attackRoll > defenseRoll) {
+    // Striker wins — hit the cell
+    target.ship.hits[target.cellIndex] = true;
+    if (!attacker.radarData.shots.some(s => s.x === x && s.y === y)) {
+      attacker.radarData.shots.push({ x, y, hit: true });
+    }
+    battle.strikerChain.push({ x, y, result: 'hit' });
+
+    // Check reactor detonation
+    const detonation = checkReactorDetonation(attackerIdx, target.ship, target.cellIndex, defenderIdx);
+
+    // Check sunk
+    if (target.ship.hits.every(h => h)) {
+      target.ship.sunk = true;
+      attacker.radarData.sunkShips.push({
+        type: target.ship.type,
+        cells: target.ship.cells.map(c => ({ ...c }))
+      });
+      showToast(`Striker HIT! (${attackRoll} vs ${defenseRoll}) ${target.ship.name} SUNK! Select next target or End Turn.`, 'sunk', 4000);
+    } else if (detonation) {
+      showToast(`Striker HIT! (${attackRoll} vs ${defenseRoll}) DETONATION!`, 'sunk', 4000);
+    } else {
+      showToast(`Striker HIT! (${attackRoll} vs ${defenseRoll}) Select next target on Radar.`, 'hit', 3000);
+    }
+    // Chain continues — player clicks next target
+    return 'continue';
+  } else {
+    // Striker shot down
+    battle.strikerChain.push({ x, y, result: 'shot_down' });
+    showToast(`Striker SHOT DOWN! (${attackRoll} vs ${defenseRoll})`, 'miss', 3000);
+    battle.strikerMode = false;
+    return 'end';
+  }
+}
+
 // ── AI (Easy) ──
 
 function aiUseRadar(sourceShip) {
@@ -2740,6 +3006,53 @@ function aiTakeTurn() {
     if (aiSub2 && detectedTarget && Math.random() < 0.3) {
       const midCell = detectedTarget.cells[Math.floor(detectedTarget.cells.length / 2)];
       if (fireTorpedo(aiIdx, midCell.x, midCell.y)) {
+        setTimeout(() => endTurn(), 800);
+        return;
+      }
+    }
+
+    // AI PCR Vulkan: if TARKR has loaded launchers and a detected ship, 50% chance
+    const aiTarkr = ai.ships.find(s => s.type === 'tarkr' && !s.sunk);
+    if (aiTarkr) {
+      const aiLoadedLauncher = aiTarkr.launchers.find(l => l.loaded && !l.damaged);
+      const pcrTarget = ai.radarData.detectedShips.find(d => gameState.currentTurn - d.turnDetected <= 1 && d.type !== 'submarine');
+      if (aiLoadedLauncher && pcrTarget && Math.random() < 0.5) {
+        const midCell = pcrTarget.cells[Math.floor(pcrTarget.cells.length / 2)];
+        battle.pcrSelectedLauncher = aiLoadedLauncher.index;
+        if (firePCR(aiIdx, midCell.x, midCell.y)) {
+          setTimeout(() => endTurn(), 800);
+          return;
+        }
+      }
+    }
+
+    // AI Striker: if carrier available and detected ships, 40% chance
+    const aiCarrier2 = ai.ships.find(s => s.type === 'carrier' && !s.sunk && !s.blocked);
+    const strikerTarget = ai.radarData.detectedShips.find(d => gameState.currentTurn - d.turnDetected <= 1);
+    if (aiCarrier2 && strikerTarget && Math.random() < 0.4) {
+      // AI fires one striker engagement
+      const midCell = strikerTarget.cells[Math.floor(strikerTarget.cells.length / 2)];
+      const target = getShipAt(0, midCell.x, midCell.y);
+      if (target && !(target.ship.type === 'submarine' && !target.ship.surfaced)) {
+        let attackRoll, defenseRoll;
+        do {
+          attackRoll = Math.floor(Math.random() * 100) + 1;
+          defenseRoll = Math.floor(Math.random() * 100) + 1;
+        } while (attackRoll === defenseRoll);
+        if (attackRoll > defenseRoll) {
+          target.ship.hits[target.cellIndex] = true;
+          if (!ai.radarData.shots.some(s => s.x === midCell.x && s.y === midCell.y)) {
+            ai.radarData.shots.push({ x: midCell.x, y: midCell.y, hit: true });
+          }
+          checkReactorDetonation(aiIdx, target.ship, target.cellIndex, 0);
+          if (target.ship.hits.every(h => h)) {
+            target.ship.sunk = true;
+            ai.radarData.sunkShips.push({ type: target.ship.type, cells: target.ship.cells.map(c => ({ ...c })) });
+          }
+          showToast('Enemy striker HIT your ' + target.ship.name + '!', 'sunk', 3000);
+        } else {
+          showToast('Enemy striker shot down by your PVO!', 'hit', 2000);
+        }
         setTimeout(() => endTurn(), 800);
         return;
       }
@@ -3198,6 +3511,37 @@ function renderRadar() {
     ctx.setLineDash([]);
   }
 
+  // Striker chain trail (green arrows)
+  if (battle.strikerChain.length > 0) {
+    for (let i = 0; i < battle.strikerChain.length; i++) {
+      const sc = battle.strikerChain[i];
+      const cx = sc.x * CELL_PX + CELL_PX / 2;
+      const cy = sc.y * CELL_PX + CELL_PX / 2;
+      if (sc.result === 'hit') {
+        ctx.fillStyle = 'rgba(0,230,118,0.6)';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('\u2716', cx, cy); // ✖
+      } else if (sc.result === 'shot_down') {
+        ctx.fillStyle = 'rgba(255,23,68,0.8)';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('\u2620', cx, cy); // ☠
+      }
+      // Connect chain with lines
+      if (i > 0) {
+        const prev = battle.strikerChain[i - 1];
+        ctx.strokeStyle = 'rgba(0,230,118,0.4)'; ctx.lineWidth = 1;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(prev.x * CELL_PX + CELL_PX / 2, prev.y * CELL_PX + CELL_PX / 2);
+        ctx.lineTo(cx, cy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
   // Crosshair on mouse position during fire mode
   if (gameState.currentPlayer === 0 && gameState.actionMode === 'fire' && battle.radarMouseCell) {
     const mc = battle.radarMouseCell;
@@ -3606,6 +3950,23 @@ function setupBattleInput() {
     if (battle.nuclearStrikeMode) {
       const result = launchNuclearStrike(0, cell.x, cell.y);
       if (result) setTimeout(() => endTurn(), 1500);
+      return;
+    }
+
+    if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) {
+      const result = firePCR(0, cell.x, cell.y);
+      if (result) setTimeout(() => endTurn(), 2000);
+      return;
+    }
+
+    if (battle.strikerMode) {
+      const result = strikerAttack(0, cell.x, cell.y);
+      if (result === 'end') {
+        setTimeout(() => endTurn(), 1500);
+      }
+      // 'continue' — chain continues, player clicks next target
+      // updateActionBar will show "Striker (chain)"
+      updateActionBar();
       return;
     }
 
