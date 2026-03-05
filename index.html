@@ -214,17 +214,13 @@
   #game-hud span { color: #4fc3f7; }
 
   #back-to-menu-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
     background: rgba(10,22,40,0.85);
     border: 1px solid #78909c;
     color: #78909c;
-    padding: 6px 16px;
+    padding: 4px 12px;
     font-size: 12px;
     cursor: pointer;
     letter-spacing: 1px;
-    z-index: 25;
   }
 
   #back-to-menu-btn:hover {
@@ -347,6 +343,39 @@
 
   .ship-name { flex: 1; }
   .ship-size-label { color: #546e7a; font-size: 11px; }
+
+  #ship-tooltip {
+    display: none;
+    position: fixed;
+    background: #0a1929;
+    border: 1px solid #4fc3f7;
+    padding: 8px 12px;
+    z-index: 9999;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    min-width: 120px;
+  }
+  #ship-tooltip::before {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #4fc3f7;
+  }
+  #ship-tooltip .tt-type {
+    color: #4fc3f7;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  #ship-tooltip .tt-sprite {
+    image-rendering: pixelated;
+    height: 28px;
+  }
 
   .placement-buttons {
     display: flex;
@@ -645,6 +674,177 @@
     pointer-events: none;
   }
 
+  /* ── Nuke Ceremony Overlay ── */
+  #nuke-ceremony-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 650;
+    background: radial-gradient(ellipse at center, rgba(80,0,0,0.95) 0%, rgba(20,0,0,0.98) 100%);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    overflow-y: auto;
+  }
+  #nuke-ceremony-content {
+    max-width: 700px;
+    text-align: center;
+  }
+  .ceremony-step {
+    margin-bottom: 24px;
+    padding: 16px 24px;
+    border: 1px solid rgba(255,60,60,0.3);
+    background: rgba(0,0,0,0.4);
+    color: #ff6b6b;
+    font-size: 15px;
+    line-height: 1.6;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    animation: ceremonyFadeIn 0.8s ease-out;
+    box-shadow: 0 0 20px rgba(255,0,0,0.15);
+  }
+  .ceremony-step:last-child {
+    color: #ff2222;
+    font-size: 20px;
+    font-weight: bold;
+    border-color: rgba(255,0,0,0.6);
+    box-shadow: 0 0 40px rgba(255,0,0,0.3);
+    animation: ceremonyFadeIn 0.8s ease-out, ceremonyPulse 1s ease-in-out infinite;
+  }
+  @keyframes ceremonyFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ceremonyPulse {
+    0%, 100% { box-shadow: 0 0 40px rgba(255,0,0,0.3); }
+    50% { box-shadow: 0 0 60px rgba(255,0,0,0.6); }
+  }
+  @keyframes alarmFlash {
+    0%, 100% { background: radial-gradient(ellipse at center, rgba(80,0,0,0.95) 0%, rgba(20,0,0,0.98) 100%); }
+    50% { background: radial-gradient(ellipse at center, rgba(120,0,0,0.95) 0%, rgba(40,0,0,0.98) 100%); }
+  }
+  #nuke-ceremony-overlay.alarm-flash {
+    animation: alarmFlash 1s ease-in-out infinite;
+  }
+  .ceremony-code-panel {
+    margin-top: 20px;
+    padding: 24px 32px;
+    border: 2px solid rgba(255,0,0,0.6);
+    background: rgba(0,0,0,0.6);
+    animation: ceremonyFadeIn 0.8s ease-out;
+  }
+  .ceremony-code-display {
+    color: #ff4444;
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 8px;
+    margin: 12px 0 20px;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 20px rgba(255,0,0,0.5);
+  }
+  .ceremony-code-timer {
+    color: #ff8888;
+    font-size: 14px;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+  }
+  .ceremony-code-input {
+    background: rgba(0,0,0,0.8);
+    border: 2px solid #ff4444;
+    color: #ff2222;
+    font-size: 28px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 6px;
+    text-align: center;
+    padding: 10px 16px;
+    width: 220px;
+    outline: none;
+  }
+  .ceremony-code-input:focus {
+    border-color: #ff0000;
+    box-shadow: 0 0 20px rgba(255,0,0,0.4);
+  }
+  .ceremony-code-input.wrong {
+    border-color: #ff0000;
+    animation: codeShake 0.4s ease-in-out;
+  }
+  @keyframes codeShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .ceremony-launch-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 16px 48px;
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #fff;
+    background: radial-gradient(ellipse at center, #cc0000 0%, #880000 100%);
+    border: 3px solid #ff2222;
+    cursor: pointer;
+    box-shadow: 0 0 30px rgba(255,0,0,0.4), inset 0 -4px 8px rgba(0,0,0,0.3);
+    transition: all 0.15s;
+  }
+  .ceremony-launch-btn:hover {
+    background: radial-gradient(ellipse at center, #ee0000 0%, #aa0000 100%);
+    box-shadow: 0 0 50px rgba(255,0,0,0.6), inset 0 -4px 8px rgba(0,0,0,0.3);
+    transform: scale(1.05);
+  }
+  .ceremony-launch-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 0 20px rgba(255,0,0,0.3), inset 0 4px 8px rgba(0,0,0,0.4);
+  }
+  .ceremony-abort-msg {
+    color: #ff6666;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 20px;
+    animation: ceremonyFadeIn 0.8s ease-out;
+  }
+
+  /* ── Nuke Impact Overlay (hotseat) ── */
+  #nuke-impact-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 650;
+    background: radial-gradient(ellipse at center, rgba(100,0,0,0.95) 0%, rgba(30,0,0,0.98) 100%);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    cursor: pointer;
+  }
+  #nuke-impact-content {
+    max-width: 700px;
+    text-align: center;
+    color: #ff4444;
+    font-size: 18px;
+    line-height: 1.8;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: ceremonyPulse 1.5s ease-in-out infinite;
+  }
+  #nuke-impact-content h2 {
+    font-size: 28px;
+    color: #ff2222;
+    margin-bottom: 20px;
+    letter-spacing: 4px;
+  }
+  #nuke-impact-content .impact-losses {
+    margin-top: 16px;
+    color: #ff8888;
+    font-size: 14px;
+    text-transform: none;
+  }
+
   /* ── Movement Options Overlay ── */
   #move-options {
     display: none;
@@ -819,16 +1019,45 @@
     margin-top: 30px;
   }
   #rules-close-btn:hover { background: linear-gradient(180deg, #254e78, #163050); }
+
+  /* ── Language Toggle ── */
+  #lang-toggle {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .lang-btn {
+    background: rgba(26,58,92,0.4);
+    border: 1px solid #1e3a5f;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lang-btn svg { width: 32px; height: 20px; display: block; }
+  .lang-btn:hover { border-color: #4fc3f7; }
+  .lang-btn.active {
+    border-color: #4fc3f7;
+    box-shadow: 0 0 10px rgba(79,195,247,0.3);
+    background: rgba(26,58,92,0.7);
+  }
 </style>
 </head>
 <body>
 
 <!-- Main Menu -->
 <div id="menu-screen">
-  <h1>Naval Battle</h1>
-  <h2>Strategic Edition</h2>
-  <button class="menu-btn" onclick="showSettings()">New Game</button>
-  <button class="menu-btn" onclick="showRules()">Game Rules</button>
+  <h1 id="menu-title">Naval Battle</h1>
+  <h2 id="menu-subtitle">Strategic Edition</h2>
+  <button class="menu-btn" id="menu-new-game" onclick="showSettings()">New Game</button>
+  <button class="menu-btn" id="menu-rules" onclick="showRules()">Game Rules</button>
+  <div id="lang-toggle">
+    <button class="lang-btn" onclick="setLang('ru')"><svg viewBox="0 0 9 6"><rect width="9" height="2" fill="#fff"/><rect y="2" width="9" height="2" fill="#0039A6"/><rect y="4" width="9" height="2" fill="#D52B1E"/></svg></button>
+    <button class="lang-btn" onclick="setLang('en')"><svg viewBox="0 0 19 10"><rect width="19" height="10" fill="#B22234"/><rect y="0" width="19" height="1" fill="#fff"/><rect y="2" width="19" height="1" fill="#fff"/><rect y="4" width="19" height="1" fill="#fff"/><rect y="6" width="19" height="1" fill="#fff"/><rect y="8" width="19" height="1" fill="#fff"/><rect width="7.6" height="5" fill="#3C3B6E"/><circle cx="1" cy="0.7" r="0.3" fill="#fff"/><circle cx="2.5" cy="0.7" r="0.3" fill="#fff"/><circle cx="4" cy="0.7" r="0.3" fill="#fff"/><circle cx="5.5" cy="0.7" r="0.3" fill="#fff"/><circle cx="7" cy="0.7" r="0.3" fill="#fff"/><circle cx="1.7" cy="1.5" r="0.3" fill="#fff"/><circle cx="3.2" cy="1.5" r="0.3" fill="#fff"/><circle cx="4.7" cy="1.5" r="0.3" fill="#fff"/><circle cx="6.2" cy="1.5" r="0.3" fill="#fff"/><circle cx="1" cy="2.3" r="0.3" fill="#fff"/><circle cx="2.5" cy="2.3" r="0.3" fill="#fff"/><circle cx="4" cy="2.3" r="0.3" fill="#fff"/><circle cx="5.5" cy="2.3" r="0.3" fill="#fff"/><circle cx="7" cy="2.3" r="0.3" fill="#fff"/><circle cx="1.7" cy="3.1" r="0.3" fill="#fff"/><circle cx="3.2" cy="3.1" r="0.3" fill="#fff"/><circle cx="4.7" cy="3.1" r="0.3" fill="#fff"/><circle cx="6.2" cy="3.1" r="0.3" fill="#fff"/><circle cx="1" cy="3.9" r="0.3" fill="#fff"/><circle cx="2.5" cy="3.9" r="0.3" fill="#fff"/><circle cx="4" cy="3.9" r="0.3" fill="#fff"/><circle cx="5.5" cy="3.9" r="0.3" fill="#fff"/><circle cx="7" cy="3.9" r="0.3" fill="#fff"/></svg></button>
+  </div>
 </div>
 
 <!-- Rules Overlay -->
@@ -920,11 +1149,12 @@
     Zoom: <span id="hud-zoom">100%</span> &nbsp;|&nbsp;
     <span id="hud-phase">PLACEMENT</span>
   </div>
-  <button id="tb-sound-btn2" onclick="toggleSound()" style="position:absolute;top:10px;right:70px;background:rgba(10,22,40,0.85);border:1px solid #78909c;color:#78909c;padding:6px 10px;font-size:14px;cursor:pointer;z-index:25;">&#x1F50A;</button>
-  <button id="back-to-menu-btn" onclick="backToMenu()">Menu</button>
-
   <div id="placement-panel">
     <h3>Fleet Roster</h3>
+    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:6px;">
+      <button id="tb-sound-btn2" onclick="toggleSound()" style="background:rgba(10,22,40,0.85);border:1px solid #78909c;color:#78909c;padding:4px 10px;font-size:14px;cursor:pointer;">&#x1F50A;</button>
+      <button id="back-to-menu-btn" onclick="backToMenu()">Menu</button>
+    </div>
     <div id="ship-roster"></div>
     <div class="placement-hint">
       Click ship to select, then click field to place.<br>
@@ -1023,6 +1253,14 @@
 </div>
 
 <div id="nuke-overlay"></div>
+
+<div id="nuke-ceremony-overlay">
+  <div id="nuke-ceremony-content"></div>
+</div>
+
+<div id="nuke-impact-overlay">
+  <div id="nuke-impact-content"></div>
+</div>
 
 <script>
 // ============================================================
@@ -1773,25 +2011,678 @@ function updateSoundButton() {
   if (btn2) btn2.textContent = soundEnabled ? '\u{1F50A}' : '\u{1F507}';
 }
 
-// ── Ship Type Labels (Russian abbreviations) ──
+// ══════════════════════════════════════════════
+//  i18n SYSTEM
+// ══════════════════════════════════════════════
 
-const SHIP_LABELS = {
-  missile_boat: '\u041C\u041A', mrk: '\u041C\u0420\u041A', destroyer: '\u042D\u041C',
-  cruiser: '\u041A\u0420', tarkr: '\u0422\u0410\u0420\u041A\u0420', carrier: '\u0410\u0412', submarine: '\u041F\u041B'
-};
+let currentLang = localStorage.getItem('naval_lang') || 'ru';
 
-const SHIP_NAMES = {
-  missile_boat: ['Гном','Волна','Таран','Шершень','Оса','Вихрь','Бриз','Шквал'],
-  mrk: ['Молния','Буря','Гроза','Смерч','Мираж','Ураган','Тайфун','Шторм'],
-  destroyer: ['Быстрый','Сметливый','Находчивый','Смелый','Умелый','Грозный','Стойкий','Бдительный','Отважный','Решительный'],
-  cruiser: ['Москва','Ленинград','Новосибирск','Севастополь','Мурманск','Владивосток','Одесса','Киев'],
-  tarkr: ['Нахимов','Кузнецов','Лазарев','Ушаков','Макаров','Горшков'],
-  carrier: ['Орлан','Кондор','Сапсан','Беркут','Ястреб','Буревестник'],
-  submarine: ['Альфа','Лира','Анчар','Барс','Щука','Гепард']
-};
-const SHIP_TYPE_NAMES_RU = {
-  missile_boat:'Катер', mrk:'МРК', destroyer:'Эсминец',
-  cruiser:'Крейсер', tarkr:'ТАРКР', carrier:'Авианосец', submarine:'ПЛ'
+function L(key) {
+  const parts = key.split('.');
+  let obj = LOCALE[currentLang];
+  for (const p of parts) {
+    if (obj === undefined || obj === null) return key;
+    obj = obj[p];
+  }
+  return obj !== undefined ? obj : key;
+}
+
+function T(key, vars) {
+  let s = L(key);
+  if (typeof s !== 'string') return key;
+  if (vars) {
+    for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+  }
+  return s;
+}
+
+function shipTypeName(type) { return L('ship_types.' + type); }
+function shipProperName(ship) { return currentLang === 'ru' ? ship.russianName : (ship.englishName || ship.russianName); }
+function shipLabel(type) { return L('ship_labels.' + type); }
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('naval_lang', lang);
+  applyLocaleToDOM();
+}
+
+function applyLocaleToDOM() {
+  // Menu
+  const mt = document.getElementById('menu-title'); if (mt) mt.textContent = L('menu.title');
+  const ms = document.getElementById('menu-subtitle'); if (ms) ms.textContent = L('menu.subtitle');
+  const mng = document.getElementById('menu-new-game'); if (mng) mng.textContent = L('menu.new_game');
+  const mr = document.getElementById('menu-rules'); if (mr) mr.textContent = L('menu.rules');
+
+  // Settings
+  const ss = document.querySelector('#settings-screen h2'); if (ss) ss.textContent = L('settings.title');
+  const groups = document.querySelectorAll('#settings-screen .settings-group h3');
+  if (groups[0]) groups[0].textContent = L('settings.field_size');
+  if (groups[1]) groups[1].textContent = L('settings.landscape');
+  if (groups[2]) groups[2].textContent = L('settings.game_mode');
+  const lsLabels = document.querySelectorAll('#settings-screen .radio-option label');
+  // landscape labels (index 3-6)
+  if (lsLabels[3]) lsLabels[3].textContent = L('settings.ocean');
+  if (lsLabels[4]) lsLabels[4].textContent = L('settings.wrecks');
+  if (lsLabels[5]) lsLabels[5].textContent = L('settings.islands');
+  if (lsLabels[6]) lsLabels[6].textContent = L('settings.archipelago');
+  // game mode labels (index 7-8)
+  if (lsLabels[7]) lsLabels[7].textContent = L('settings.vs_ai');
+  if (lsLabels[8]) lsLabels[8].textContent = L('settings.hotseat');
+  // tooltips
+  const tips = document.querySelectorAll('#settings-screen .flavor-tooltip');
+  if (tips[0]) tips[0].textContent = L('settings.ocean_tip');
+  if (tips[1]) tips[1].textContent = L('settings.wrecks_tip');
+  if (tips[2]) tips[2].textContent = L('settings.islands_tip');
+  if (tips[3]) tips[3].textContent = L('settings.archipelago_tip');
+  // buttons
+  const backBtn = document.querySelector('#settings-screen .back-btn'); if (backBtn) backBtn.textContent = L('settings.back');
+  const startBtn = document.querySelector('#settings-screen .start-btn'); if (startBtn) startBtn.textContent = L('settings.start');
+
+  // Placement panel
+  const ph = document.querySelector('#placement-panel h3'); if (ph) ph.textContent = L('placement.roster');
+  const pHint = document.querySelector('.placement-hint');
+  if (pHint) pHint.innerHTML = L('placement.hint').split('\n').join('<br>');
+  const apb = document.getElementById('auto-place-btn'); if (apb) apb.textContent = L('placement.auto_place');
+  const clb = document.getElementById('clear-btn'); if (clb) clb.textContent = L('placement.clear');
+  const rdb = document.getElementById('ready-btn'); if (rdb) rdb.textContent = L('placement.ready');
+
+  // Choice dialog
+  const cd = document.querySelector('#choice-dialog h2'); if (cd) cd.textContent = L('choice.title');
+  const cdp = document.querySelector('#choice-dialog p'); if (cdp) cdp.textContent = L('choice.desc');
+  const cards = document.querySelectorAll('#choice-dialog .choice-card');
+  if (cards[0]) { cards[0].querySelector('h3').textContent = L('choice.tarkr_name'); cards[0].querySelector('.desc').innerHTML = L('choice.tarkr_desc').split('\n').join('<br>'); }
+  if (cards[1]) { cards[1].querySelector('h3').textContent = L('choice.carrier_name'); cards[1].querySelector('.desc').innerHTML = L('choice.carrier_desc').split('\n').join('<br>'); }
+
+  // Panel labels
+  const fl = document.querySelector('#fleet-panel .panel-label'); if (fl) fl.textContent = L('panels.fleet');
+  const rl = document.querySelector('#radar-panel .panel-label'); if (rl) rl.textContent = L('panels.radar');
+
+  // Victory overlay button
+  const vmb = document.querySelector('#victory-overlay .menu-btn'); if (vmb) vmb.textContent = L('victory.main_menu');
+
+  // Handoff
+  const hb = document.getElementById('handoff-btn'); if (hb) hb.textContent = L('handoff.ready_btn');
+
+  // Loading
+  const lt = document.getElementById('loading-text'); if (lt) lt.textContent = L('placement.loading');
+
+  // Confirm dialog buttons
+  const cy = document.getElementById('confirm-yes'); if (cy) cy.textContent = L('confirm.confirm');
+  const cn = document.getElementById('confirm-no'); if (cn) cn.textContent = L('confirm.cancel');
+
+  // HUD
+  const hp = document.getElementById('hud-phase'); if (hp) hp.textContent = L('hud.phase');
+
+  // Back to menu button
+  const bmb = document.getElementById('back-to-menu-btn'); if (bmb) bmb.textContent = L('hud.menu');
+
+  // Lang toggle active state
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  const langBtns = document.querySelectorAll('#lang-toggle .lang-btn');
+  if (langBtns[0] && currentLang === 'ru') langBtns[0].classList.add('active');
+  if (langBtns[1] && currentLang === 'en') langBtns[1].classList.add('active');
+}
+
+const LOCALE = {
+ru: {
+  // ── Menu ──
+  menu: {
+    title: 'Морской Бой',
+    subtitle: 'Стратегическое Издание',
+    new_game: 'Новая Игра',
+    rules: 'Правила'
+  },
+  // ── Settings ──
+  settings: {
+    title: 'Настройки',
+    field_size: 'Размер поля',
+    landscape: 'Ландшафт',
+    game_mode: 'Режим игры',
+    vs_ai: 'Против ИИ',
+    hotseat: 'Хотсит',
+    ocean: 'Океан',
+    wrecks: 'Обломки',
+    islands: 'Острова',
+    archipelago: 'Архипелаг',
+    ocean_tip: 'Открытые воды. Никаких препятствий — чистая тактика и огневая мощь решают исход боя.',
+    wrecks_tip: 'Обломки затонувших кораблей разбросаны по дну. Подлодки проскользнут незамеченными; торпедам повезёт не всегда. ~10% покрытия.',
+    islands_tip: 'Скалистые островные гряды поднимаются из глубин, видимые на радаре и непроходимые для всех. Используйте их как укрытие — или попадите в ловушку. ~20% покрытия.',
+    archipelago_tip: 'Плотные островные образования рассекают поле боя на узкие проливы и скрытые бухты. Навигация коварна — но и засада тоже. ~30% покрытия.',
+    back: 'Назад',
+    start: 'Начать'
+  },
+  // ── Choice Dialog ──
+  choice: {
+    title: 'Выберите флагман',
+    desc: 'Доктрина эскадры допускает один флагман. Выбирайте с умом — это решение необратимо.',
+    tarkr_name: 'ТАРКР',
+    tarkr_desc: 'Тяжёлый атомный ракетный крейсер\n5 клеток • 4 ракеты «Вулкан»\nЯдерный реактор (центральная клетка)\nОгневая мощь, высокий риск',
+    carrier_name: 'Авианосец',
+    carrier_desc: 'Авианосец\n5 клеток • 3 разведчика + штурмовики\nЯдерный реактор (центральная клетка)\nРазведка, универсальность'
+  },
+  // ── Placement ──
+  placement: {
+    roster: 'Состав эскадры',
+    hint: 'Нажмите корабль для выбора, затем на поле для размещения.\nПКМ для поворота перед размещением.\nНажмите на размещённый корабль для поворота.',
+    auto_place: 'Авторасстановка',
+    clear: 'Очистить',
+    ready: 'Готово',
+    loading: 'Генерация ландшафта...'
+  },
+  // ── HUD (placement screen) ──
+  hud: {
+    field: 'Поле',
+    landscape: 'Ландшафт',
+    zoom: 'Масштаб',
+    phase: 'РАССТАНОВКА',
+    menu: 'Меню'
+  },
+  // ── Top Bar (battle) ──
+  topbar: {
+    turn: 'Ход',
+    player: 'Игрок',
+    you: 'Вы',
+    ai: 'ИИ',
+    ai_thinking: 'ИИ ДУМАЕТ...',
+    striker_chain: 'ШТУРМОВКА',
+    action_move: 'ДЕЙСТВИЕ + ХОДЫ ({pts})',
+    move_only: 'ХОДЫ ({pts} очк.)',
+    menu: 'Меню'
+  },
+  // ── Panel Labels ──
+  panels: {
+    fleet: 'Карта флота',
+    radar: 'Радар'
+  },
+  // ── Action Bar ──
+  action: {
+    radar: 'Радар',
+    sonar: 'Гидролокатор',
+    air_recon: 'Авиаразведка',
+    shot: 'Выстрел',
+    torpedo: 'Торпеда',
+    asroc: 'АСРОК',
+    pcr_vulkan: 'ПКР Вулкан',
+    pcr_pu: 'ПКР ПУ-{n} (цель)',
+    striker: 'Штурмовик',
+    t10: '☢ Т-15',
+    deploy_sub: 'Развернуть ПЛ',
+    move_pts: 'Ходы: {pts} очк.',
+    end_turn: 'Конец хода',
+    end_sortie: 'Конец вылета',
+    striker_hint: 'Штурмовик активен — выберите следующую цель на Радаре',
+    sub_deploy_hint: 'Нажмите на Карту флота для размещения ПЛ. ПКМ для поворота.',
+    cancel: 'Отмена'
+  },
+  // ── Confirm Dialog ──
+  confirm: {
+    t10_title: 'ЗАПУСК ЯДЕРНОЙ ТОРПЕДЫ ☢ Т-15?',
+    t10_text: 'Это действие необратимо. Зона 19×19 будет опустошена. Подлодка всплывёт.',
+    confirm: 'Подтвердить',
+    cancel: 'Отмена',
+    select_launcher: 'ВЫБОР ПУСКОВОЙ'
+  },
+  // ── Handoff ──
+  handoff: {
+    player: 'ИГРОК {n}',
+    ready_placement: 'Нажмите Готово для начала расстановки',
+    ready_turn: 'Нажмите Готово когда будете на позиции',
+    ready_btn: 'Готово'
+  },
+  // ── Victory ──
+  victory: {
+    win: 'ПОБЕДА',
+    lose: 'ПОРАЖЕНИЕ',
+    player_wins: 'ИГРОК {n} ПОБЕДИЛ',
+    enemy_destroyed: 'Вражеский флот уничтожен.',
+    your_destroyed: 'Ваш флот уничтожен.',
+    main_menu: 'Главное меню'
+  },
+  // ── Ship types ──
+  ship_types: {
+    missile_boat: 'Катер', mrk: 'МРК', destroyer: 'Эсминец',
+    cruiser: 'Крейсер', tarkr: 'ТАРКР', carrier: 'Авианосец', submarine: 'ПЛ'
+  },
+  // ── Ship canvas labels ──
+  ship_labels: {
+    missile_boat: 'МК', mrk: 'МРК', destroyer: 'ЭМ',
+    cruiser: 'КР', tarkr: 'ТАРКР', carrier: 'АВ', submarine: 'ПЛ'
+  },
+  // ── Ship proper names ──
+  ship_proper_names: {
+    missile_boat: ['Гном','Волна','Таран','Шершень','Оса','Вихрь','Бриз','Шквал'],
+    mrk: ['Молния','Буря','Гроза','Смерч','Мираж','Ураган','Тайфун','Шторм'],
+    destroyer: ['Быстрый','Сметливый','Находчивый','Смелый','Умелый','Грозный','Стойкий','Бдительный','Отважный','Решительный'],
+    cruiser: ['Москва','Ленинград','Новосибирск','Севастополь','Мурманск','Владивосток','Одесса','Киев'],
+    tarkr: ['Нахимов','Кузнецов','Лазарев','Ушаков','Макаров','Горшков'],
+    carrier: ['Орлан','Кондор','Сапсан','Беркут','Ястреб','Буревестник'],
+    submarine: ['Альфа','Лира','Анчар','Барс','Щука','Гепард']
+  },
+  // ── Launcher status ──
+  launcher: {
+    bow: 'Нос',
+    stern: 'Корма',
+    damaged: 'ПОВРЕЖДЕНА',
+    empty: 'ПУСТА',
+    ready: 'ГОТОВА'
+  },
+  // ── Toast messages ──
+  toast: {
+    radar_select: 'Выберите эсминец или более крупный корабль на Карте флота как источник РЛС.',
+    sonar_select: 'Выберите эсминец на Карте флота для гидролокации.',
+    already_fired: 'Уже стреляли по этой клетке.',
+    no_surface_ships: 'Нет живых надводных кораблей.',
+    no_valid_moves: 'Нет доступных ходов для этого корабля.',
+    ship_moved: '{name} — курс изменён, малый ход. (Осталось {pts} очк.)',
+    sub_place_hint: 'Нажмите на Карту флота для размещения ПЛ. ПКМ для поворота.',
+    sonar_only_dd: 'Только эсминцы имеют гидролокатор.',
+    asroc_same_turn: 'Нельзя стрелять АСРОК в тот же ход, что и гидролокация — цель должна иметь шанс уклониться.',
+    asroc_aim: 'Выберите цель на Радаре для запуска АСРОК.',
+    no_asroc: 'Нет доступного АСРОК.',
+    torpedo_aim: 'Выберите цель на Радаре для запуска торпеды.',
+    no_torpedo: 'Нет подлодки с торпедами.',
+    t10_used: 'Т-15 уже запущена в этой игре.',
+    t10_no_skirmish: 'Недоступно в режиме Стычки.',
+    no_t10: 'Нет подлодки с Т-15.',
+    t10_aim: 'Выберите центр зоны поражения на Радаре.',
+    no_tarkr: 'Нет доступного ТАРКР.',
+    no_launchers: 'Нет заряженных пусковых.',
+    pcr_selected: 'ПУ-{n} выбрана. Выберите цель на Радаре.',
+    no_carrier: 'Нет доступного авианосца.',
+    carrier_blocked: 'Авианосец заблокирован — недавно получил попадание.',
+    no_strikers: 'Нет штурмовиков.',
+    striker_aim: 'Штурмовик взлетел! Выберите цель на Радаре.',
+    radar_ready_hint: 'Выберите корабль с готовой РЛС (без перезарядки).',
+    sonar_ready_hint: 'Выберите эсминец с готовым гидролокатором.',
+    invalid_sub_placement: 'Недопустимое размещение подлодки.',
+    cancel_text: 'Отмена'
+  },
+  // ── Battle Log Messages ──
+  log: {
+    turn_label: 'Ход',
+    // Turn start
+    torpedo_warning: 'ВНИМАНИЕ! Торпеда в воде! {n} торпед{suffix} приближаются! Акустик — пеленг! БЧ-3 — к отражению!',
+    sub_lost: 'ПЛ "{name}" потеряна — экипаж {crew} чел. не вышел на связь в установленные сроки. Объявлена погибшей.',
+    turn_damaged: 'Ход {turn}. БЧ-5 докладывает: повреждены {report}. Борьба за живучесть!',
+    turn_first: 'Ход 1. Эскадра в полной боевой готовности. Ожидаем приказа, товарищ адмирал.',
+    turn_normal: 'Ход {turn}. Обстановка без изменений. {alive} кораблей в строю.',
+    dmg_report_item: '{type} "{name}" ({hits}/{size})',
+    // Radar
+    radar_detected: 'РЛС {type} "{name}" — антенна «Фрегат» на излучение! Вращение... захват... Обнаружено {n} целей! Дальность и пеленг определены! Данные переданы в БИЦ, нанесены на планшет!',
+    radar_clear: 'РЛС {type} "{name}" — антенна «Фрегат» на излучение. Полный оборот... Эфир чист. Целей в зоне ответственности не обнаружено. Продолжаем наблюдение.',
+    radar_reb: 'БЧ-1 докладывает: РЭБ фиксирует импульсное облучение на частоте 9 ГГц! Классификация — корабельная РЛС! {type} "{name}" демаскирован! Координаты зафиксированы!',
+    // Air Recon
+    air_detected: 'Разведчик Ка-31 с АВ "{name}" — взлёт с палубы! Набор высоты... выход в район разведки. Борт докладывает: обнаружено {n} целей! Координаты переданы в БИЦ по закрытому каналу. ({planes} самолётов осталось)',
+    air_clear: 'Разведчик Ка-31 с АВ "{name}" — облёт заданного района завершён. Визуально и радиолокационно — чисто. Возврат на палубу. ({planes} самолётов осталось)',
+    air_shot_down: 'Зенитный огонь! ПЛОТНЫЙ ЗАГРАДИТЕЛЬНЫЙ ОГОНЬ! Разведчик получил попадание в двигатель! Машина теряет высоту... Падение! Пилот не катапультировался!',
+    // Reactor/Detonations
+    reactor_hit: 'ПОПАДАНИЕ В РЕАКТОР! КРИТИЧЕСКИЙ ОТКАЗ СИСТЕМ ОХЛАЖДЕНИЯ! Температура активной зоны — 2800°! ДЕТОНАЦИЯ!',
+    launcher_det: 'ДЕТОНАЦИЯ ПУСКОВОЙ УСТАНОВКИ! Ракетное топливо — возгорание! ВЗРЫВ БОЕЗАПАСА!',
+    fuel_det: 'ВЗРЫВ АВИАТОПЛИВА! Пожар на полётной палубе! Детонация авиационных боеприпасов!',
+    // Regular Shot
+    miss_our: 'Залп главным калибром! Квадрат {coord} — всплеск! Три столба воды. Снаряд лёг с недолётом. Штурман — корректирую прицельные данные!',
+    sunk_our: '{type} противника поражен! Фугасный снаряд пробил бронепояс! {desc}',
+    sunk_enemy: 'Адмирал! {type} "{name}" — критические повреждения! Пробоина ниже ватерлинии! Корабль кренится! Экипаж — {crew} чел! Шлюпки на воде! Спасение невозможно — бой продолжается!',
+    hit_our: 'Огонь главным калибром! Квадрат {coord} — ЕСТЬ ПОПАДАНИЕ! Бронебойный прошёл навылет! Наблюдаю дым и пламя над целью!',
+    hit_enemy: 'Попадание в {type} "{name}"! Осколочно-фугасный снаряд! Пробоина в надводной части! БЧ-5 — аварийные партии в отсеки! ({hits}/{size})',
+    // Sub deploy
+    sub_deployed: 'ПЛ "{name}" вышла на назначенную позицию. Погружение на рабочую глубину. Реактор на малошумном режиме. Торпедные аппараты — к бою. Готова к выполнению задач.',
+    sub_enemy_detected: 'Акустики докладывают! Шум турбозубчатого агрегата! Классификация — подводная лодка! Внимание — в составе эскадры противника ПЛ! Возможно ядерное вооружение! Всем кораблям — противолодочная готовность!',
+    // Sonar
+    sonar_contact: 'Акустик ЭМ "{name}" — КОНТАКТ! Активная посылка! Шум турбозубчатого агрегата подводной лодки! Классификация — атомная ПЛ! Пеленг определён, дистанция устойчивая!',
+    sonar_clear: 'Акустик ЭМ "{name}": активная посылка — эхо не получено. Пассивный режим — горизонт чист. Подводных целей в зоне не обнаружено.',
+    our_sub_detected: 'Акустики противника засекли нашу ПЛ! Демаскировка! Эсминец противника ведёт активный поиск! Обнаружены!',
+    // ASROC
+    asroc_sub_kill: 'АСРОК — ПУСК! Ракетоторпеда отделилась от ускорителя! Вход в воду! Активный поиск... ЗАХВАТ! Подрыв на контакте! Подлодка уничтожена! На поверхности — масляное пятно и обломки корпуса.',
+    asroc_sunk: 'АСРОК — ПУСК! Ракетоторпеда на траектории! Боевая часть в воде — активный поиск... Попадание! {type} противника УНИЧТОЖЕН! {desc}',
+    asroc_hit: 'АСРОК — ПУСК! Ракетоторпеда отделилась от ускорителя! Вход в воду! Попадание по надводной цели! Наблюдаю повреждения!',
+    asroc_miss: 'АСРОК — ПУСК! Ракетоторпеда на траектории... Отделение... Вход в воду. Активный поиск... Тишина. Цель не обнаружена. Самоликвидация.',
+    // Torpedo
+    torpedo_blocked: 'Торпеда наткнулась на мелководье! Подрыв на грунте! Торпеда потеряна!',
+    torpedo_launch: 'Торпедный аппарат — ПУСК! Торпеда 533мм в воде! Телеуправление — активно. Дистанция до расчётной точки встречи — 3 хода! Скорость 45 узлов!',
+    torpedo_hit_our: 'Торпеда поразила цель! Подрыв под килём! {type} противника — корпус разломлен! УНИЧТОЖЕН! {desc}',
+    torpedo_hit_enemy: 'Торпедное попадание! Подрыв под килём {type} "{name}"! Киль разрушен! Экипаж — {crew} чел! Корабль разламывается! Спасение невозможно!',
+    torpedo_miss_our: 'Торпеда прошла мимо цели — противник выполнил манёвр уклонения. ГСН потеряла контакт. Промах.',
+    torpedo_miss_enemy: 'Торпеда противника на подходе! Манёвр уклонения — полный ход, лево на борт! ГСН потеряла захват! Торпеда прошла мимо! Пронесло!',
+    // Nuclear
+    nuke_explosion: '\u2622 ЯДЕРНЫЙ ВЗРЫВ! Квадрат {coord}! Мощность — 15 килотонн! Ударная волна!',
+    nuke_casualties: 'УНИЧТОЖЕНЫ: {ships}. Потери — {crew} чел. Район заражён, проход запрещён.',
+    nuke_warning: 'ЯДЕРНАЯ ТОРПЕДА В ВОДЕ! БОЕВАЯ ТРЕВОГА! ВСЕМ — ПРОТИВОАТОМНАЯ ЗАЩИТА!',
+    radiation_death: '{type} "{name}" — лучевая болезнь экипажа. Корабль потерял ход. Затонул. {crew} чел.',
+    // Nuclear ceremony
+    nuke_ceremony_1: 'СИГНАЛ ОТ ГЕНЕРАЛЬНОГО ШТАБА ВМФ через СДВ-станцию «ЗЕВС» (82 Гц): Получена кодограмма литер «Ч». Дешифровка... Приказ Верховного Главнокомандующего: санкционировано применение специального боеприпаса. Подтверждение подлинности — сверить с опечатанным пакетом.',
+    nuke_ceremony_2: 'Командир ПЛ: «Товарищи офицеры. Получен боевой приказ. Старпом — вскрыть сейф номер один. Достать опечатанный пакет. Сверяем коды...» Старпом: «Коды совпадают. Приказ подлинный. Это не учебная тревога.»',
+    nuke_ceremony_3: 'Командир: «Боевая тревога. Ракетная атака. БЧ-2 — расчехлить изделие. Штурман — ввести координаты цели. Старпом — ключ на разблокировку на мой счёт. Предстартовая подготовка — НАЧАТЬ.»',
+    nuke_ceremony_4_prefix: 'ВВЕДИТЕ ПУСКОВОЙ КОД',
+    nuke_ceremony_launch: '«Ключ на старт — ЕСТЬ. Пуск разрешаю. Три... два... один... ПУСК!»',
+    nuke_code_abort: 'КОД НЕ ПОДТВЕРЖДЁН. Система безопасности — блокировка. Торпеда деактивирована. Пуск отменён.',
+    nuke_code_timer: 'Автоблокировка через: {sec} сек.',
+    nuke_code_placeholder: 'Пусковой код',
+    nuke_code_btn: 'ПУСК',
+    nuke_hotseat_impact: 'ПРОТИВНИК НАНЁС ЯДЕРНЫЙ УДАР ПО ВАШЕМУ ФЛОТУ!',
+    nuke_hotseat_epicenter: 'Координаты эпицентра: {coord}',
+    nuke_hotseat_losses: 'Потери: {ships}',
+    // PCR
+    pcr_launch: 'БИЦ: координаты цели {x}-{y}, наряд — одна ПКР, БЧ-2 — провести пусковую процедуру! Крышка ПУ-{n} открыта. Координаты переданы бортовой ЭВМ. Запуск пороховых ускорителей... ВЫХОД! Включение маршевых прямоточных — УСПЕХ. Цель захвачена ГСН! П-1000 «Вулкан» идёт на цель!',
+    pcr_enemy_incoming: 'ТРЕВОГА! ДРЛО фиксирует пуск ПКР с ТАРКР противника! Ракета идёт на нас!',
+    pcr_miss: 'ПКР вышла на координаты... Цели нет. Самоликвидация. Ракета потеряна.',
+    pcr_sub_miss: 'ПКР не может поразить подводную цель! Ракета потеряна.',
+    pcr_intercepted_our: 'Телеметрия: ПКР на подлёте... ПВО противника — огонь! Зенитные ракеты сошли с направляющих! Подрыв! ПКР поражена на маршевом участке. Промах.',
+    pcr_intercepted_enemy: 'ВНИМАНИЕ! ДРЛО обнаружил входящую ПКР! Вероятная цель — {type} "{name}"! ПВО — К БОЮ! БЧ-2 — цель сопровождается! Зенитные — ОГОНЬ! Подрыв на подлёте! ПКР перехвачена!',
+    pcr_sunk_our: 'Телеметрия: ПКР на подлёте... ПВО противника — огонь! Зенитные пуски... ВСЕ МИМО! ПКР ПРОРВАЛАСЬ! {type} — ПРЯМОЕ ПОПАДАНИЕ! {desc}',
+    pcr_sunk_enemy: 'ВНИМАНИЕ! ДРЛО обнаружил входящую ПКР! Вероятная цель — {type} "{name}"! ПВО — К БОЮ! БЧ-2 — цель сопровождается! Зенитные — ОГОНЬ! НЕ ПОРАЖЕНА! ПКР ПРОРВАЛАСЬ!',
+    pcr_sunk_enemy2: '{type} "{name}" — ПРЯМОЕ ПОПАДАНИЕ! Борьба за живучесть! Аварийные партии — в отсеки! Крен нарастает! ...Корабль потерян. Экипаж — {crew} чел. Спасательная операция невозможна — бой продолжается.',
+    // Striker
+    striker_launch: 'Палубная авиация — ВЗЛЁТ! Су-33 с АВ "{name}" стартовал с трамплина! Набор высоты, выход на боевой курс! ({n} осталось)',
+    striker_miss: 'Штурмовик вышел в район цели — визуально и по РЛС чисто. Цель не обнаружена. Возврат на палубу.',
+    striker_sub_miss: 'Штурмовик над водой — подводная цель для авиабомб недосягаема. Возврат на АВ.',
+    striker_sunk: 'Штурмовик заходит на цель! Пикирование! Бомбы отделились — ПРЯМОЕ ПОПАДАНИЕ! {type} противника УНИЧТОЖЕН! {desc}',
+    striker_detonation: 'Штурмовик заходит на цель! Пикирование! Бомбы в цель — ДЕТОНАЦИЯ БОЕЗАПАСА! Столб пламени на сотню метров!',
+    striker_hit: 'Штурмовик заходит на цель! Пикирование! Бомбы отделились — ПОПАДАНИЕ! Наблюдаю пожар на надстройке! Цель повреждена.',
+    striker_shot_down: 'Зенитный огонь! ПЛОТНЫЙ ЗАГРАДИТЕЛЬНЫЙ ОГОНЬ! Штурмовик получил попадание зенитной ракетой! Взрыв в воздухе! Пилот не катапультировался!',
+    // AI striker (enemy)
+    ai_striker_sunk: 'Штурмовик противника атакует! Бомбы на цель! {type} "{name}" — прямое попадание! Корабль тонет! Экипаж — {crew} чел!',
+    ai_striker_hit: 'Штурмовик противника атакует! Попадание в {type} "{name}"! Пожар! БЧ-5 — борьба за живучесть! ({hits}/{size})',
+    ai_striker_shot_down: 'Зенитный огонь! Штурмовик противника сбит! БЧ-2 — отличная работа!',
+    // REB
+    reb_alert: 'РЭБ фиксирует радиолокационное облучение на частоте Х-диапазона! {type} "{name}" — позиция раскрыта! Координаты зафиксированы противником!',
+    // AI air recon
+    enemy_air_recon: 'Самолёт-разведчик противника над нами! {type} "{name}" обнаружен с воздуха! Позиция раскрыта!',
+    enemy_air_recon_launch: 'Сигнальщики докладывают: наблюдаю взлёт самолёта с авианосца противника! Разведывательный вылет!'
+  },
+  // ── Captain Last Words ──
+  captain_last_words: [
+    '«{NAME}» — последний сигнал: "Прощайте, товарищи... Служу Отечеству." Тишина.',
+    '«{NAME}»: "Машина, полный назад—" ...связь потеряна. Шлюпки в воде. Спасение невозможно — бой продолжается.',
+    '«{NAME}», командир: "Экипажу — покинуть корабль! Оставить раненых не могу. Остаюсь." Конец связи.',
+    '«{NAME}» — обрыв связи. Тишина в эфире. На месте корабля — масляное пятно и обломки.',
+    '«{NAME}»: "Не сдаёмся! Орудия к б—" ...помехи... конец передачи. Навсегда.',
+    '«{NAME}», радист: "Крен 40 градусов... уходим под воду... машинное затоплено... не выб—" Молчание.',
+    '«{NAME}»: "Флаг не спускать." Корабль скрылся под водой кормой вперёд. С поднятым флагом.',
+    '«{NAME}» — последний доклад: "Реактор — аварийное... температура активной зоны критическая... всем поки—" Взрыв.',
+    '«{NAME}»: "Это конец. Слава флоту. Слава экипажу." Молчание. Корабля больше нет.',
+    '«{NAME}», штурман: "Координаты переданы. Боезапас детонирует. Отомстите за нас." Связь оборвалась.',
+    '«{NAME}»: "Я первый помощник, Семёнов. Капитан погиб. Принимаю командование на с—" ...белый шум. Тишина.',
+    '«{NAME}», мичман из БЧ-5: "Вода в третьем... четвёртом... переборка между ними сложилась как бумага... ребята не успели выйти..." Конец связи.',
+    '«{NAME}»: "Пожарным расчётам — отставить. Боезапас не потушить. Всем наверх. Все наверх, мать вашу!" ...хрип... молчание.',
+    '«{NAME}», последний перехват: "...ватерлиния разрушена по левому борту на протяжении тридцати метров... крен нарастает... контрзатопление невозможно — насосы обесточены..." Обрыв.',
+    '«{NAME}» — из радиорубки, открытым текстом, без шифра: "Корабль гибнет. Координаты 57-14. Флаг на месте. Экипаж... экипаж выполнил долг."'
+  ],
+  // ── Sunk Descriptions ──
+  sunk_desc: [
+    'Попадание пришлось в район мидельшпангоута. Бронепояс не выдержал — трещина прошла ниже ватерлинии. Вода хлынула в машинное отделение, турбины захлебнулись, генераторы встали. Корабль потерял ход, лёг на борт и опрокинулся, обнажив днище, заросшее ракушками. В воздух ударил пузырь мазута и пара. Через сорок секунд на поверхности остались только спасательные плотики и крики.',
+    'Ракета вошла в кормовую надстройку и прошила корпус навылет, разорвавшись в погребе. Детонация боезапаса выбросила кормовую башню вместе с барбетом на высоту пятиэтажного дома. Верхнюю палубу вспучило, как консервную банку. Корабль переломился — нос и корма разошлись под углом, между ними — столб чёрного дыма и оранжевого пламени. Носовая часть задрала винты к небу и ушла за двадцать секунд. Кормовая горела ещё час.',
+    'Пожар перекинулся на топливные цистерны. Горящий мазут хлынул по внутренним отсекам — переборки раскалились докрасна, а затем лопнули от температурного напряжения. Корабль превратился в плавучий крематорий. Краска пузырилась и стекала с бортов. Боеприпасы рвались внутри, как попкорн. Когда взорвался погреб главного калибра, от корабля осталось облако пара и разлетающиеся во все стороны куски стали.',
+    'Торпедная пробоина ниже ватерлинии — восемь на двенадцать метров. Вода заполнила три смежных отсека за полторы минуты. Контрзатопление не помогло — крен перевалил за критические тридцать пять градусов. Люди срывались с палубы в воду. Корабль медленно, словно нехотя, лёг на борт. Винты ещё вращались вхолостую, когда волна накрыла мостик. Ушёл под воду с работающими машинами.',
+    'Попадание в реакторный отсек. Аварийная защита не сработала — контрольные стержни заклинило от деформации корпуса. Температура активной зоны за двадцать секунд превысила три тысячи градусов. Расплав прожёг днище. Паровой взрыв поднял корабль из воды на два метра и разломил пополам. Радиоактивное облако поднялось на триста метров. На месте корабля — пятно кипящей воды и фонящие обломки.',
+    'Три попадания: два в борт, одно — прямо в ходовую рубку. Командование уничтожено мгновенно. Рулевое управление потеряно. Корабль описал циркуляцию, подставив неповреждённый борт, и получил ещё два попадания. Бак затоплен, палуба просела по шпангоут. Носовая часть зарылась в волну — корма задралась, обнажив вращающиеся винты. Ушёл носом вперёд, вертикально, как будто нырнул.',
+    'Ракета попала в пусковую установку. Детонация маршевых двигателей хранящихся ракет вызвала цепную реакцию — взрывы шли один за другим, как фейерверк. Корпус разрывало изнутри. Каждый взрыв выбрасывал через пробоины снопы пламени и обломки. Надстройка сложилась, мачты рухнули. Через три минуты — обугленный, покорёженный остов, слепо дрейфующий по течению. Через семь — остов ушёл под воду.',
+    'Ракета вошла в машинное отделение. Маслопровод турбины перебит — горящее масло под давлением хлестало из магистрали, превращая отсек в ад. Аварийная партия не смогла пробиться — жар плавил алюминиевые переборки. Пожар дошёл до топливных танков. Корабль вздрогнул всем корпусом, тяжело осел на корму и начал тонуть — медленно, ровно, без крена. Как будто сам решил уйти с достоинством.'
+  ]
+},
+en: {
+  menu: {
+    title: 'Naval Battle',
+    subtitle: 'Strategic Edition',
+    new_game: 'New Game',
+    rules: 'Game Rules'
+  },
+  settings: {
+    title: 'Game Setup',
+    field_size: 'Field Size',
+    landscape: 'Landscape',
+    game_mode: 'Game Mode',
+    vs_ai: 'vs AI',
+    hotseat: 'Hotseat',
+    ocean: 'Ocean',
+    wrecks: 'Wrecks',
+    islands: 'Islands',
+    archipelago: 'Archipelago',
+    ocean_tip: 'Open waters. No obstacles — pure tactics and firepower decide the battle.',
+    wrecks_tip: 'Scattered hulks of sunken vessels litter the seabed. Submarines slip beneath them unseen; torpedoes may not be so lucky. ~10% coverage.',
+    islands_tip: 'Rocky island chains rise from the deep, visible on radar and impassable to all. Use them as cover — or get trapped. ~20% coverage.',
+    archipelago_tip: 'Dense island formations carve the battlefield into narrow straits and hidden bays. Navigation is treacherous — but so is ambush. ~30% coverage.',
+    back: 'Back',
+    start: 'Start'
+  },
+  choice: {
+    title: 'Choose Your Capital Ship',
+    desc: 'Squadron doctrine allows one capital ship. Choose wisely — this decision is permanent.',
+    tarkr_name: 'TARKR',
+    tarkr_desc: 'Heavy Nuclear Missile Cruiser\n5 cells \u2022 4 Vulkan missiles\nNuclear reactor (center cell)\nRaw firepower, high risk',
+    carrier_name: 'Carrier',
+    carrier_desc: 'Aircraft Carrier\n5 cells \u2022 3 recon planes + strikers\nNuclear reactor (center cell)\nIntel advantage, versatile'
+  },
+  placement: {
+    roster: 'Fleet Roster',
+    hint: 'Click ship to select, then click field to place.\nRight-click to rotate before placing.\nClick a placed ship on the field to rotate it.',
+    auto_place: 'Auto-Place',
+    clear: 'Clear All',
+    ready: 'Ready',
+    loading: 'Generating landscape...'
+  },
+  hud: {
+    field: 'Field',
+    landscape: 'Landscape',
+    zoom: 'Zoom',
+    phase: 'PLACEMENT',
+    menu: 'Menu'
+  },
+  topbar: {
+    turn: 'Turn',
+    player: 'Player',
+    you: 'You',
+    ai: 'AI',
+    ai_thinking: 'AI THINKING...',
+    striker_chain: 'STRIKER CHAIN',
+    action_move: 'ACTION + MOVE ({pts})',
+    move_only: 'MOVE ({pts} pts)',
+    menu: 'Menu'
+  },
+  panels: {
+    fleet: 'Fleet Map',
+    radar: 'Radar'
+  },
+  action: {
+    radar: 'Radar',
+    sonar: 'Sonar',
+    air_recon: 'Air Recon',
+    shot: 'Shot',
+    torpedo: 'Torpedo',
+    asroc: 'ASROC',
+    pcr_vulkan: 'PCR Vulkan',
+    pcr_pu: 'PCR PU-{n} (aim)',
+    striker: 'Striker',
+    t10: '☢ T-15',
+    deploy_sub: 'Deploy Sub',
+    move_pts: 'Move: {pts} pts',
+    end_turn: 'End Turn',
+    end_sortie: 'End Sortie',
+    striker_hint: 'Striker active — click next target on Radar',
+    sub_deploy_hint: 'Click Fleet Map to deploy sub. Right-click to rotate.',
+    cancel: 'Cancel'
+  },
+  confirm: {
+    t10_title: 'LAUNCH ☢ T-15 NUCLEAR TORPEDO?',
+    t10_text: 'This action cannot be undone. 19\u00d719 zone will be devastated. Submarine will surface.',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    select_launcher: 'SELECT LAUNCHER'
+  },
+  handoff: {
+    player: 'PLAYER {n}',
+    ready_placement: 'Press Ready to begin placement',
+    ready_turn: 'Press Ready when in position',
+    ready_btn: 'Ready'
+  },
+  victory: {
+    win: 'VICTORY',
+    lose: 'DEFEAT',
+    player_wins: 'PLAYER {n} WINS',
+    enemy_destroyed: 'Enemy fleet destroyed.',
+    your_destroyed: 'Your fleet has been destroyed.',
+    main_menu: 'Main Menu'
+  },
+  ship_types: {
+    missile_boat: 'Boat', mrk: 'Corvette', destroyer: 'Destroyer',
+    cruiser: 'Cruiser', tarkr: 'TARKR', carrier: 'Carrier', submarine: 'Sub'
+  },
+  ship_labels: {
+    missile_boat: 'PB', mrk: 'CRV', destroyer: 'DD',
+    cruiser: 'CA', tarkr: 'TARKR', carrier: 'CV', submarine: 'SS'
+  },
+  ship_proper_names: {
+    missile_boat: ['Wasp','Hornet','Stinger','Viper','Dart','Storm','Gale','Surge'],
+    mrk: ['Tempest','Cyclone','Thunder','Monsoon','Squall','Blizzard','Typhoon','Mistral'],
+    destroyer: ['USS Arleigh Burke','USS Halsey','USS Benfold','USS Milius','USS Stethem','USS Chafee','USS Decatur','USS Momsen','USS Gridley','USS Pinckney'],
+    cruiser: ['USS Ticonderoga','USS Bunker Hill','USS Monterey','USS Chancellorsville','USS Cowpens','USS Gettysburg','USS Chosin','USS Hue City'],
+    tarkr: ['USS Alaska','USS Guam','USS Hawaii','USS Samoa','USS Philippines','USS Puerto Rico'],
+    carrier: ['USS Enterprise','USS Nimitz','USS Roosevelt','USS Lincoln','USS Washington','USS Stennis'],
+    submarine: ['USS Seawolf','USS Connecticut','USS Jimmy Carter','USS Virginia','USS Texas','USS Hawaii']
+  },
+  launcher: {
+    bow: 'Bow',
+    stern: 'Stern',
+    damaged: 'DAMAGED',
+    empty: 'EMPTY',
+    ready: 'READY'
+  },
+  toast: {
+    radar_select: 'Click a destroyer or larger ship on the Fleet Map to use as radar source.',
+    sonar_select: 'Click a destroyer on the Fleet Map to ping sonar.',
+    already_fired: 'Already fired at this cell.',
+    no_surface_ships: 'No living surface ships.',
+    no_valid_moves: 'No valid moves for this ship.',
+    ship_moved: '{name} — course adjusted, slow ahead. ({pts} pts left)',
+    sub_place_hint: 'Click on Fleet Map to place submarine. Right-click to rotate.',
+    sonar_only_dd: 'Only destroyers have sonar.',
+    asroc_same_turn: 'Cannot fire ASROC on the same turn as sonar — target must have a chance to evade.',
+    asroc_aim: 'Click target cell on Radar to launch ASROC.',
+    no_asroc: 'No ASROC available.',
+    torpedo_aim: 'Click target cell on Radar to launch torpedo.',
+    no_torpedo: 'No submarine with torpedoes available.',
+    t10_used: 'T-15 already launched this game.',
+    t10_no_skirmish: 'Not available in Skirmish mode.',
+    no_t10: 'No submarine with T-15 available.',
+    t10_aim: 'Select target zone center on Radar.',
+    no_tarkr: 'No TARKR available.',
+    no_launchers: 'No loaded launchers remaining.',
+    pcr_selected: 'PU-{n} selected. Click target on Radar.',
+    no_carrier: 'No carrier available.',
+    carrier_blocked: 'Carrier blocked — hit recently.',
+    no_strikers: 'No strikers remaining.',
+    striker_aim: 'Striker launched! Click target on Radar.',
+    radar_ready_hint: 'Click a ship with radar ready (no cooldown).',
+    sonar_ready_hint: 'Click a destroyer with sonar ready.',
+    invalid_sub_placement: 'Invalid placement for submarine.',
+    cancel_text: 'Cancel'
+  },
+  log: {
+    turn_label: 'Turn',
+    torpedo_warning: 'WARNING! Torpedo in the water! {n} torpedo{suffix} inbound! Sonar — bearing! ASW — stand by to engage!',
+    sub_lost: 'Submarine "{name}" lost — crew of {crew} failed to report. Declared lost with all hands.',
+    turn_damaged: 'Turn {turn}. Damage control reports: {report} damaged. Damage control ongoing!',
+    turn_first: 'Turn 1. Squadron at full combat readiness. Awaiting orders, Admiral.',
+    turn_normal: 'Turn {turn}. Situation unchanged. {alive} ships operational.',
+    dmg_report_item: '{type} "{name}" ({hits}/{size})',
+    radar_detected: 'Radar {type} "{name}" — AN/SPS-49 antenna radiating! Full sweep... acquisition... {n} contacts detected! Range and bearing confirmed! Data passed to CIC, plotted on tactical display!',
+    radar_clear: 'Radar {type} "{name}" — AN/SPS-49 antenna radiating. Full rotation... All clear. No contacts in assigned sector. Maintaining surveillance.',
+    radar_reb: 'ECM reports: pulsed emission detected on X-band, 9 GHz! Classification — surface search radar! {type} "{name}" compromised! Coordinates logged!',
+    air_detected: 'E-2 Hawkeye from CV "{name}" — launching off catapult! Climbing to patrol altitude... entering surveillance area. Pilot reports: {n} contacts detected! Coordinates passed to CIC via encrypted link. ({planes} planes remaining)',
+    air_clear: 'E-2 Hawkeye from CV "{name}" — patrol area sweep complete. Visual and radar — nothing. Returning to carrier. ({planes} planes remaining)',
+    air_shot_down: 'Flak barrage! HEAVY DEFENSIVE FIRE! Recon aircraft hit in the engine! Losing altitude... Impact! Pilot did not eject!',
+    reactor_hit: 'REACTOR HIT! CRITICAL COOLING FAILURE! Core temperature — 2800°! DETONATION!',
+    launcher_det: 'LAUNCHER DETONATION! Rocket fuel — ignition! MAGAZINE EXPLOSION!',
+    fuel_det: 'AVIATION FUEL EXPLOSION! Flight deck fire! Aviation ordnance detonating!',
+    miss_our: 'Main battery salvo! Grid {coord} — splash! Three columns of water. Round fell short. Navigator — adjusting fire solution!',
+    sunk_our: 'Enemy {type} hit! HE shell penetrated the armor belt! {desc}',
+    sunk_enemy: 'Admiral! {type} "{name}" — critical damage! Hull breach below waterline! Ship listing! Crew — {crew}! Lifeboats in the water! Rescue impossible — battle continues!',
+    hit_our: 'Main battery — fire! Grid {coord} — HIT! AP round punched through! Smoke and flame observed over target!',
+    hit_enemy: 'Hit on {type} "{name}"! High-explosive shell impact! Hull breach above waterline! Damage control — emergency parties to compartments! ({hits}/{size})',
+    sub_deployed: 'Submarine "{name}" on station. Diving to operating depth. Reactor on quiet mode. Torpedo tubes loaded and ready. Standing by for tasking.',
+    sub_enemy_detected: 'Sonar reports! Turbine noise classified — submarine! Enemy fleet includes a submarine! Possible nuclear armament! All ships — ASW readiness!',
+    sonar_contact: 'Sonar DD "{name}" — CONTACT! Active ping returned! Submarine turbine noise classified — nuclear boat! Bearing confirmed, range holding!',
+    sonar_clear: 'Sonar DD "{name}": active ping — no return. Passive mode — horizon clear. No submarine contacts in sector.',
+    our_sub_detected: 'Enemy sonar has detected our submarine! Compromised! Enemy destroyer conducting active search! We are exposed!',
+    asroc_sub_kill: 'ASROC — LAUNCH! Rocket torpedo separated from booster! Water entry! Active search... ACQUISITION! Contact detonation! Submarine destroyed! Oil slick and hull fragments on the surface.',
+    asroc_sunk: 'ASROC — LAUNCH! Rocket torpedo on trajectory! Warhead in the water — active search... Hit! Enemy {type} DESTROYED! {desc}',
+    asroc_hit: 'ASROC — LAUNCH! Rocket torpedo separated from booster! Water entry! Surface target hit! Observing damage!',
+    asroc_miss: 'ASROC — LAUNCH! Rocket torpedo on trajectory... Separation... Water entry. Active search... Silence. Target not found. Self-destruct.',
+    torpedo_blocked: 'Torpedo struck shallow water! Bottom detonation! Torpedo lost!',
+    torpedo_launch: 'Torpedo tube — LAUNCH! 533mm torpedo in the water! Wire-guided — active. Distance to intercept — 3 turns! Speed 45 knots!',
+    torpedo_hit_our: 'Torpedo hit! Detonation under keel! Enemy {type} — hull fractured! DESTROYED! {desc}',
+    torpedo_hit_enemy: 'Torpedo hit! Under-keel detonation on {type} "{name}"! Keel broken! Crew — {crew}! Ship breaking apart! Rescue impossible!',
+    torpedo_miss_our: 'Torpedo missed target — enemy executed evasion maneuver. Seeker lost contact. Miss.',
+    torpedo_miss_enemy: 'Enemy torpedo inbound! Evasion maneuver — flank speed, hard to port! Seeker lost lock! Torpedo passed clear! Close call!',
+    nuke_explosion: '\u2622 NUCLEAR DETONATION! Grid {coord}! Yield — 15 kilotons! Shockwave!',
+    nuke_casualties: 'DESTROYED: {ships}. Casualties — {crew}. Area contaminated, passage forbidden.',
+    nuke_warning: 'NUCLEAR TORPEDO IN THE WATER! BATTLE STATIONS! ALL HANDS — ATOMIC DEFENSE!',
+    radiation_death: '{type} "{name}" — crew radiation sickness. Ship lost propulsion. Sunk. {crew} crew.',
+    // Nuclear ceremony
+    nuke_ceremony_1: 'EMERGENCY ACTION MESSAGE VIA TACAMO (E-6B MERCURY): «SKYKING, SKYKING, DO NOT ANSWER. Message follows. Authenticate: TANGO-BRAVO. Nuclear weapons release authorized per National Command Authority. Proceed to sealed authentication system. This is not a drill.»',
+    nuke_ceremony_2: 'Captain: «XO, authenticate. Open the safe.» XO: «Aye sir. Breaking out the CIP... Comparing against sealed authenticators... Codes match. Message is valid. I concur — this is a valid nuclear launch order.»',
+    nuke_ceremony_3: 'Captain: «Weapons con — Captain. Set condition 1-SQ for strategic launch. Spin up the weapon. Program target coordinates into fire control. XO — we go to launch on my mark. This is a lawful order. May God forgive us.»',
+    nuke_ceremony_4_prefix: 'ENTER LAUNCH CODE',
+    nuke_ceremony_launch: '«Both keys turned. FIRE CONTROL — GREEN BOARD. Three... two... one... LAUNCH!»',
+    nuke_code_abort: 'CODE REJECTED. Safety interlock engaged. Torpedo safed. Launch aborted.',
+    nuke_code_timer: 'Auto-lockout in: {sec} sec.',
+    nuke_code_placeholder: 'Launch code',
+    nuke_code_btn: 'LAUNCH',
+    nuke_hotseat_impact: 'ENEMY HAS LAUNCHED A NUCLEAR STRIKE ON YOUR FLEET!',
+    nuke_hotseat_epicenter: 'Epicenter: {coord}',
+    nuke_hotseat_losses: 'Losses: {ships}',
+    pcr_launch: 'CIC: target coordinates {x}-{y}, ordnance — one AShM, weapons — commence launch procedure! PU-{n} hatch open. Coordinates uploaded to onboard computer. Booster ignition... CLEAR OF RAIL! Ramjet sustainer — IGNITION — GOOD. Seeker has acquired! P-1000 Vulkan is en route to target!',
+    pcr_enemy_incoming: 'ALARM! AWACS detects AShM launch from enemy TARKR! Missile inbound!',
+    pcr_miss: 'Missile reached coordinates... No target. Self-destruct. Missile wasted.',
+    pcr_sub_miss: 'Missile cannot engage submerged target! Missile wasted.',
+    pcr_intercepted_our: 'Telemetry: missile on approach... Enemy AA — firing! SAMs away! Detonation! Missile destroyed on cruise phase. Miss.',
+    pcr_intercepted_enemy: 'WARNING! AWACS detected inbound AShM! Probable target — {type} "{name}"! AA — ENGAGE! Weapons tracking! SAMs — FIRE! Proximity kill! Missile intercepted!',
+    pcr_sunk_our: 'Telemetry: missile on approach... Enemy AA — firing! SAM launches... ALL MISS! MISSILE GOT THROUGH! {type} — DIRECT HIT! {desc}',
+    pcr_sunk_enemy: 'WARNING! AWACS detected inbound AShM! Probable target — {type} "{name}"! AA — ENGAGE! Weapons tracking! SAMs — FIRE! NO KILL! MISSILE GOT THROUGH!',
+    pcr_sunk_enemy2: '{type} "{name}" — DIRECT HIT! Damage control! Emergency parties to compartments! List increasing! ...Ship lost. Crew — {crew}. Rescue impossible — battle continues.',
+    striker_launch: 'Deck aviation — LAUNCH! F/A-18 from CV "{name}" catapult launch! Climbing to attack altitude, turning to target heading! ({n} remaining)',
+    striker_miss: 'Striker reached target area — visual and radar clear. Target not found. Returning to carrier.',
+    striker_sub_miss: 'Striker overhead — submerged target unreachable by bombs. Returning to carrier.',
+    striker_sunk: 'Striker rolling in! Dive attack! Bombs away — DIRECT HIT! Enemy {type} DESTROYED! {desc}',
+    striker_detonation: 'Striker rolling in! Dive attack! Bombs on target — MAGAZINE DETONATION! Fireball rising hundreds of meters!',
+    striker_hit: 'Striker rolling in! Dive attack! Bombs away — HIT! Fire on superstructure! Target damaged.',
+    striker_shot_down: 'Flak barrage! HEAVY DEFENSIVE FIRE! Striker hit by SAM! Mid-air explosion! Pilot did not eject!',
+    ai_striker_sunk: 'Enemy striker attacks! Bombs on target! {type} "{name}" — direct hit! Ship sinking! Crew — {crew}!',
+    ai_striker_hit: 'Enemy striker attacks! Hit on {type} "{name}"! Fire! Damage control — fight for survival! ({hits}/{size})',
+    ai_striker_shot_down: 'Flak fire! Enemy striker shot down! AA — excellent work!',
+    reb_alert: 'ECM detects radar emission on X-band! {type} "{name}" position compromised! Coordinates logged!',
+    // AI air recon
+    enemy_air_recon: 'Enemy recon aircraft overhead! {type} "{name}" spotted from the air! Position compromised!',
+    enemy_air_recon_launch: 'Lookouts report: aircraft launch observed from enemy carrier! Recon flight inbound!'
+  },
+  captain_last_words: [
+    '"{NAME}" — last signal: "Farewell, shipmates... I served my country." Silence.',
+    '"{NAME}": "Engine room, full reverse—" ...signal lost. Lifeboats in the water. Rescue impossible — battle continues.',
+    '"{NAME}", captain: "All hands, abandon ship! I won\'t leave the wounded. I\'m staying." End of transmission.',
+    '"{NAME}" — signal lost. Radio silence. Where the ship was — an oil slick and debris.',
+    '"{NAME}": "We don\'t surrender! Guns to batt—" ...static... end of transmission. Forever.',
+    '"{NAME}", radioman: "List 40 degrees... going under... engine room flooded... can\'t ge—" Silence.',
+    '"{NAME}": "Don\'t strike the colors." The ship went down stern-first. Colors still flying.',
+    '"{NAME}" — final report: "Reactor — emergency... core temperature critical... all hands aband—" Explosion.',
+    '"{NAME}": "This is the end. Glory to the fleet. Glory to the crew." Silence. The ship is gone.',
+    '"{NAME}", navigator: "Coordinates transmitted. Magazine will detonate. Avenge us." Signal lost.',
+    '"{NAME}": "This is the XO, Simmons. Captain is dead. I\'m assuming command of th—" ...white noise. Silence.',
+    '"{NAME}", damage control petty officer: "Water in compartment three... four... the bulkhead between them folded like paper... the boys didn\'t make it out..." End of signal.',
+    '"{NAME}": "Fire parties — stand down. Magazine fire can\'t be contained. All hands topside. Everyone topside, NOW!" ...rasping... silence.',
+    '"{NAME}", last intercept: "...hull breached below waterline along thirty meters on port side... list increasing... counter-flooding impossible — pumps without power..." Signal lost.',
+    '"{NAME}" — from radio room, in the clear, no cipher: "Ship is going down. Grid 57-14. Colors are flying. The crew... the crew did their duty."'
+  ],
+  sunk_desc: [
+    'The hit struck amidships. The armor belt failed — a crack ran below the waterline. Water surged into the engine room, turbines choked, generators died. The ship lost way, rolled onto her beam ends and capsized, exposing a barnacle-crusted hull. A bubble of fuel oil and steam erupted skyward. Forty seconds later, only life rafts and screaming remained on the surface.',
+    'The missile entered the aft superstructure and punched clean through, detonating in the magazine. The ammunition explosion hurled the aft turret and barbette five stories high. The upper deck buckled like a tin can. The ship broke in two — bow and stern separating at an angle, a column of black smoke and orange flame between them. The bow raised its screws skyward and went under in twenty seconds. The stern burned for another hour.',
+    'Fire reached the fuel bunkers. Burning oil flooded the internal compartments — bulkheads glowed red-hot, then burst from thermal stress. The ship became a floating crematorium. Paint bubbled and ran down the sides. Ammunition cooked off inside like popcorn. When the main magazine blew, all that remained was a cloud of steam and steel fragments flying in every direction.',
+    'Torpedo breach below the waterline — eight by twelve meters. Water filled three adjacent compartments in ninety seconds. Counter-flooding failed — the list exceeded the critical thirty-five degrees. Men slid off the deck into the sea. The ship slowly, reluctantly, rolled onto her beam. The screws were still turning in the air when the wave covered the bridge. She went under with engines still running.',
+    'Hit in the reactor compartment. Emergency protection failed — control rods jammed from hull deformation. Core temperature exceeded three thousand degrees in twenty seconds. The melt burned through the hull. A steam explosion lifted the ship two meters out of the water and broke her in half. A radioactive cloud rose to three hundred meters. Where the ship had been — boiling water and glowing debris.',
+    'Three hits: two to the hull, one straight into the bridge. Command killed instantly. Steering lost. The ship swung in a circle, presenting her undamaged side, and took two more hits. The forecastle flooded, the deck sagged to the frames. The bow dug into a wave — the stern rose, exposing spinning propellers. She went down bow-first, vertically, as if diving.',
+    'The missile hit a launcher. Detonation of stored missile boosters triggered a chain reaction — explosions rippled one after another like fireworks. The hull tore apart from within. Each blast threw gouts of flame and debris through the breaches. The superstructure collapsed, masts toppled. Three minutes later — a charred, twisted hulk drifting blindly. Seven minutes — the hulk went under.',
+    'The missile entered the engine room. A turbine oil line severed — burning oil under pressure sprayed from the main, turning the compartment into an inferno. The damage control party couldn\'t break through — the heat melted aluminum bulkheads. Fire reached the fuel tanks. The ship shuddered along her entire length, settled heavily by the stern and began to sink — slowly, evenly, without list. As if she chose to go with dignity.'
+  ]
+}
 };
 const CREW_COUNTS = {
   missile_boat:{min:12,max:18}, mrk:{min:45,max:60}, destroyer:{min:250,max:320},
@@ -1826,18 +2717,25 @@ const SHIP_DEFS = {
 function getFleetForSize(fieldSize, capitalChoice) {
   const fleet = [];
   const usedNames = {};
+  const usedNamesEN = {};
   const add = (type, count) => {
     if (!usedNames[type]) usedNames[type] = [];
+    if (!usedNamesEN[type]) usedNamesEN[type] = [];
     for (let i = 0; i < count; i++) {
       const def = SHIP_DEFS[type];
-      const available = SHIP_NAMES[type].filter(n => !usedNames[type].includes(n));
-      const rName = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : SHIP_NAMES[type][i % SHIP_NAMES[type].length];
+      const ruNames = LOCALE.ru.ship_proper_names[type];
+      const enNames = LOCALE.en.ship_proper_names[type];
+      const availRU = ruNames.filter(n => !usedNames[type].includes(n));
+      const rName = availRU.length > 0 ? availRU[Math.floor(Math.random() * availRU.length)] : ruNames[i % ruNames.length];
       usedNames[type].push(rName);
+      const availEN = enNames.filter(n => !usedNamesEN[type].includes(n));
+      const eName = availEN.length > 0 ? availEN[Math.floor(Math.random() * availEN.length)] : enNames[i % enNames.length];
+      usedNamesEN[type].push(eName);
       const cc = CREW_COUNTS[type];
       const crew = cc.min + Math.floor(Math.random() * (cc.max - cc.min + 1));
       fleet.push({
         ...def, id: type + '_' + i, cells: [], orientation: 'horizontal',
-        placed: false, hits: null, sunk: false, russianName: rName, crew: crew,
+        placed: false, hits: null, sunk: false, russianName: rName, englishName: eName, crew: crew,
         // Special fields
         reactor: (type === 'tarkr' || type === 'carrier') ? 2 : -1,
         launchers: type === 'tarkr' ? [
@@ -1945,6 +2843,7 @@ function initPlacementWithFleet(capitalChoice, playerIdx) {
 function buildShipRoster() {
   const container = document.getElementById('ship-roster');
   container.innerHTML = '';
+  const tip = document.getElementById('ship-tooltip');
   placement.fleet.forEach((ship, idx) => {
     const div = document.createElement('div');
     div.className = 'ship-item' + (ship.placed ? ' placed' : '');
@@ -1952,7 +2851,18 @@ function buildShipRoster() {
     let cells = '<div class="ship-cells-preview">';
     for (let i = 0; i < ship.size; i++) cells += '<span></span>';
     cells += '</div>';
-    div.innerHTML = cells + '<span class="ship-name">' + ship.name + '</span><span class="ship-size-label">' + ship.size + '</span>';
+    div.innerHTML = cells + '<span class="ship-name">' + shipProperName(ship) + '</span><span class="ship-size-label">' + ship.size + '</span>';
+    div.addEventListener('mouseenter', (e) => {
+      const sprite = spritesLoaded && SPRITES[ship.type] ? SPRITES[ship.type].src : '';
+      const spriteHtml = sprite ? '<img class="tt-sprite" src="' + sprite + '" alt="">' : '';
+      tip.innerHTML = '<div class="tt-type">' + shipTypeName(ship.type) + '</div>' + spriteHtml;
+      const rect = div.getBoundingClientRect();
+      tip.style.display = 'block';
+      const tipW = tip.offsetWidth;
+      tip.style.left = (rect.left - tipW - 14) + 'px';
+      tip.style.top = (rect.top + rect.height / 2 - tip.offsetHeight / 2) + 'px';
+    });
+    div.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
     container.appendChild(div);
   });
 }
@@ -2124,8 +3034,8 @@ function confirmReady() {
     placement.phase = 'done';
     document.getElementById('placement-panel').style.display = 'none';
     document.getElementById('handoff-overlay').style.display = 'flex';
-    document.getElementById('handoff-text').textContent = 'PLAYER 2';
-    document.getElementById('handoff-sub').textContent = 'Press Ready to begin placement';
+    document.getElementById('handoff-text').textContent = T('handoff.player', {n: 2});
+    document.getElementById('handoff-sub').textContent = L('handoff.ready_placement');
     document.getElementById('handoff-btn').onclick = () => {
       document.getElementById('handoff-overlay').style.display = 'none';
       document.getElementById('handoff-btn').onclick = dismissHandoff;
@@ -2298,8 +3208,7 @@ function startGame() {
 
     const sz = gameState.settings.fieldSize;
     document.getElementById('hud-size').textContent = sz + '\u00d7' + sz;
-    document.getElementById('hud-landscape').textContent =
-      gameState.settings.landscape.charAt(0).toUpperCase() + gameState.settings.landscape.slice(1);
+    document.getElementById('hud-landscape').textContent = L('settings.' + gameState.settings.landscape) || gameState.settings.landscape;
 
     const worldSize = sz * CELL_PX;
     const canvas = document.getElementById('game-canvas');
@@ -2424,7 +3333,7 @@ function beginPlayerTurn() {
   const incoming = gameState.activeTorpedoes.filter(t => t.attackerIdx !== gameState.currentPlayer);
   const isHuman = gameState.settings.gameMode === 'hotseat' || gameState.currentPlayer === 0;
   if (incoming.length > 0 && isHuman) {
-    addLog('ВНИМАНИЕ! Торпеда в воде! ' + incoming.length + ' торпед' + (incoming.length > 1 ? 'ы' : 'а') + ' приближаются! Акустик — пеленг! БЧ-3 — к отражению!', 'critical');
+    addLog(T('log.torpedo_warning', {n: incoming.length, suffix: currentLang === 'ru' ? (incoming.length > 1 ? 'ы' : 'а') : (incoming.length > 1 ? 'es' : '')}), 'critical');
   }
 
   // Turn 11: auto-sink undeployed subs
@@ -2433,7 +3342,7 @@ function beginPlayerTurn() {
       const sub = gameState.players[p].ships.find(s => s.type === 'submarine' && !s.deployed);
       if (sub) {
         sub.sunk = true;
-        if (p === gameState.currentPlayer && isHuman) addLog('ПЛ "' + sub.russianName + '" потеряна — экипаж ' + sub.crew + ' чел. не вышел на связь в установленные сроки. Объявлена погибшей.', 'critical');
+        if (p === gameState.currentPlayer && isHuman) addLog(T('log.sub_lost', {name: shipProperName(sub), crew: sub.crew}), 'critical');
       }
     }
   }
@@ -2447,14 +3356,24 @@ function beginPlayerTurn() {
     if (damaged.length > 0) {
       const dmgReport = damaged.map(s => {
         const hitCount = s.hits.filter(h => h).length;
-        return SHIP_TYPE_NAMES_RU[s.type] + ' "' + s.russianName + '" (' + hitCount + '/' + s.size + ')';
+        return T('log.dmg_report_item', {type: shipTypeName(s.type), name: shipProperName(s), hits: hitCount, size: s.size});
       }).join(', ');
-      addLog('Ход ' + gameState.currentTurn + '. БЧ-5 докладывает: повреждены ' + dmgReport + '. Борьба за живучесть!', 'info');
+      addLog(T('log.turn_damaged', {turn: gameState.currentTurn, report: dmgReport}), 'info');
     } else if (gameState.currentTurn === 1) {
-      addLog('Ход 1. Эскадра в полной боевой готовности. Ожидаем приказа, товарищ адмирал.', 'info');
+      addLog(L('log.turn_first'), 'info');
     } else {
-      addLog('Ход ' + gameState.currentTurn + '. Обстановка без изменений. ' + aliveCount + ' кораблей в строю.', 'info');
+      addLog(T('log.turn_normal', {turn: gameState.currentTurn, alive: aliveCount}), 'info');
     }
+  }
+
+  // Hotseat: show nuclear impact overlay to victim before handoff
+  if (gameState.settings.gameMode === 'hotseat' && gameState.pendingNukeImpact && gameState.pendingNukeImpact.victimIdx === gameState.currentPlayer) {
+    const impact = gameState.pendingNukeImpact;
+    gameState.pendingNukeImpact = null;
+    showNukeImpactOverlay(impact, () => {
+      showHandoff();
+    });
+    return;
   }
 
   // Hotseat handoff (skip the very first turn of the game)
@@ -2481,8 +3400,8 @@ function beginPlayerTurn() {
 function showHandoff() {
   const overlay = document.getElementById('handoff-overlay');
   const pNum = gameState.currentPlayer + 1;
-  document.getElementById('handoff-text').textContent = 'PLAYER ' + pNum;
-  document.getElementById('handoff-sub').textContent = 'Press Ready when in position';
+  document.getElementById('handoff-text').textContent = T('handoff.player', {n: pNum});
+  document.getElementById('handoff-sub').textContent = L('handoff.ready_turn');
   overlay.style.display = 'flex';
 }
 
@@ -2568,13 +3487,13 @@ function showVictory(winner) {
   overlay.style.display = 'flex';
   if (gameState.settings.gameMode === 'hotseat') {
     overlay.className = 'win';
-    document.getElementById('victory-text').textContent = 'PLAYER ' + (winner + 1) + ' WINS';
-    document.getElementById('victory-sub').textContent = 'Enemy fleet destroyed.';
+    document.getElementById('victory-text').textContent = T('victory.player_wins', {n: winner + 1});
+    document.getElementById('victory-sub').textContent = L('victory.enemy_destroyed');
   } else {
     overlay.className = winner === 0 ? 'win' : 'lose';
-    document.getElementById('victory-text').textContent = winner === 0 ? 'VICTORY' : 'DEFEAT';
+    document.getElementById('victory-text').textContent = winner === 0 ? L('victory.win') : L('victory.lose');
     document.getElementById('victory-sub').textContent =
-      winner === 0 ? 'Enemy fleet destroyed.' : 'Your fleet has been destroyed.';
+      winner === 0 ? L('victory.enemy_destroyed') : L('victory.your_destroyed');
   }
 }
 
@@ -2585,19 +3504,19 @@ function updateTopBar() {
   if (gameState.settings.gameMode === 'hotseat') {
     document.getElementById('tb-player').textContent = 'P' + (gameState.currentPlayer + 1);
   } else {
-    document.getElementById('tb-player').textContent = gameState.currentPlayer === 0 ? 'You' : 'AI';
+    document.getElementById('tb-player').textContent = gameState.currentPlayer === 0 ? L('topbar.you') : L('topbar.ai');
   }
 
   const phaseEl = document.getElementById('tb-phase');
   if (gameState.settings.gameMode === 'ai' && gameState.currentPlayer === 1) {
     phaseEl.className = 'tb-phase waiting';
-    phaseEl.textContent = 'AI THINKING...';
+    phaseEl.textContent = L('topbar.ai_thinking');
   } else if (battle.strikerMode) {
     phaseEl.className = 'tb-phase fire';
-    phaseEl.textContent = 'STRIKER CHAIN';
+    phaseEl.textContent = L('topbar.striker_chain');
   } else {
     phaseEl.className = 'tb-phase' + (gameState.actionDone ? ' move' : ' recon');
-    phaseEl.textContent = gameState.actionDone ? 'MOVE (' + gameState.movePoints + ' pts)' : 'ACTION + MOVE (' + gameState.movePoints + ')';
+    phaseEl.textContent = gameState.actionDone ? T('topbar.move_only', {pts: gameState.movePoints}) : T('topbar.action_move', {pts: gameState.movePoints});
   }
 
   document.getElementById('tb-info').textContent = '';
@@ -2612,9 +3531,9 @@ function updateActionBar() {
   // Striker chain mode — only show chain info
   if (battle.strikerMode) {
     bar.innerHTML = `
-      <span style="color:#ef5350;font-size:12px;letter-spacing:1px;">Striker active — click next target on Radar</span>
+      <span style="color:#ef5350;font-size:12px;letter-spacing:1px;">${L('action.striker_hint')}</span>
       <div class="action-separator"></div>
-      <button class="action-btn skip-btn" onclick="battle.strikerMode=false;battle.strikerChain=[];endTurn()">End Sortie</button>
+      <button class="action-btn skip-btn" onclick="battle.strikerMode=false;battle.strikerChain=[];endTurn()">${L('action.end_sortie')}</button>
     `;
     return;
   }
@@ -2647,36 +3566,36 @@ function updateActionBar() {
   // Active fire mode
   const noFireMode = !battle.torpedoMode && !battle.asrocMode && !battle.nuclearStrikeMode && !battle.pcrMode;
 
-  let pcrLabel = 'PCR Vulkan';
+  let pcrLabel = L('action.pcr_vulkan');
   if (tarkr && hasPcr) { const cnt = tarkr.launchers.filter(l => l.loaded && !l.damaged).length; pcrLabel += ' (' + cnt + ')'; }
-  if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) pcrLabel = 'PCR PU-' + (battle.pcrSelectedLauncher + 1) + ' (aim)';
+  if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) pcrLabel = T('action.pcr_pu', {n: battle.pcrSelectedLauncher + 1});
 
   // Sub deploy mode
   if (battle.subDeployMode) {
     bar.innerHTML = `
-      <span style="color:#66bb6a;font-size:12px;letter-spacing:1px;">Click Fleet Map to deploy sub. Right-click to rotate.</span>
+      <span style="color:#66bb6a;font-size:12px;letter-spacing:1px;">${L('action.sub_deploy_hint')}</span>
       <div class="action-separator"></div>
-      <button class="action-btn skip-btn" onclick="battle.subDeployMode=false;battle.subGhostCells=[];updateActionBar()">Cancel</button>
+      <button class="action-btn skip-btn" onclick="battle.subDeployMode=false;battle.subGhostCells=[];updateActionBar()">${L('action.cancel')}</button>
     `;
     return;
   }
 
   bar.innerHTML = `
-    <button class="action-btn recon-btn${battle.radarSelectMode ? ' active' : ''}" onclick="startRadarSelect()" ${!hasRadarShip ? 'disabled' : ''}>Radar</button>
-    <button class="action-btn recon-btn${battle.sonarSelectMode ? ' active' : ''}" onclick="startSonarSelect()" ${!hasSonar ? 'disabled' : ''}>Sonar</button>
-    <button class="action-btn recon-btn" onclick="useAirRecon()" ${!hasAirRecon ? 'disabled' : ''}>Air Recon${carrier ? ' (' + carrier.planes + ')' : ''}</button>
+    <button class="action-btn recon-btn${battle.radarSelectMode ? ' active' : ''}" onclick="startRadarSelect()" ${!hasRadarShip ? 'disabled' : ''}>${L('action.radar')}</button>
+    <button class="action-btn recon-btn${battle.sonarSelectMode ? ' active' : ''}" onclick="startSonarSelect()" ${!hasSonar ? 'disabled' : ''}>${L('action.sonar')}</button>
+    <button class="action-btn recon-btn" onclick="useAirRecon()" ${!hasAirRecon ? 'disabled' : ''}>${L('action.air_recon')}${carrier ? ' (' + carrier.planes + ')' : ''}</button>
     <div class="action-separator"></div>
-    <button class="action-btn fire-btn${canShot && noFireMode ? ' active' : ''}" onclick="resetFireModes();updateActionBar()" ${!canShot ? 'disabled' : ''}>Shot</button>
-    <button class="action-btn fire-btn${battle.torpedoMode ? ' active' : ''}" onclick="startTorpedoMode()" ${!hasTorpedo ? 'disabled' : ''}>Torpedo</button>
-    <button class="action-btn fire-btn${battle.asrocMode ? ' active' : ''}" onclick="startAsrocMode()" ${!hasAsroc ? 'disabled' : ''}>ASROC</button>
+    <button class="action-btn fire-btn${canShot && noFireMode ? ' active' : ''}" onclick="resetFireModes();updateActionBar()" ${!canShot ? 'disabled' : ''}>${L('action.shot')}</button>
+    <button class="action-btn fire-btn${battle.torpedoMode ? ' active' : ''}" onclick="startTorpedoMode()" ${!hasTorpedo ? 'disabled' : ''}>${L('action.torpedo')}</button>
+    <button class="action-btn fire-btn${battle.asrocMode ? ' active' : ''}" onclick="startAsrocMode()" ${!hasAsroc ? 'disabled' : ''}>${L('action.asroc')}</button>
     <button class="action-btn fire-btn${battle.pcrMode ? ' active' : ''}" onclick="startPcrMode()" ${!hasPcr ? 'disabled' : ''}>${pcrLabel}</button>
-    <button class="action-btn fire-btn" onclick="startStrikerMode()" ${!hasStriker ? 'disabled' : ''}>Striker${carrier ? ' (' + carrier.strikers + ')' : ''}</button>
-    <button class="action-btn fire-btn${battle.nuclearStrikeMode ? ' active' : ''}" onclick="startT10Mode()" ${!hasT10 ? 'disabled' : ''} style="${hasT10 ? 'border-color:#ff9800;color:#ff9800;' : ''}">T-10</button>
+    <button class="action-btn fire-btn" onclick="startStrikerMode()" ${!hasStriker ? 'disabled' : ''}>${L('action.striker')}${carrier ? ' (' + carrier.strikers + ')' : ''}</button>
+    <button class="action-btn fire-btn${battle.nuclearStrikeMode ? ' active' : ''}" onclick="startT10Mode()" ${!hasT10 ? 'disabled' : ''} style="${hasT10 ? 'border-color:#ff9800;color:#ff9800;' : ''}">${L('action.t10')}</button>
     <div class="action-separator"></div>
-    ${canDeploySub ? '<button class="action-btn move-btn" onclick="startSubDeploy()">Deploy Sub</button>' : ''}
-    <span style="color:#66bb6a;font-size:11px;letter-spacing:1px;">Move: ${mp} pts</span>
+    ${canDeploySub ? '<button class="action-btn move-btn" onclick="startSubDeploy()">' + L('action.deploy_sub') + '</button>' : ''}
+    <span style="color:#66bb6a;font-size:11px;letter-spacing:1px;">${T('action.move_pts', {pts: mp})}</span>
     <div class="action-separator"></div>
-    <button class="action-btn skip-btn" onclick="endTurn()">End Turn</button>
+    <button class="action-btn skip-btn" onclick="endTurn()">${L('action.end_turn')}</button>
   `;
 }
 
@@ -2700,33 +3619,15 @@ function coordStr(x, y) {
   return colLabel(x) + '-' + (y + 1);
 }
 
-const CAPTAIN_LAST_WORDS = [
-  '«{NAME}» — последний сигнал: "Прощайте, товарищи... Служу Отечеству." Тишина.',
-  '«{NAME}»: "Машина, полный назад—" ...связь потеряна. Шлюпки в воде. Спасение невозможно — бой продолжается.',
-  '«{NAME}», командир: "Экипажу — покинуть корабль! Оставить раненых не могу. Остаюсь." Конец связи.',
-  '«{NAME}» — обрыв связи. Тишина в эфире. На месте корабля — масляное пятно и обломки.',
-  '«{NAME}»: "Не сдаёмся! Орудия к б—" ...помехи... конец передачи. Навсегда.',
-  '«{NAME}», радист: "Крен 40 градусов... уходим под воду... машинное затоплено... не выб—" Молчание.',
-  '«{NAME}»: "Флаг не спускать." Корабль скрылся под водой кормой вперёд. С поднятым флагом.',
-  '«{NAME}» — последний доклад: "Реактор — аварийное... температура активной зоны критическая... всем поки—" Взрыв.',
-  '«{NAME}»: "Это конец. Слава флоту. Слава экипажу." Молчание. Корабля больше нет.',
-  '«{NAME}», штурман: "Координаты переданы. Боезапас детонирует. Отомстите за нас." Связь оборвалась.'
-];
-
-const SUNK_DESCRIPTIONS = [
-  'Корабль разломился пополам. Носовая часть ушла под воду за 40 секунд.',
-  'Корпус объят пламенем. Детонация боезапаса. Корабля больше нет.',
-  'Корабль опрокинулся и затонул. На поверхности — только обломки и мазут.',
-  'Пожар в машинном. Взрыв котлов. Корабль затонул за две минуты.',
-  'Корпус получил критические разрушения. Переборки не выдержали. Затоплен.'
-];
-
 function sunkDescription() {
-  return SUNK_DESCRIPTIONS[Math.floor(Math.random() * SUNK_DESCRIPTIONS.length)];
+  const arr = L('sunk_desc');
+  return Array.isArray(arr) ? arr[Math.floor(Math.random() * arr.length)] : '';
 }
 
 function captainLastWords(name) {
-  return CAPTAIN_LAST_WORDS[Math.floor(Math.random() * CAPTAIN_LAST_WORDS.length)].replace('{NAME}', name);
+  const arr = L('captain_last_words');
+  if (!Array.isArray(arr)) return '';
+  return arr[Math.floor(Math.random() * arr.length)].replace('{NAME}', name);
 }
 
 const LOG_TOAST_MAP = { hit:'hit', miss:'miss', sunk:'sunk', critical:'sunk', info:'info', enemy:'sunk' };
@@ -2750,7 +3651,7 @@ function addLog(msg, type) {
   lastEl.classList.add(type || 'info');
   const div = document.createElement('div');
   div.className = 'log-entry ' + (type || 'info');
-  div.innerHTML = '<span class="log-turn">[Ход ' + turn + ']</span>' + msg;
+  div.innerHTML = '<span class="log-turn">[' + L('log.turn_label') + ' ' + turn + ']</span>' + msg;
   entriesEl.appendChild(div);
   entriesEl.scrollTop = entriesEl.scrollHeight;
 }
@@ -2775,7 +3676,7 @@ function startRadarSelect() {
   if (gameState.settings.gameMode === 'ai' && gameState.currentPlayer !== 0) return;
   resetFireModes();
   battle.radarSelectMode = true;
-  showToast('Click a destroyer or larger ship on the Fleet Map to use as radar source.', 'info', 3000);
+  showToast(L('toast.radar_select'), 'info', 3000);
   updateActionBar();
 }
 
@@ -2824,10 +3725,10 @@ function useRadar(sourceShip) {
   playSound('radar_ping');
   battle.radarSelectMode = false;
   gameState.actionDone = true;
-  const typeRu = SHIP_TYPE_NAMES_RU[sourceShip.type] || sourceShip.type;
-  const sName = sourceShip.russianName || sourceShip.name;
+  const sType = shipTypeName(sourceShip.type);
+  const sName = shipProperName(sourceShip);
   if (detected > 0) {
-    addLog('РЛС ' + typeRu + ' "' + sName + '" — антенна на излучение... Обнаружено ' + detected + ' целей! Передаю данные в БИЦ.', 'info');
+    addLog(T('log.radar_detected', {type: sType, name: sName, n: detected}), 'info');
     // Add radar pulses for detected ships
     for (const det of player.radarData.detectedShips.filter(d => d.turnDetected === gameState.currentTurn)) {
       const cx = det.cells.reduce((s, c) => s + c.x, 0) / det.cells.length;
@@ -2835,10 +3736,10 @@ function useRadar(sourceShip) {
       battle.radarPulses.push({ cx, cy, startTime: Date.now(), rings: 3 });
     }
   } else {
-    addLog('РЛС ' + typeRu + ' "' + sName + '" — антенна на излучение... Эфир чист. Целей не обнаружено.', 'info');
+    addLog(T('log.radar_clear', {type: sType, name: sName}), 'info');
   }
   // REB alert for enemy
-  addLog('БЧ-1 докладывает: РЭБ фиксирует облучение! ' + typeRu + ' "' + sName + '" демаскирован.', 'enemy');
+  addLog(T('log.radar_reb', {type: sType, name: sName}), 'enemy');
   updateTopBar();
   updateActionBar();
   return true;
@@ -2889,18 +3790,18 @@ function useAirRecon() {
     }
   }
 
-  const carrierName = carrier.russianName || 'Авианосец';
+  const carrierName = shipProperName(carrier);
   if (detected > 0) {
-    addLog('Разведчик с АВ "' + carrierName + '" докладывает: обнаружено ' + detected + ' целей! Координаты переданы в БИЦ. (' + carrier.planes + ' самолётов осталось)', 'info');
+    addLog(T('log.air_detected', {name: carrierName, n: detected, planes: carrier.planes}), 'info');
     for (const det of player.radarData.detectedShips.filter(d => d.turnDetected === gameState.currentTurn && d.source === 'air')) {
       const cx = det.cells.reduce((s, c) => s + c.x, 0) / det.cells.length;
       const cy = det.cells.reduce((s, c) => s + c.y, 0) / det.cells.length;
       battle.radarPulses.push({ cx, cy, startTime: Date.now(), rings: 3 });
     }
   } else {
-    addLog('Разведчик с АВ "' + carrierName + '" — облёт завершён. Целей не обнаружено. (' + carrier.planes + ' самолётов осталось)', 'info');
+    addLog(T('log.air_clear', {name: carrierName, planes: carrier.planes}), 'info');
   }
-  if (planeLost) addLog('Зенитный огонь! ПЛОТНЫЙ ОГОНЬ! Разведчик сбит! Пилот не катапультировался.', 'enemy');
+  if (planeLost) addLog(L('log.air_shot_down'), 'enemy');
   gameState.actionDone = true;
   updateTopBar();
   updateActionBar();
@@ -2936,7 +3837,7 @@ function checkReactorDetonation(attackerIdx, ship, cellIndex, ownerIdx) {
   // Reactor hit (center cell, index 2) on TARKR or Carrier
   if (ship.reactor === 2 && cellIndex === 2) {
     if (roll <= 50) {
-      addLog('ПОПАДАНИЕ В РЕАКТОР! КРИТИЧЕСКИЙ ОТКАЗ СИСТЕМ ОХЛАЖДЕНИЯ! Температура активной зоны — 2800°! ДЕТОНАЦИЯ!', 'critical');
+      addLog(L('log.reactor_hit'), 'critical');
       triggerNuclearExplosion(attackerIdx, ownerIdx, center.x, center.y);
       return true;
     }
@@ -2949,7 +3850,7 @@ function checkReactorDetonation(attackerIdx, ship, cellIndex, ownerIdx) {
       if (launcher.loaded && !launcher.damaged) {
         if (roll <= 15) {
           launcher.damaged = true;
-          addLog('ДЕТОНАЦИЯ ПУСКОВОЙ УСТАНОВКИ! Ракетное топливо — возгорание! ВЗРЫВ БОЕЗАПАСА!', 'critical');
+          addLog(L('log.launcher_det'), 'critical');
           triggerNuclearExplosion(attackerIdx, ownerIdx, center.x, center.y);
           return true;
         }
@@ -2961,7 +3862,7 @@ function checkReactorDetonation(attackerIdx, ship, cellIndex, ownerIdx) {
   // Carrier fuel hit (any cell except reactor)
   if (ship.type === 'carrier' && cellIndex !== 2) {
     if (roll <= 15) {
-      addLog('ВЗРЫВ АВИАТОПЛИВА! Пожар на полётной палубе! Детонация авиационных боеприпасов!', 'critical');
+      addLog(L('log.fuel_det'), 'critical');
       triggerNuclearExplosion(attackerIdx, ownerIdx, center.x, center.y);
       return true;
     }
@@ -3023,13 +3924,13 @@ function regularShot(attackerIdx, x, y) {
 
   // Check already shot here
   if (attacker.radarData.shots.some(s => s.x === x && s.y === y)) {
-    showToast('Already fired at this cell.', 'info', 1500);
+    showToast(L('toast.already_fired'), 'info', 1500);
     return false;
   }
 
   // Check has living surface ship
   if (!attacker.ships.some(s => !s.sunk && s.type !== 'submarine')) {
-    showToast('No living surface ships.', 'info');
+    showToast(L('toast.no_surface_ships'), 'info');
     return false;
   }
 
@@ -3041,7 +3942,7 @@ function regularShot(attackerIdx, x, y) {
   const crd = coordStr(x, y);
   if (target && target.ship.type === 'submarine' && !target.ship.surfaced) {
     attacker.radarData.shots.push({ x, y, hit: false });
-    if (isOurShot) addLog('Залп! Квадрат ' + crd + ' — всплеск! Снаряд лёг мимо. Корректирую.', 'miss');
+    if (isOurShot) addLog(T('log.miss_our', {coord: crd}), 'miss');
     setTimeout(() => playSound('miss'), 200);
     return true;
   }
@@ -3065,25 +3966,25 @@ function regularShot(attackerIdx, x, y) {
         type: target.ship.type,
         cells: target.ship.cells.map(c => ({ ...c }))
       });
-      const sunkType = SHIP_TYPE_NAMES_RU[target.ship.type] || target.ship.type;
-      const sunkName = target.ship.russianName || target.ship.name;
+      const sunkType = shipTypeName(target.ship.type);
+      const sunkName = shipProperName(target.ship);
       if (isOurShot) {
-        addLog(sunkType + ' противника поражен! ' + sunkDescription() + ' Цель уничтожена!', 'sunk');
+        addLog(T('log.sunk_our', {type: sunkType, desc: sunkDescription()}), 'sunk');
       } else {
-        addLog('Адмирал! ' + sunkType + ' "' + sunkName + '" — критические повреждения! Тонет! Экипаж — ' + target.ship.crew + ' чел! Шлюпки в воде! Спасение невозможно — бой продолжается!', 'critical');
+        addLog(T('log.sunk_enemy', {type: sunkType, name: sunkName, crew: target.ship.crew}), 'critical');
         addLog(captainLastWords(sunkName), 'critical');
       }
       battle.sinkExplosions.push({ cells: target.ship.cells.map(c => ({...c})), startTime: Date.now(), duration: 1500, onRadar: isOurShot });
       setTimeout(() => playSound('sunk'), 200);
     } else {
       if (isOurShot) {
-        addLog('Огонь! Квадрат ' + crd + ' — ЕСТЬ ПОПАДАНИЕ! Наблюдаю дым над целью!', 'hit');
+        addLog(T('log.hit_our', {coord: crd}), 'hit');
       } else {
         // AI hit us
-        const hitType = SHIP_TYPE_NAMES_RU[target.ship.type] || target.ship.type;
-        const hitName = target.ship.russianName || target.ship.name;
+        const hitType = shipTypeName(target.ship.type);
+        const hitName = shipProperName(target.ship);
         const hitCount = target.ship.hits.filter(h => h).length;
-        addLog('Попадание в ' + hitType + ' "' + hitName + '"! Пробоина! БЧ-5 — борьба за живучесть! (' + hitCount + '/' + target.ship.size + ')', 'enemy');
+        addLog(T('log.hit_enemy', {type: hitType, name: hitName, hits: hitCount, size: target.ship.size}), 'enemy');
       }
       setTimeout(() => playSound('hit'), 200);
     }
@@ -3091,7 +3992,7 @@ function regularShot(attackerIdx, x, y) {
   } else {
     // MISS
     attacker.radarData.shots.push({ x, y, hit: false });
-    if (isOurShot) addLog('Залп! Квадрат ' + crd + ' — всплеск! Снаряд лёг мимо. Корректирую.', 'miss');
+    if (isOurShot) addLog(T('log.miss_our', {coord: crd}), 'miss');
     setTimeout(() => playSound('miss'), 200);
     return true;
   }
@@ -3189,7 +4090,7 @@ function getMoveCost(opt) {
 
 function showMoveOptions(ship, screenX, screenY) {
   const opts = getMovementOptions(gameState.currentPlayer, ship);
-  if (opts.length === 0) { showToast('No valid moves for this ship.', 'info'); return; }
+  if (opts.length === 0) { showToast(L('toast.no_valid_moves'), 'info'); return; }
 
   battle.selectedShip = ship;
   const container = document.getElementById('move-options');
@@ -3210,7 +4111,7 @@ function showMoveOptions(ship, screenX, screenY) {
       executeMove(gameState.currentPlayer, ship, opt);
       gameState.movePoints -= cost;
       hideMoveOptions();
-      showToast(ship.name + ' moved. (' + gameState.movePoints + ' pts left)', 'move-toast', 1500);
+      showToast(T('toast.ship_moved', {name: shipProperName(ship), pts: gameState.movePoints}), 'move-toast', 1500);
       updateTopBar();
       updateActionBar();
     };
@@ -3219,7 +4120,7 @@ function showMoveOptions(ship, screenX, screenY) {
 
   const cancel = document.createElement('button');
   cancel.className = 'move-opt-btn';
-  cancel.textContent = 'Cancel';
+  cancel.textContent = L('action.cancel');
   cancel.style.borderColor = '#78909c';
   cancel.style.color = '#78909c';
   cancel.onclick = () => hideMoveOptions();
@@ -3241,7 +4142,7 @@ function startSubDeploy() {
   battle.subGhostCells = [];
   battle.subGhostValid = false;
   battle.subGhostOrientation = 'horizontal';
-  showToast('Click on Fleet Map to place submarine. Right-click to rotate.', 'info', 3000);
+  showToast(L('toast.sub_place_hint'), 'info', 3000);
   updateActionBar();
 }
 
@@ -3300,7 +4201,7 @@ function deploySubmarine(playerIdx, cells, orientation) {
   battle.subDeployMode = false;
   battle.subGhostCells = [];
   gameState.actionDone = true;
-  addLog('ПЛ "' + sub.russianName + '" вышла на позицию. Погружение. Готова к бою.', 'info');
+  addLog(T('log.sub_deployed', {name: shipProperName(sub)}), 'info');
   updateTopBar();
   updateActionBar();
 }
@@ -3322,7 +4223,7 @@ function aiDeploySub() {
       sub.placed = true;
       sub.hits = Array(3).fill(false);
       if (gameState.settings.gameMode === 'ai') {
-        addLog('Акустики докладывают! Шум винтов! В эскадре противника ПЛ! Может нести ядерное!', 'enemy');
+        addLog(L('log.sub_enemy_detected'), 'enemy');
       }
       return true;
     }
@@ -3337,12 +4238,12 @@ function startSonarSelect() {
   if (gameState.settings.gameMode === 'ai' && gameState.currentPlayer !== 0) return;
   resetFireModes();
   battle.sonarSelectMode = true;
-  showToast('Click a destroyer on the Fleet Map to ping sonar.', 'info', 3000);
+  showToast(L('toast.sonar_select'), 'info', 3000);
   updateActionBar();
 }
 
 function useSonar(sourceShip) {
-  if (sourceShip.type !== 'destroyer') { showToast('Only destroyers have sonar.', 'info'); return; }
+  if (sourceShip.type !== 'destroyer') { showToast(L('toast.sonar_only_dd'), 'info'); return; }
   if (sourceShip.sunk || sourceShip.sonarCooldown > 0) return;
 
   sourceShip.sonarCooldown = 2;
@@ -3376,7 +4277,7 @@ function useSonar(sourceShip) {
       detected++;
       // Notify sub owner if human (AI mode only — in hotseat don't reveal info to current player)
       if (gameState.settings.gameMode === 'ai' && enemyIdx === 0) {
-        addLog('Акустики докладывают! Шум винтов! В эскадре противника ПЛ! Может нести ядерное!', 'enemy');
+        addLog(L('log.sub_enemy_detected'), 'enemy');
       }
     }
   }
@@ -3384,11 +4285,11 @@ function useSonar(sourceShip) {
   playSound('sonar_ping');
   battle.sonarSelectMode = false;
   gameState.actionDone = true;
-  const ddName = sourceShip.russianName || sourceShip.name;
+  const ddName = shipProperName(sourceShip);
   if (detected > 0) {
-    addLog('Акустик ЭМ "' + ddName + '" — КОНТАКТ! Шум винтов подводной лодки! Пеленг определён!', 'hit');
+    addLog(T('log.sonar_contact', {name: ddName}), 'hit');
   } else {
-    addLog('Акустик ЭМ "' + ddName + '": горизонт чист. Подводных целей не обнаружено.', 'info');
+    addLog(T('log.sonar_clear', {name: ddName}), 'info');
   }
   updateTopBar();
   updateActionBar();
@@ -3400,11 +4301,11 @@ function startAsrocMode() {
   // Cannot fire ASROC on the same turn sonar was used — sub must have a chance to move
   const sonarThisTurn = gameState.sonarDetections.some(d => d.playerIdx === gameState.currentPlayer && d.turnDetected === gameState.currentTurn);
   if (sonarThisTurn) {
-    showToast('Cannot fire ASROC on the same turn as sonar — target must have a chance to evade.', 'info', 3000);
+    showToast(L('toast.asroc_same_turn'), 'info', 3000);
     return;
   }
   battle.asrocMode = true;
-  showToast('Click target cell on Radar to launch ASROC.', 'info', 3000);
+  showToast(L('toast.asroc_aim'), 'info', 3000);
   updateActionBar();
 }
 
@@ -3414,11 +4315,11 @@ function fireAsroc(attackerIdx, x, y) {
 
   // Find destroyer with ASROC available
   const dd = attacker.ships.find(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
-  if (!dd) { showToast('No ASROC available.', 'info'); return false; }
+  if (!dd) { showToast(L('toast.no_asroc'), 'info'); return false; }
 
   // Already shot here?
   if (attacker.radarData.shots.some(s => s.x === x && s.y === y)) {
-    showToast('Already fired at this cell.', 'info', 1500);
+    showToast(L('toast.already_fired'), 'info', 1500);
     return false;
   }
 
@@ -3438,7 +4339,7 @@ function fireAsroc(attackerIdx, x, y) {
         attacker.radarData.shots.push({ x: c.x, y: c.y, hit: true });
       }
     }
-    addLog('АСРОК — ПУСК! Ракетоторпеда поразила цель! Подлодка уничтожена! На поверхности — масляное пятно и обломки.', 'sunk');
+    addLog(L('log.asroc_sub_kill'), 'sunk');
     battle.sinkExplosions.push({ cells: target.ship.cells.map(c => ({...c})), startTime: Date.now(), duration: 1500, onRadar: true });
   } else if (target) {
     // Regular hit on surface ship
@@ -3450,15 +4351,15 @@ function fireAsroc(attackerIdx, x, y) {
         type: target.ship.type,
         cells: target.ship.cells.map(c => ({ ...c }))
       });
-      const t = SHIP_TYPE_NAMES_RU[target.ship.type] || target.ship.type;
-      addLog('АСРОК — ПУСК! Попадание! ' + t + ' противника УНИЧТОЖЕН! ' + sunkDescription(), 'sunk');
+      const t = shipTypeName(target.ship.type);
+      addLog(T('log.asroc_sunk', {type: t, desc: sunkDescription()}), 'sunk');
       battle.sinkExplosions.push({ cells: target.ship.cells.map(c => ({...c})), startTime: Date.now(), duration: 1500, onRadar: true });
     } else {
-      addLog('АСРОК — ПУСК! Попадание по надводной цели! Наблюдаю повреждения!', 'hit');
+      addLog(L('log.asroc_hit'), 'hit');
     }
   } else {
     attacker.radarData.shots.push({ x, y, hit: false });
-    addLog('АСРОК — ПУСК! Ракетоторпеда ушла в пустоту. Цель не обнаружена.', 'miss');
+    addLog(L('log.asroc_miss'), 'miss');
   }
 
   battle.asrocMode = false;
@@ -3469,14 +4370,14 @@ function fireAsroc(attackerIdx, x, y) {
 
 function startTorpedoMode() {
   battle.torpedoMode = true;
-  showToast('Click target cell on Radar to launch torpedo.', 'info', 3000);
+  showToast(L('toast.torpedo_aim'), 'info', 3000);
   updateActionBar();
 }
 
 function fireTorpedo(attackerIdx, targetX, targetY) {
   const attacker = gameState.players[attackerIdx];
   const sub = attacker.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
-  if (!sub) { showToast('No submarine with torpedoes available.', 'info'); return false; }
+  if (!sub) { showToast(L('toast.no_torpedo'), 'info'); return false; }
 
   sub.torpedoes--;
   // Surface the sub (visible for 1 turn)
@@ -3525,7 +4426,7 @@ function fireTorpedo(attackerIdx, targetX, targetY) {
   }
 
   if (blocked) {
-    addLog('Торпеда заблокирована препятствием!', 'miss');
+    addLog(L('log.torpedo_blocked'), 'miss');
     battle.torpedoMode = false;
     return true; // still counts as action (sub surfaced)
   }
@@ -3540,7 +4441,7 @@ function fireTorpedo(attackerIdx, targetX, targetY) {
   });
 
   playSound('torpedo_launch');
-  addLog('Торпедный аппарат — ПУСК! Торпеда в воде! Дистанция до цели — 3 хода!', 'hit');
+  addLog(L('log.torpedo_launch'), 'hit');
   battle.torpedoMode = false;
   return true;
 }
@@ -3565,44 +4466,47 @@ function advanceTorpedoes() {
       continue;
     }
 
-    if (torp.turnsRemaining <= 0) {
-      // Torpedo arrives
-      const defenderIdx = 1 - torp.attackerIdx;
-      const attacker = gameState.players[torp.attackerIdx];
-      const target = getShipAt(defenderIdx, torp.targetX, torp.targetY);
-      if (target) {
-        // Guaranteed kill
-        for (let h = 0; h < target.ship.hits.length; h++) target.ship.hits[h] = true;
-        target.ship.sunk = true;
-        attacker.radarData.sunkShips.push({
-          type: target.ship.type,
-          cells: target.ship.cells.map(c => ({ ...c }))
-        });
-        for (const c of target.ship.cells) {
-          if (!attacker.radarData.shots.some(s => s.x === c.x && s.y === c.y)) {
-            attacker.radarData.shots.push({ x: c.x, y: c.y, hit: true });
-          }
+    // Check collision with any ship at current position (contact kill)
+    const defenderIdx = 1 - torp.attackerIdx;
+    const attacker = gameState.players[torp.attackerIdx];
+    const collision = getShipAt(defenderIdx, torp.currentX, torp.currentY);
+    if (collision) {
+      // Guaranteed kill on contact
+      for (let h = 0; h < collision.ship.hits.length; h++) collision.ship.hits[h] = true;
+      collision.ship.sunk = true;
+      attacker.radarData.sunkShips.push({
+        type: collision.ship.type,
+        cells: collision.ship.cells.map(c => ({ ...c }))
+      });
+      for (const c of collision.ship.cells) {
+        if (!attacker.radarData.shots.some(s => s.x === c.x && s.y === c.y)) {
+          attacker.radarData.shots.push({ x: c.x, y: c.y, hit: true });
         }
-        const isOurs = (gameState.settings.gameMode === 'hotseat') ? (torp.attackerIdx === gameState.currentPlayer) : (torp.attackerIdx === 0);
-        const tType = SHIP_TYPE_NAMES_RU[target.ship.type] || target.ship.type;
-        const tName = target.ship.russianName || target.ship.name;
-        if (isOurs) {
-          addLog('Торпеда поразила цель! ' + tType + ' противника УНИЧТОЖЕН! ' + sunkDescription(), 'sunk');
-        } else {
-          addLog('Торпедное попадание! ' + tType + ' "' + tName + '" поражён! Экипаж — ' + target.ship.crew + ' чел! Корабль тонет! Спасение невозможно!', 'critical');
-          addLog(captainLastWords(tName), 'critical');
-        }
-        battle.sinkExplosions.push({ cells: target.ship.cells.map(c => ({...c})), startTime: Date.now(), duration: 1500, onRadar: isOurs });
-        playSound('torpedo_hit');
-      } else {
-        const isOurs = (gameState.settings.gameMode === 'hotseat') ? (torp.attackerIdx === gameState.currentPlayer) : (torp.attackerIdx === 0);
-        if (isOurs) {
-          addLog('Торпеда прошла мимо цели — противник уклонился. Промах.', 'miss');
-        } else {
-          addLog('Торпеда противника прошла мимо! Уклонение! Пронесло!', 'info');
-        }
-        playSound('miss');
       }
+      const isOurs = (gameState.settings.gameMode === 'hotseat') ? (torp.attackerIdx === gameState.currentPlayer) : (torp.attackerIdx === 0);
+      const tType = shipTypeName(collision.ship.type);
+      const tName = shipProperName(collision.ship);
+      if (isOurs) {
+        addLog(T('log.torpedo_hit_our', {type: tType, desc: sunkDescription()}), 'sunk');
+      } else {
+        addLog(T('log.torpedo_hit_enemy', {type: tType, name: tName, crew: collision.ship.crew}), 'critical');
+        addLog(captainLastWords(tName), 'critical');
+      }
+      battle.sinkExplosions.push({ cells: collision.ship.cells.map(c => ({...c})), startTime: Date.now(), duration: 1500, onRadar: isOurs });
+      playSound('torpedo_hit');
+      toRemove.push(i);
+      continue;
+    }
+
+    if (torp.turnsRemaining <= 0) {
+      // Torpedo arrived at target but no ship there — miss
+      const isOurs = (gameState.settings.gameMode === 'hotseat') ? (torp.attackerIdx === gameState.currentPlayer) : (torp.attackerIdx === 0);
+      if (isOurs) {
+        addLog(L('log.torpedo_miss_our'), 'miss');
+      } else {
+        addLog(L('log.torpedo_miss_enemy'), 'info');
+      }
+      playSound('miss');
       toRemove.push(i);
     }
   }
@@ -3615,18 +4519,18 @@ function advanceTorpedoes() {
 
 function startT10Mode() {
   const player = gameState.players[gameState.currentPlayer];
-  if (player.nuclearUsed) { showToast('T-10 already launched this game.', 'info'); return; }
-  if (gameState.settings.fieldSize === 30) { showToast('Not available in Skirmish mode.', 'info'); return; }
+  if (player.nuclearUsed) { showToast(L('toast.t10_used'), 'info'); return; }
+  if (gameState.settings.fieldSize === 30) { showToast(L('toast.t10_no_skirmish'), 'info'); return; }
   const sub = player.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.t10 > 0);
-  if (!sub) { showToast('No submarine with T-10 available.', 'info'); return; }
+  if (!sub) { showToast(L('toast.no_t10'), 'info'); return; }
 
   showConfirmDialog(
-    'LAUNCH T-10 NUCLEAR TORPEDO?',
-    'This action cannot be undone. 11x11 zone will be devastated. Submarine will surface.',
+    L('confirm.t10_title'),
+    L('confirm.t10_text'),
     () => {
       resetFireModes();
       battle.nuclearStrikeMode = true;
-      showToast('Select target zone center on Radar.', 'info', 3000);
+      showToast(L('toast.t10_aim'), 'info', 3000);
       updateActionBar();
     },
     () => { /* cancel */ }
@@ -3639,7 +4543,7 @@ function launchNuclearStrike(attackerIdx, centerX, centerY) {
   const defender = gameState.players[defenderIdx];
   const sz = gameState.settings.fieldSize;
 
-  // T-10 is fired from submarine — surface it
+  // ☢ T-15 is fired from submarine — surface it
   const sub = attacker.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.t10 > 0);
   if (sub) {
     sub.t10--;
@@ -3654,8 +4558,8 @@ function launchNuclearStrike(attackerIdx, centerX, centerY) {
   }
   attacker.nuclearUsed = true;
 
-  const x0 = Math.max(0, centerX - 5), x1 = Math.min(sz - 1, centerX + 5);
-  const y0 = Math.max(0, centerY - 5), y1 = Math.min(sz - 1, centerY + 5);
+  const x0 = Math.max(0, centerX - 9), x1 = Math.min(sz - 1, centerX + 9);
+  const y0 = Math.max(0, centerY - 9), y1 = Math.min(sz - 1, centerY + 9);
 
   // Destroy/damage ships in zone
   for (const ship of defender.ships) {
@@ -3702,52 +4606,219 @@ function launchNuclearStrike(attackerIdx, centerX, centerY) {
   for (const s of sunkShips) {
     if (s.cells.some(c => c.x >= x0 && c.x <= x1 && c.y >= y0 && c.y <= y1)) {
       totalCrew += s.crew;
-      sunkNames.push(SHIP_TYPE_NAMES_RU[s.type] + ' "' + s.russianName + '"');
+      sunkNames.push(shipTypeName(s.type) + ' "' + shipProperName(s) + '"');
     }
   }
-  addLog('\u2622 ЯДЕРНЫЙ ВЗРЫВ! Квадрат ' + coordStr(centerX, centerY) + '! Мощность — 15 килотонн! Ударная волна!', 'critical');
+  addLog(T('log.nuke_explosion', {coord: coordStr(centerX, centerY)}), 'critical');
   if (sunkNames.length > 0) {
-    addLog('УНИЧТОЖЕНЫ: ' + sunkNames.join(', ') + '. Потери — ' + totalCrew + ' чел. Район заражён, проход запрещён.', 'critical');
+    addLog(T('log.nuke_casualties', {ships: sunkNames.join(', '), crew: totalCrew}), 'critical');
+  }
+
+  // Store impact info for hotseat victim overlay
+  if (gameState.pendingNukeImpact) {
+    gameState.pendingNukeImpact.coord = coordStr(centerX, centerY);
+    gameState.pendingNukeImpact.sunkNames = sunkNames;
+    gameState.pendingNukeImpact.victimIdx = defenderIdx;
   }
   return true;
 }
 
 function nuclearSequence(attackerIdx, centerX, centerY) {
   battle.nuclearAnimating = true;
-  const overlay = document.getElementById('nuke-overlay');
-  overlay.style.display = 'block';
+  const ceremony = document.getElementById('nuke-ceremony-overlay');
+  const content = document.getElementById('nuke-ceremony-content');
+  const nukeOverlay = document.getElementById('nuke-overlay');
+  content.innerHTML = '';
+  ceremony.style.display = 'flex';
+  ceremony.classList.add('alarm-flash');
 
-  addLog('ЯДЕРНАЯ ТОРПЕДА В ВОДЕ! БОЕВАЯ ТРЕВОГА! ВСЕМ — ПРОТИВОАТОМНАЯ ЗАЩИТА!', 'critical');
+  addLog(L('log.nuke_warning'), 'critical');
   playSound('alarm');
 
-  let flashCount = 0;
-  const flashInterval = setInterval(() => {
-    overlay.style.background = 'rgba(255,0,0,0.3)';
-    setTimeout(() => { overlay.style.background = 'transparent'; }, 200);
-    flashCount++;
-    if (flashCount >= 3) clearInterval(flashInterval);
-  }, 500);
+  // Store nuke info for hotseat impact overlay
+  gameState.pendingNukeImpact = { attackerIdx, centerX, centerY };
 
+  // Generate random launch code (6 digits)
+  const launchCode = String(Math.floor(100000 + Math.random() * 900000));
+
+  const textSteps = [
+    L('log.nuke_ceremony_1'),
+    L('log.nuke_ceremony_2'),
+    L('log.nuke_ceremony_3')
+  ];
+
+  const STEP_DELAY = 5000; // 5s per text step
+
+  // Show text steps 1-3
+  textSteps.forEach((text, i) => {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'ceremony-step';
+      div.textContent = text;
+      content.appendChild(div);
+      content.scrollTop = content.scrollHeight;
+    }, i * STEP_DELAY);
+  });
+
+  // Step 4: code input mini-game
+  const codePhaseTime = textSteps.length * STEP_DELAY;
   setTimeout(() => {
-    // White flash + damage
-    overlay.style.background = 'rgba(255,255,255,0.9)';
+    showNukeLaunchCodePanel(content, launchCode, attackerIdx, centerX, centerY, ceremony, nukeOverlay);
+  }, codePhaseTime);
+}
+
+function showNukeLaunchCodePanel(content, launchCode, attackerIdx, centerX, centerY, ceremony, nukeOverlay) {
+  const panel = document.createElement('div');
+  panel.className = 'ceremony-code-panel';
+
+  const label = document.createElement('div');
+  label.className = 'ceremony-step';
+  label.style.border = 'none';
+  label.style.background = 'none';
+  label.style.marginBottom = '8px';
+  label.textContent = L('log.nuke_ceremony_4_prefix');
+  panel.appendChild(label);
+
+  const codeDisplay = document.createElement('div');
+  codeDisplay.className = 'ceremony-code-display';
+  codeDisplay.textContent = launchCode;
+  panel.appendChild(codeDisplay);
+
+  const timerEl = document.createElement('div');
+  timerEl.className = 'ceremony-code-timer';
+  panel.appendChild(timerEl);
+
+  const input = document.createElement('input');
+  input.className = 'ceremony-code-input';
+  input.type = 'text';
+  input.maxLength = 6;
+  input.placeholder = L('log.nuke_code_placeholder');
+  input.setAttribute('autocomplete', 'off');
+  panel.appendChild(input);
+
+  const btn = document.createElement('button');
+  btn.className = 'ceremony-launch-btn';
+  btn.textContent = L('log.nuke_code_btn');
+  panel.appendChild(btn);
+
+  content.appendChild(panel);
+  content.scrollTop = content.scrollHeight;
+  input.focus();
+
+  let timeLeft = 30;
+  let resolved = false;
+  timerEl.textContent = T('log.nuke_code_timer', {sec: timeLeft});
+
+  const timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = T('log.nuke_code_timer', {sec: timeLeft});
+    if (timeLeft <= 10) timerEl.style.color = '#ff2222';
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if (!resolved) { resolved = true; nukeCeremonyAbort(content, ceremony); }
+    }
+  }, 1000);
+
+  function attemptLaunch() {
+    if (resolved) return;
+    if (input.value.trim() === launchCode) {
+      resolved = true;
+      clearInterval(timerInterval);
+      nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, centerX, centerY);
+    } else {
+      input.classList.add('wrong');
+      playSound('miss');
+      setTimeout(() => input.classList.remove('wrong'), 400);
+    }
+  }
+
+  btn.addEventListener('click', attemptLaunch);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptLaunch(); });
+}
+
+function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, centerX, centerY) {
+  // Show launch text
+  const div = document.createElement('div');
+  div.className = 'ceremony-step';
+  div.textContent = L('log.nuke_ceremony_launch');
+  content.appendChild(div);
+  content.scrollTop = content.scrollHeight;
+  playSound('alarm');
+
+  // After 2.5s — white flash and damage
+  setTimeout(() => {
+    ceremony.style.display = 'none';
+    ceremony.classList.remove('alarm-flash');
+
+    nukeOverlay.style.display = 'block';
+    nukeOverlay.style.background = 'rgba(255,255,255,0.9)';
     playSound('nuke');
 
-    // Execute damage
     launchNuclearStrike(attackerIdx, centerX, centerY);
 
     setTimeout(() => {
-      overlay.style.background = 'rgba(255,255,255,0.5)';
+      nukeOverlay.style.background = 'rgba(255,255,255,0.5)';
       setTimeout(() => {
-        overlay.style.background = 'transparent';
-        overlay.style.display = 'none';
+        nukeOverlay.style.background = 'transparent';
+        nukeOverlay.style.display = 'none';
         battle.nuclearAnimating = false;
         gameState.actionDone = true;
         updateTopBar();
         updateActionBar();
       }, 500);
     }, 500);
+  }, 2500);
+}
+
+function nukeCeremonyAbort(content, ceremony) {
+  // Remove code panel inputs
+  const panel = content.querySelector('.ceremony-code-panel');
+  if (panel) {
+    panel.innerHTML = '';
+    const abortMsg = document.createElement('div');
+    abortMsg.className = 'ceremony-abort-msg';
+    abortMsg.textContent = L('log.nuke_code_abort');
+    panel.appendChild(abortMsg);
+  }
+
+  addLog(L('log.nuke_code_abort'), 'critical');
+
+  // Close after 3s, cancel the launch
+  setTimeout(() => {
+    ceremony.style.display = 'none';
+    ceremony.classList.remove('alarm-flash');
+    battle.nuclearAnimating = false;
+    battle.nuclearStrikeMode = false;
+    gameState.pendingNukeImpact = null;
+    // Don't consume the action — player can try again or do something else
+    updateTopBar();
+    updateActionBar();
   }, 3000);
+}
+
+function showNukeImpactOverlay(impact, callback) {
+  const overlay = document.getElementById('nuke-impact-overlay');
+  const content = document.getElementById('nuke-impact-content');
+  const warning = L('log.nuke_hotseat_impact');
+  const epicenter = T('log.nuke_hotseat_epicenter', {coord: impact.coord});
+  let html = '<h2>\u2622 ' + warning + '</h2><p>' + epicenter + '</p>';
+  if (impact.sunkNames && impact.sunkNames.length > 0) {
+    html += '<p class="impact-losses">' + T('log.nuke_hotseat_losses', {ships: impact.sunkNames.join(', ')}) + '</p>';
+  }
+  content.innerHTML = html;
+  overlay.style.display = 'flex';
+  playSound('alarm');
+
+  let dismissed = false;
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    overlay.style.display = 'none';
+    overlay.removeEventListener('click', dismiss);
+    if (callback) callback();
+  }
+  overlay.addEventListener('click', dismiss);
+  setTimeout(dismiss, 5000);
 }
 
 function applyRadiationDamage() {
@@ -3767,7 +4838,7 @@ function applyRadiationDamage() {
             cells: ship.cells.map(c => ({ ...c }))
           });
           const isHuman = gameState.settings.gameMode === 'hotseat' || p === 0;
-          if (isHuman) addLog(SHIP_TYPE_NAMES_RU[ship.type] + ' "' + ship.russianName + '" — лучевая болезнь экипажа. Корабль потерял ход. Затонул. ' + ship.crew + ' чел.', 'critical');
+          if (isHuman) addLog(T('log.radiation_death', {type: shipTypeName(ship.type), name: shipProperName(ship), crew: ship.crew}), 'critical');
         }
       }
     }
@@ -3822,10 +4893,10 @@ function showConfirmDialog(title, text, onConfirm, onCancel) {
 function startPcrMode() {
   const player = gameState.players[gameState.currentPlayer];
   const tarkr = player.ships.find(s => s.type === 'tarkr' && !s.sunk);
-  if (!tarkr) { showToast('No TARKR available.', 'info'); return; }
+  if (!tarkr) { showToast(L('toast.no_tarkr'), 'info'); return; }
 
   const available = tarkr.launchers.filter(l => l.loaded && !l.damaged);
-  if (available.length === 0) { showToast('No loaded launchers remaining.', 'info'); return; }
+  if (available.length === 0) { showToast(L('toast.no_launchers'), 'info'); return; }
 
   // Reset other fire modes
   battle.torpedoMode = false;
@@ -3843,14 +4914,14 @@ function showLauncherSelect(tarkr) {
   const dialog = document.getElementById('confirm-dialog');
   const title = document.getElementById('confirm-title');
   const text = document.getElementById('confirm-text');
-  title.textContent = 'SELECT LAUNCHER';
+  title.textContent = L('confirm.select_launcher');
 
   // Build launcher buttons
   let html = '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">';
   for (const l of tarkr.launchers) {
-    const cellLabel = l.index < 2 ? 'Bow-' + (l.index + 1) : 'Stern-' + (l.index - 2);
+    const cellLabel = (l.index < 2 ? L('launcher.bow') : L('launcher.stern')) + '-' + (l.index < 2 ? l.index + 1 : l.index - 2);
     const avail = l.loaded && !l.damaged;
-    const status = l.damaged ? 'DAMAGED' : (!l.loaded ? 'EMPTY' : 'READY');
+    const status = l.damaged ? L('launcher.damaged') : (!l.loaded ? L('launcher.empty') : L('launcher.ready'));
     const color = avail ? '#4fc3f7' : '#555';
     html += `<button class="menu-btn" style="padding:10px 20px;font-size:14px;border-color:${color};color:${color};${!avail ? 'opacity:0.4;cursor:not-allowed;' : ''}" `
       + (avail ? `onclick="selectLauncher(${l.index})"` : 'disabled')
@@ -3861,11 +4932,11 @@ function showLauncherSelect(tarkr) {
 
   // Repurpose confirm buttons
   document.getElementById('confirm-yes').style.display = 'none';
-  document.getElementById('confirm-no').textContent = 'Cancel';
+  document.getElementById('confirm-no').textContent = L('confirm.cancel');
   document.getElementById('confirm-no').onclick = () => {
     dialog.style.display = 'none';
     document.getElementById('confirm-yes').style.display = '';
-    document.getElementById('confirm-no').textContent = 'Cancel';
+    document.getElementById('confirm-no').textContent = L('confirm.cancel');
     battle.pcrMode = false;
     battle.pcrSelectedLauncher = -1;
     updateActionBar();
@@ -3877,10 +4948,10 @@ function selectLauncher(index) {
   const dialog = document.getElementById('confirm-dialog');
   dialog.style.display = 'none';
   document.getElementById('confirm-yes').style.display = '';
-  document.getElementById('confirm-no').textContent = 'Cancel';
+  document.getElementById('confirm-no').textContent = L('confirm.cancel');
 
   battle.pcrSelectedLauncher = index;
-  showToast('PU-' + (index + 1) + ' selected. Click target on Radar.', 'info', 3000);
+  showToast(T('toast.pcr_selected', {n: index + 1}), 'info', 3000);
   updateActionBar();
 }
 
@@ -3900,20 +4971,30 @@ function firePCR(attackerIdx, x, y) {
   playSound('pcr_launch');
 
   const isOurPcr = (gameState.settings.gameMode === 'hotseat') ? true : (attackerIdx === 0);
-  addLog('ПУ-' + (launcherIdx + 1) + ' — ПУСК! Ракета П-1000 «Вулкан» пошла! Маршевый двигатель — запуск! Захват цели!', 'hit');
+
+  if (isOurPcr) {
+    addLog(T('log.pcr_launch', {n: launcherIdx + 1, x: x, y: y}), 'hit');
+  }
 
   const target = getShipAt(defenderIdx, x, y);
+  const tType = target ? shipTypeName(target.ship.type) : '';
+  const tName = target ? shipProperName(target.ship) : '';
+
+  if (!isOurPcr) {
+    // Enemy fires at us — AWACS detection
+    addLog(L('log.pcr_enemy_incoming'), 'critical');
+  }
 
   if (!target) {
     attacker.radarData.shots.push({ x, y, hit: false });
-    addLog('ПКР ушла в пустоту. Попадание в воду. Ракета потеряна.', 'miss');
+    addLog(L('log.pcr_miss'), 'miss');
     return true;
   }
 
   // Submerged sub = invalid
   if (target.ship.type === 'submarine' && !target.ship.surfaced) {
     attacker.radarData.shots.push({ x, y, hit: false });
-    addLog('ПКР не может поразить подводную цель! Ракета потеряна.', 'miss');
+    addLog(L('log.pcr_sub_miss'), 'miss');
     return true;
   }
 
@@ -3928,17 +5009,15 @@ function firePCR(attackerIdx, x, y) {
   }
 
   const roll = Math.floor(Math.random() * 100) + 1;
-  const tType = SHIP_TYPE_NAMES_RU[target.ship.type] || target.ship.type;
-  const tName = target.ship.russianName || target.ship.name;
 
   if (roll <= interceptChance) {
     // Intercepted
     attacker.radarData.shots.push({ x, y, hit: false });
     setTimeout(() => playSound('pcr_intercept'), 400);
     if (isOurPcr) {
-      addLog('ПВО противника! БЧ-4 — сопровождение! Зенитный огонь! ПКР поражена на подлёте!', 'enemy');
+      addLog(L('log.pcr_intercepted_our'), 'enemy');
     } else {
-      addLog('ТРЕВОГА! Ракетная атака! ПВО — К БОЮ! БЧ-2 ведёт огонь! ПКР перехвачена!', 'info');
+      addLog(T('log.pcr_intercepted_enemy', {type: tType, name: tName}), 'info');
     }
     return true;
   }
@@ -3963,10 +5042,10 @@ function firePCR(attackerIdx, x, y) {
   }
 
   if (isOurPcr) {
-    addLog('ПКР прорвалась через ПВО! ' + tType + ' — ПРЯМОЕ ПОПАДАНИЕ! ' + sunkDescription() + ' Цель уничтожена, наблюдаю огонь по всей длине корпуса!', 'sunk');
+    addLog(T('log.pcr_sunk_our', {type: tType, desc: sunkDescription()}), 'sunk');
   } else {
-    addLog('ТРЕВОГА! Ракетная атака! ПВО — К БОЮ! БЧ-2 ведёт огонь! ПКР ПРОРВАЛАСЬ!', 'critical');
-    addLog(tType + ' "' + tName + '" — ПРЯМОЕ ПОПАДАНИЕ В МАШИННОЕ! Корабль разломился! Экипаж — ' + target.ship.crew + ' чел! Спасательная операция невозможна — бой продолжается!', 'critical');
+    addLog(T('log.pcr_sunk_enemy', {type: tType, name: tName}), 'critical');
+    addLog(T('log.pcr_sunk_enemy2', {type: tType, name: tName, crew: target.ship.crew}), 'critical');
     addLog(captainLastWords(tName), 'critical');
   }
   battle.sinkExplosions.push({ cells: target.ship.cells.map(c => ({...c})), startTime: Date.now(), duration: 1500, onRadar: isOurPcr });
@@ -3978,9 +5057,9 @@ function firePCR(attackerIdx, x, y) {
 function startStrikerMode() {
   const player = gameState.players[gameState.currentPlayer];
   const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
-  if (!carrier) { showToast('No carrier available.', 'info'); return; }
-  if (carrier.blocked) { showToast('Carrier blocked — hit recently.', 'info'); return; }
-  if (carrier.strikers <= 0) { showToast('No strikers remaining.', 'info'); return; }
+  if (!carrier) { showToast(L('toast.no_carrier'), 'info'); return; }
+  if (carrier.blocked) { showToast(L('toast.carrier_blocked'), 'info'); return; }
+  if (carrier.strikers <= 0) { showToast(L('toast.no_strikers'), 'info'); return; }
 
   carrier.strikers--;
 
@@ -3990,9 +5069,8 @@ function startStrikerMode() {
   battle.pcrMode = false;
   battle.strikerMode = true;
   battle.strikerChain = [];
-  const carrierName = carrier.russianName || 'Авианосец';
-  addLog('Палубная авиация — ВЗЛЁТ! Штурмовик с АВ "' + carrierName + '" на боевом курсе! (' + carrier.strikers + ' осталось)', 'info');
-  showToast('Striker launched! Click target on Radar.', 'info', 3000);
+  addLog(T('log.striker_launch', {name: shipProperName(carrier), n: carrier.strikers}), 'info');
+  showToast(L('toast.striker_aim'), 'info', 3000);
   updateActionBar();
 }
 
@@ -4006,7 +5084,7 @@ function strikerAttack(attackerIdx, x, y) {
     // Miss — striker returns safely
     attacker.radarData.shots.push({ x, y, hit: false });
     battle.strikerChain.push({ x, y, result: 'miss' });
-    addLog('Штурмовик не обнаружил цель — возврат на АВ.', 'info');
+    addLog(L('log.striker_miss'), 'info');
     battle.strikerMode = false;
     return 'end';
   }
@@ -4015,7 +5093,7 @@ function strikerAttack(attackerIdx, x, y) {
   if (target.ship.type === 'submarine' && !target.ship.surfaced) {
     attacker.radarData.shots.push({ x, y, hit: false });
     battle.strikerChain.push({ x, y, result: 'miss' });
-    addLog('Штурмовик не может атаковать подводную цель — возврат.', 'info');
+    addLog(L('log.striker_sub_miss'), 'info');
     battle.strikerMode = false;
     return 'end';
   }
@@ -4039,26 +5117,26 @@ function strikerAttack(attackerIdx, x, y) {
     const detonation = checkReactorDetonation(attackerIdx, target.ship, target.cellIndex, defenderIdx);
 
     // Check sunk
-    const tType = SHIP_TYPE_NAMES_RU[target.ship.type] || target.ship.type;
+    const tType = shipTypeName(target.ship.type);
     if (target.ship.hits.every(h => h)) {
       target.ship.sunk = true;
       attacker.radarData.sunkShips.push({
         type: target.ship.type,
         cells: target.ship.cells.map(c => ({ ...c }))
       });
-      addLog('Штурмовик атакует! Бомбы на цель — ПОПАДАНИЕ! ' + tType + ' противника УНИЧТОЖЕН! ' + sunkDescription(), 'sunk');
+      addLog(T('log.striker_sunk', {type: tType, desc: sunkDescription()}), 'sunk');
       battle.sinkExplosions.push({ cells: target.ship.cells.map(c => ({...c})), startTime: Date.now(), duration: 1500, onRadar: true });
     } else if (detonation) {
-      addLog('Штурмовик атакует! Бомбы на цель — ПОПАДАНИЕ! ДЕТОНАЦИЯ БОЕЗАПАСА!', 'critical');
+      addLog(L('log.striker_detonation'), 'critical');
     } else {
-      addLog('Штурмовик атакует! Бомбы на цель — ПОПАДАНИЕ! Наблюдаю пожар! Цель повреждена.', 'hit');
+      addLog(L('log.striker_hit'), 'hit');
     }
     // Chain continues — player clicks next target
     return 'continue';
   } else {
     // Striker shot down
     battle.strikerChain.push({ x, y, result: 'shot_down' });
-    addLog('Зенитный огонь! ПЛОТНЫЙ ОГОНЬ! Штурмовик сбит! Пилот не катапультировался.', 'enemy');
+    addLog(L('log.striker_shot_down'), 'enemy');
     battle.strikerMode = false;
     return 'end';
   }
@@ -4090,7 +5168,7 @@ function aiUseRadar(sourceShip) {
         turnDetected: gameState.currentTurn, source: 'radar'
       });
       triggerRebFlash(hShip.cells); // REB: our ship was scanned
-      addLog('РЭБ фиксирует облучение! ' + SHIP_TYPE_NAMES_RU[hShip.type] + ' "' + hShip.russianName + '" обнаружен!', 'enemy');
+      addLog(T('log.reb_alert', {type: shipTypeName(hShip.type), name: shipProperName(hShip)}), 'enemy');
     }
   }
 }
@@ -4099,6 +5177,7 @@ function aiUseAirRecon(carrier) {
   const ai = gameState.players[1];
   const human = gameState.players[0];
   carrier.planes--;
+  addLog(L('log.enemy_air_recon_launch'), 'enemy');
   for (const hShip of human.ships) {
     if (hShip.sunk) continue;
     if (hShip.type === 'submarine' && !hShip.deployed) continue;
@@ -4109,7 +5188,8 @@ function aiUseAirRecon(carrier) {
         type: hShip.type, size: hShip.size,
         turnDetected: gameState.currentTurn, source: 'air'
       });
-      triggerRebFlash(hShip.cells); // REB: our ship was spotted by air recon
+      triggerRebFlash(hShip.cells);
+      addLog(T('log.enemy_air_recon', {type: shipTypeName(hShip.type), name: shipProperName(hShip)}), 'enemy');
     } else {
       if (Math.floor(Math.random() * 100) + 1 <= 30) break;
     }
@@ -4270,7 +5350,7 @@ function aiReconPhase(ai, human) {
           turnDetected: gameState.currentTurn,
           playerIdx: 1
         });
-        addLog('Акустики противника засекли нашу ПЛ! Обнаружены!', 'enemy');
+        addLog(L('log.our_sub_detected'), 'enemy');
       }
     }
     return; // sonar was the action
@@ -4314,7 +5394,7 @@ function aiTrySpecialWeapons(aiIdx, ai, shotSet, sz) {
       // Prioritize: carrier > tarkr > cruiser > destroyer > mrk > boat
       const valuePriority = ['carrier', 'tarkr', 'cruiser', 'destroyer', 'mrk', 'missile_boat'];
       const freshDetections = ai.radarData.detectedShips
-        .filter(d => gameState.currentTurn - d.turnDetected <= 1 && d.type !== 'submarine')
+        .filter(d => d.turnDetected === gameState.currentTurn && d.type !== 'submarine')
         .sort((a, b) => valuePriority.indexOf(a.type) - valuePriority.indexOf(b.type));
       if (freshDetections.length > 0) {
         const pcrTarget = freshDetections[0];
@@ -4369,14 +5449,14 @@ function aiTrySpecialWeapons(aiIdx, ai, shotSet, sz) {
           if (hit.ship.hits.every(h => h)) {
             hit.ship.sunk = true;
             ai.radarData.sunkShips.push({ type: hit.ship.type, cells: hit.ship.cells.map(c => ({ ...c })) });
-            const sType = SHIP_TYPE_NAMES_RU[hit.ship.type] || hit.ship.type;
-            addLog('Штурмовик противника атакует! Бомбы на цель! ' + sType + ' "' + hit.ship.russianName + '" — прямое попадание! Корабль тонет! Экипаж — ' + hit.ship.crew + ' чел!', 'critical');
-            addLog(captainLastWords(hit.ship.russianName), 'critical');
+            const sType = shipTypeName(hit.ship.type);
+            addLog(T('log.ai_striker_sunk', {type: sType, name: shipProperName(hit.ship), crew: hit.ship.crew}), 'critical');
+            addLog(captainLastWords(shipProperName(hit.ship)), 'critical');
             battle.sinkExplosions.push({ cells: hit.ship.cells.map(c => ({...c})), startTime: Date.now(), duration: 1500, onRadar: false });
           } else {
-            const sType = SHIP_TYPE_NAMES_RU[hit.ship.type] || hit.ship.type;
+            const sType = shipTypeName(hit.ship.type);
             const hCount = hit.ship.hits.filter(h => h).length;
-            addLog('Штурмовик противника атакует! Попадание в ' + sType + ' "' + hit.ship.russianName + '"! Пожар! БЧ-5 — борьба за живучесть! (' + hCount + '/' + hit.ship.size + ')', 'enemy');
+            addLog(T('log.ai_striker_hit', {type: sType, name: shipProperName(hit.ship), hits: hCount, size: hit.ship.size}), 'enemy');
           }
           // Try to hit next unhit cell on same ship
           const nextCell = hit.ship.cells.find((c, i) => !hit.ship.hits[i]);
@@ -4386,7 +5466,7 @@ function aiTrySpecialWeapons(aiIdx, ai, shotSet, sz) {
             chainContinues = false;
           }
         } else {
-          addLog('Зенитный огонь! Штурмовик противника сбит! БЧ-2 — отличная работа!', 'hit');
+          addLog(L('log.ai_striker_shot_down'), 'hit');
           chainContinues = false;
         }
       }
@@ -4684,14 +5764,14 @@ function renderFleetMap() {
     ctx.textBaseline = 'top';
     for (const ship of player.ships) {
       if (ship.sunk || (ship.type === 'submarine' && !ship.deployed)) continue;
-      if (!ship.russianName) continue;
+      if (!ship.russianName && !ship.englishName) continue;
       const cx = ship.cells.reduce((s, c) => s + c.x, 0) / ship.cells.length;
       const cy = ship.cells.reduce((s, c) => s + c.y, 0) / ship.cells.length;
       const isH = ship.orientation === 'horizontal';
       const tx = (cx + 0.5) * CELL_PX;
       const ty = isH ? (cy + 1.2) * CELL_PX : (cy + 0.5) * CELL_PX;
       const labelX = isH ? tx : (cx + 1.4) * CELL_PX;
-      ctx.fillText(ship.russianName, labelX, ty);
+      ctx.fillText(shipProperName(ship), labelX, ty);
     }
   }
 
@@ -4959,7 +6039,7 @@ function renderRadar() {
       ctx.fillStyle = 'rgba(255,23,68,0.7)';
       ctx.font = '6px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(SHIP_LABELS[sunk.type] || sunk.type,
+      ctx.fillText(shipLabel(sunk.type),
         ((fc.x + lc.x) / 2 + 0.5) * CELL_PX, ((fc.y + lc.y) / 2 + 0.5) * CELL_PX);
     }
   }
@@ -4996,7 +6076,7 @@ function renderRadar() {
       ctx.fillStyle = `rgba(0,255,100,${opacity * 0.7})`;
       ctx.font = '5px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(SHIP_LABELS[det.type] || det.type,
+      ctx.fillText(shipLabel(det.type),
         ((fc2.x + lc2.x) / 2 + 0.5) * CELL_PX, ((fc2.y + lc2.y) / 2 + 0.5) * CELL_PX);
     }
   }
@@ -5295,8 +6375,11 @@ battle.radarMouseCell = null;
 
 function screenToCell(clientX, clientY, canvasEl, cam) {
   const rect = canvasEl.getBoundingClientRect();
-  const sx = clientX - rect.left;
-  const sy = clientY - rect.top;
+  // Scale CSS pixels to canvas internal pixels (handles CSS width/height stretching)
+  const scaleX = canvasEl.width / rect.width;
+  const scaleY = canvasEl.height / rect.height;
+  const sx = (clientX - rect.left) * scaleX;
+  const sy = (clientY - rect.top) * scaleY;
   const worldX = (sx - cam.x) / cam.zoom;
   const worldY = (sy - cam.y) / cam.zoom;
   return { x: Math.floor(worldX / CELL_PX), y: Math.floor(worldY / CELL_PX) };
@@ -5308,7 +6391,8 @@ function setupCameraHandlers(canvasEl, cam) {
     const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
     const newZoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, cam.zoom * factor));
     const rect = canvasEl.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const scX = canvasEl.width / rect.width, scY = canvasEl.height / rect.height;
+    const mx = (e.clientX - rect.left) * scX, my = (e.clientY - rect.top) * scY;
     cam.x = mx - (mx - cam.x) * (newZoom / cam.zoom);
     cam.y = my - (my - cam.y) * (newZoom / cam.zoom);
     cam.zoom = newZoom;
@@ -5320,7 +6404,9 @@ function setupCameraHandlers(canvasEl, cam) {
 
   canvasEl.addEventListener('mousemove', (e) => {
     if (cam.dragging) {
-      const dx = e.clientX - cam.lastMouse.x, dy = e.clientY - cam.lastMouse.y;
+      const rect = canvasEl.getBoundingClientRect();
+      const scX = canvasEl.width / rect.width, scY = canvasEl.height / rect.height;
+      const dx = (e.clientX - cam.lastMouse.x) * scX, dy = (e.clientY - cam.lastMouse.y) * scY;
       if (Math.abs(dx) > 2 || Math.abs(dy) > 2) cam.dragMoved = true;
       cam.x += dx; cam.y += dy;
       cam.lastMouse.x = e.clientX; cam.lastMouse.y = e.clientY;
@@ -5420,7 +6506,7 @@ function setupBattleInput() {
           }
         }
       }
-      showToast('Click a ship with radar ready (no cooldown).', 'info', 2000);
+      showToast(L('toast.radar_ready_hint'), 'info', 2000);
       return;
     }
 
@@ -5435,7 +6521,7 @@ function setupBattleInput() {
           }
         }
       }
-      showToast('Click a destroyer with sonar ready.', 'info', 2000);
+      showToast(L('toast.sonar_ready_hint'), 'info', 2000);
       return;
     }
 
@@ -5444,7 +6530,7 @@ function setupBattleInput() {
       if (battle.subGhostValid && battle.subGhostCells.length === 3) {
         deploySubmarine(gameState.currentPlayer, battle.subGhostCells, battle.subGhostOrientation);
       } else {
-        showToast('Invalid placement for submarine.', 'info', 1500);
+        showToast(L('toast.invalid_sub_placement'), 'info', 1500);
       }
       return;
     }
@@ -5556,7 +6642,7 @@ function setupBattleInput() {
 //  GAME RULES
 // ══════════════════════════════════════════════
 
-let currentRulesLang = 'ru';
+let currentRulesLang = currentLang;
 
 function showRules() {
   document.getElementById('rules-overlay').style.display = 'flex';
@@ -5689,7 +6775,7 @@ function getRulesRU() {
 <li>Авианосец блокируется на 1 ход после получения попадания.</li>
 </ul>
 
-<h4>Торпеда Т-10 (ядерный удар)</h4>
+<h4>Торпеда ☢ Т-15 (ядерный удар)</h4>
 <ul>
 <li>1 на игру. Запускается с подводной лодки.</li>
 <li>Недоступно в режиме 30x30 (Стычка).</li>
@@ -5848,7 +6934,7 @@ function getRulesEN() {
 <li>Carrier is blocked for 1 turn after taking a hit.</li>
 </ul>
 
-<h4>T-10 Torpedo (Nuclear Strike)</h4>
+<h4>☢ T-15 Torpedo (Nuclear Strike)</h4>
 <ul>
 <li>1 per game. Launched from submarine.</li>
 <li>Not available in 30x30 mode (Skirmish).</li>
@@ -5898,6 +6984,10 @@ function getRulesEN() {
 `;
 }
 
+// ── Init locale on load ──
+applyLocaleToDOM();
+
 </script>
+<div id="ship-tooltip"></div>
 </body>
 </html>
