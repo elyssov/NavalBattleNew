@@ -1184,7 +1184,7 @@
     </div>
     <div class="choice-card" onclick="chooseTarkrOrCarrier('carrier')">
       <h3>Carrier</h3>
-      <div class="desc">Aircraft Carrier<br>5 cells &bull; 3 recon planes + strikers<br>Nuclear reactor (center cell)<br>Intel advantage, versatile</div>
+      <div class="desc">Aircraft Carrier<br>5 cells &bull; 3 recon planes + strike aircraft<br>Nuclear reactor (center cell)<br>Intel advantage, versatile</div>
     </div>
   </div>
 </div>
@@ -2451,7 +2451,7 @@ en: {
     tarkr_name: 'TARKR',
     tarkr_desc: 'Heavy Nuclear Missile Cruiser\n5 cells \u2022 4 Vulkan missiles\nNuclear reactor (center cell)\nRaw firepower, high risk',
     carrier_name: 'Carrier',
-    carrier_desc: 'Aircraft Carrier\n5 cells \u2022 3 recon planes + strikers\nNuclear reactor (center cell)\nIntel advantage, versatile'
+    carrier_desc: 'Aircraft Carrier\n5 cells \u2022 3 recon planes + strike aircraft\nNuclear reactor (center cell)\nIntel advantage, versatile'
   },
   placement: {
     roster: 'Fleet Roster',
@@ -2474,7 +2474,7 @@ en: {
     you: 'You',
     ai: 'AI',
     ai_thinking: 'AI THINKING...',
-    striker_chain: 'STRIKER CHAIN',
+    striker_chain: 'STRIKE SORTIE',
     action_move: 'ACTION + MOVE ({pts})',
     move_only: 'MOVE ({pts} pts)',
     menu: 'Menu'
@@ -2492,13 +2492,13 @@ en: {
     asroc: 'ASROC',
     pcr_vulkan: 'PCR Vulkan',
     pcr_pu: 'PCR PU-{n} (aim)',
-    striker: 'Striker',
+    striker: 'Strike',
     t10: '☢ T-15',
     deploy_sub: 'Deploy Sub',
     move_pts: 'Move: {pts} pts',
     end_turn: 'End Turn',
     end_sortie: 'End Sortie',
-    striker_hint: 'Striker active — click next target on Radar',
+    striker_hint: 'Strike aircraft active — select next target on Radar',
     sub_deploy_hint: 'Click Fleet Map to deploy sub. Right-click to rotate.',
     cancel: 'Cancel'
   },
@@ -2570,8 +2570,8 @@ en: {
     pcr_selected: 'PU-{n} selected. Click target on Radar.',
     no_carrier: 'No carrier available.',
     carrier_blocked: 'Carrier blocked — hit recently.',
-    no_strikers: 'No strikers remaining.',
-    striker_aim: 'Striker launched! Click target on Radar.',
+    no_strikers: 'No strike aircraft remaining.',
+    striker_aim: 'Strike aircraft launched! Select target on Radar.',
     radar_ready_hint: 'Click a ship with radar ready (no cooldown).',
     sonar_ready_hint: 'Click a destroyer with sonar ready.',
     invalid_sub_placement: 'Invalid placement for submarine.',
@@ -2641,15 +2641,15 @@ en: {
     pcr_sunk_enemy: 'WARNING! AWACS detected inbound AShM! Probable target — {type} "{name}"! AA — ENGAGE! Weapons tracking! SAMs — FIRE! NO KILL! MISSILE GOT THROUGH!',
     pcr_sunk_enemy2: '{type} "{name}" — DIRECT HIT! Damage control! Emergency parties to compartments! List increasing! ...Ship lost. Crew — {crew}. Rescue impossible — battle continues.',
     striker_launch: 'Deck aviation — LAUNCH! F/A-18 from CV "{name}" catapult launch! Climbing to attack altitude, turning to target heading! ({n} remaining)',
-    striker_miss: 'Striker reached target area — visual and radar clear. Target not found. Returning to carrier.',
-    striker_sub_miss: 'Striker overhead — submerged target unreachable by bombs. Returning to carrier.',
-    striker_sunk: 'Striker rolling in! Dive attack! Bombs away — DIRECT HIT! Enemy {type} DESTROYED! {desc}',
-    striker_detonation: 'Striker rolling in! Dive attack! Bombs on target — MAGAZINE DETONATION! Fireball rising hundreds of meters!',
-    striker_hit: 'Striker rolling in! Dive attack! Bombs away — HIT! Fire on superstructure! Target damaged.',
-    striker_shot_down: 'Flak barrage! HEAVY DEFENSIVE FIRE! Striker hit by SAM! Mid-air explosion! Pilot did not eject!',
-    ai_striker_sunk: 'Enemy striker attacks! Bombs on target! {type} "{name}" — direct hit! Ship sinking! Crew — {crew}!',
-    ai_striker_hit: 'Enemy striker attacks! Hit on {type} "{name}"! Fire! Damage control — fight for survival! ({hits}/{size})',
-    ai_striker_shot_down: 'Flak fire! Enemy striker shot down! AA — excellent work!',
+    striker_miss: 'Strike aircraft reached target area — visual and radar clear. Target not found. Returning to carrier.',
+    striker_sub_miss: 'Strike aircraft overhead — submerged target unreachable by bombs. Returning to carrier.',
+    striker_sunk: 'Strike aircraft rolling in! Dive attack! Bombs away — DIRECT HIT! Enemy {type} DESTROYED! {desc}',
+    striker_detonation: 'Strike aircraft rolling in! Dive attack! Bombs on target — MAGAZINE DETONATION! Fireball rising hundreds of meters!',
+    striker_hit: 'Strike aircraft rolling in! Dive attack! Bombs away — HIT! Fire on superstructure! Target damaged.',
+    striker_shot_down: 'Flak barrage! HEAVY DEFENSIVE FIRE! Strike aircraft hit by SAM! Mid-air explosion! Pilot did not eject!',
+    ai_striker_sunk: 'Enemy strike aircraft attacks! Bombs on target! {type} "{name}" — direct hit! Ship sinking! Crew — {crew}!',
+    ai_striker_hit: 'Enemy strike aircraft attacks! Hit on {type} "{name}"! Fire! Damage control — fight for survival! ({hits}/{size})',
+    ai_striker_shot_down: 'Flak fire! Enemy strike aircraft shot down! AA — excellent work!',
     reb_alert: 'ECM detects radar emission on X-band! {type} "{name}" position compromised! Coordinates logged!',
     // AI air recon
     enemy_air_recon: 'Enemy recon aircraft overhead! {type} "{name}" spotted from the air! Position compromised!',
@@ -6924,12 +6924,12 @@ function getRulesEN() {
 <li>Submarines cannot be targeted by PCR (underwater target).</li>
 </ul>
 
-<h4>Striker Aircraft (Carrier)</h4>
+<h4>Strike Aircraft (Carrier)</h4>
 <ul>
-<li>6 strikers per carrier.</li>
+<li>6 strike aircraft per carrier.</li>
 <li>Chain attack mechanic: D100 duel "attack vs PVO".</li>
-<li>If attack > PVO — hit, striker attacks next cell on same ship.</li>
-<li>If PVO > attack — striker is shot down.</li>
+<li>If attack > PVO — hit, strike aircraft attacks next cell on same ship.</li>
+<li>If PVO > attack — strike aircraft is shot down.</li>
 <li>Chain continues until shot down or ship destroyed.</li>
 <li>Carrier is blocked for 1 turn after taking a hit.</li>
 </ul>
