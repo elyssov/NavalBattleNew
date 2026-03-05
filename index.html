@@ -915,6 +915,59 @@
   #victory-overlay p { color: #78909c; font-size: 16px; }
 
   /* ── Rules Overlay ── */
+  /* ── Donate Overlay ── */
+  #donate-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,10,20,0.95);
+    z-index: 200;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    overflow-y: auto;
+  }
+  #donate-overlay .donate-box {
+    background: linear-gradient(180deg, #0d2137, #091420);
+    border: 1px solid #4fc3f7;
+    border-radius: 8px;
+    padding: 30px 40px;
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+  }
+  #donate-overlay h2 {
+    font-size: 22px;
+    color: #4fc3f7;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  #donate-overlay .donate-details {
+    text-align: left;
+    font-size: 13px;
+    color: #b0bec5;
+    line-height: 1.8;
+    margin-bottom: 20px;
+    font-family: 'Courier New', monospace;
+  }
+  #donate-overlay .donate-details span {
+    color: #4fc3f7;
+  }
+  #donate-overlay .donate-qr {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 20px;
+    image-rendering: pixelated;
+  }
+  #donate-overlay .donate-note {
+    font-size: 12px;
+    color: #546e7a;
+    font-style: italic;
+    margin-bottom: 20px;
+  }
+
   #rules-overlay {
     display: none;
     position: fixed;
@@ -1054,9 +1107,30 @@
   <h2 id="menu-subtitle">Strategic Edition</h2>
   <button class="menu-btn" id="menu-new-game" onclick="showSettings()">New Game</button>
   <button class="menu-btn" id="menu-rules" onclick="showRules()">Game Rules</button>
+  <button class="menu-btn" id="menu-donate" onclick="showDonate()" style="border-color:#66bb6a;color:#66bb6a;font-size:16px;padding:10px 36px;">Support the Author</button>
   <div id="lang-toggle">
     <button class="lang-btn" onclick="setLang('ru')"><svg viewBox="0 0 9 6"><rect width="9" height="2" fill="#fff"/><rect y="2" width="9" height="2" fill="#0039A6"/><rect y="4" width="9" height="2" fill="#D52B1E"/></svg></button>
     <button class="lang-btn" onclick="setLang('en')"><svg viewBox="0 0 19 10"><rect width="19" height="10" fill="#B22234"/><rect y="0" width="19" height="1" fill="#fff"/><rect y="2" width="19" height="1" fill="#fff"/><rect y="4" width="19" height="1" fill="#fff"/><rect y="6" width="19" height="1" fill="#fff"/><rect y="8" width="19" height="1" fill="#fff"/><rect width="7.6" height="5" fill="#3C3B6E"/><circle cx="1" cy="0.7" r="0.3" fill="#fff"/><circle cx="2.5" cy="0.7" r="0.3" fill="#fff"/><circle cx="4" cy="0.7" r="0.3" fill="#fff"/><circle cx="5.5" cy="0.7" r="0.3" fill="#fff"/><circle cx="7" cy="0.7" r="0.3" fill="#fff"/><circle cx="1.7" cy="1.5" r="0.3" fill="#fff"/><circle cx="3.2" cy="1.5" r="0.3" fill="#fff"/><circle cx="4.7" cy="1.5" r="0.3" fill="#fff"/><circle cx="6.2" cy="1.5" r="0.3" fill="#fff"/><circle cx="1" cy="2.3" r="0.3" fill="#fff"/><circle cx="2.5" cy="2.3" r="0.3" fill="#fff"/><circle cx="4" cy="2.3" r="0.3" fill="#fff"/><circle cx="5.5" cy="2.3" r="0.3" fill="#fff"/><circle cx="7" cy="2.3" r="0.3" fill="#fff"/><circle cx="1.7" cy="3.1" r="0.3" fill="#fff"/><circle cx="3.2" cy="3.1" r="0.3" fill="#fff"/><circle cx="4.7" cy="3.1" r="0.3" fill="#fff"/><circle cx="6.2" cy="3.1" r="0.3" fill="#fff"/><circle cx="1" cy="3.9" r="0.3" fill="#fff"/><circle cx="2.5" cy="3.9" r="0.3" fill="#fff"/><circle cx="4" cy="3.9" r="0.3" fill="#fff"/><circle cx="5.5" cy="3.9" r="0.3" fill="#fff"/><circle cx="7" cy="3.9" r="0.3" fill="#fff"/></svg></button>
+  </div>
+</div>
+
+<!-- Donate Overlay -->
+<div id="donate-overlay" onclick="if(event.target===this)hideDonate()">
+  <div class="donate-box">
+    <h2 id="donate-title">Support the Author</h2>
+    <p class="donate-note" id="donate-note">If you enjoy the game, consider buying the developer a coffee (or a torpedo).</p>
+    <div class="donate-details">
+      <span>Beneficiary:</span> LISOVSKII EVGENII<br>
+      <span>Account:</span> 1051678656<br>
+      <span>Bank:</span> JOINT STOCK COMMERCIAL BANK FOR FOREIGN TRADE OF VIETNAM (Vietcombank)<br>
+      <span>SWIFT/BIC:</span> BFTVVNVX006 (or BFTVVNVX)<br>
+      <span>Branch:</span> KHANH HOA BRANCH<br>
+      <span>Address:</span> 17 Quang Trung, Van Thanh Ward, Nha Trang City, Khanh Hoa Province, Vietnam<br>
+      <span>Purpose:</span> Charitable donation
+    </div>
+    <img class="donate-qr" src="qr.png" alt="QR code for bank transfer">
+    <br>
+    <button class="menu-btn" onclick="hideDonate()" style="font-size:14px;padding:8px 30px;">Close</button>
   </div>
 </div>
 
@@ -2052,6 +2126,7 @@ function applyLocaleToDOM() {
   const ms = document.getElementById('menu-subtitle'); if (ms) ms.textContent = L('menu.subtitle');
   const mng = document.getElementById('menu-new-game'); if (mng) mng.textContent = L('menu.new_game');
   const mr = document.getElementById('menu-rules'); if (mr) mr.textContent = L('menu.rules');
+  const md = document.getElementById('menu-donate'); if (md) md.textContent = currentLang === 'ru' ? 'Поддержать автора' : 'Support the Author';
 
   // Settings
   const ss = document.querySelector('#settings-screen h2'); if (ss) ss.textContent = L('settings.title');
@@ -6651,6 +6726,27 @@ function showRules() {
 
 function hideRules() {
   document.getElementById('rules-overlay').style.display = 'none';
+}
+
+function showDonate() {
+  const lang = gameState?.lang || 'en';
+  const t = document.getElementById('donate-title');
+  const n = document.getElementById('donate-note');
+  const btn = document.getElementById('menu-donate');
+  if (lang === 'ru') {
+    t.textContent = 'Поддержать автора';
+    n.textContent = 'Если вам понравилась игра — можете угостить разработчика кофе (или торпедой).';
+    btn.textContent = 'Поддержать автора';
+  } else {
+    t.textContent = 'Support the Author';
+    n.textContent = 'If you enjoy the game, consider buying the developer a coffee (or a torpedo).';
+    btn.textContent = 'Support the Author';
+  }
+  document.getElementById('donate-overlay').style.display = 'flex';
+}
+
+function hideDonate() {
+  document.getElementById('donate-overlay').style.display = 'none';
 }
 
 function switchRulesLang(lang) {
