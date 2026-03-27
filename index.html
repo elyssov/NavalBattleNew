@@ -6052,6 +6052,40 @@ function renderFleetMap() {
     }
   }
 
+  // ── Fire/smoke on damaged cells (purely decorative) ──
+  const myShips = gameState.players[me].ships;
+  const now = Date.now();
+  for (const ship of myShips) {
+    if (!ship.hits) continue;
+    for (let i = 0; i < ship.cells.length; i++) {
+      if (!ship.hits[i]) continue;
+      const cx = (ship.cells[i].x + 0.5) * CELL_PX;
+      const cy = (ship.cells[i].y + 0.5) * CELL_PX;
+      if (ship.sunk) {
+        // Dark smoke wisps on sunk ships
+        for (let s = 0; s < 2; s++) {
+          const t = ((now / 1000 + s * 1.5 + i) % 3) / 3;
+          const alpha = (1 - t) * 0.3;
+          ctx.fillStyle = `rgba(60,60,60,${alpha})`;
+          ctx.beginPath();
+          ctx.arc(cx + Math.sin(t * 4 + s) * 3, cy - t * CELL_PX * 0.8, 2 + t * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        // Flickering fire on damaged (not sunk) cells
+        for (let f = 0; f < 3; f++) {
+          const t = ((now / 200 + f * 0.7 + i * 2.3) % 1);
+          const alpha = (1 - t) * 0.6;
+          const r = 255, g = Math.floor(100 + 120 * t), b = Math.floor(30 * t);
+          ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+          ctx.beginPath();
+          ctx.arc(cx + Math.sin(f * 2.1 + now / 300) * 3, cy - t * CELL_PX * 0.5, 1.5 + (1-t) * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  }
+
   drawCoordLabels(ctx, vx0, vy0, vx1, vy1, sz);
   ctx.restore();
 }
@@ -6075,6 +6109,29 @@ function renderRadar() {
   // Dark green field
   ctx.fillStyle = '#0a0a0a';
   ctx.fillRect(0, 0, worldSize, worldSize);
+
+  // Radar sweep line (decorative — does not affect gameplay)
+  const sweepAngle = (Date.now() / 4000) * Math.PI * 2; // one revolution per 4s
+  const centerX = worldSize / 2, centerY = worldSize / 2;
+  const sweepR = worldSize * 0.7;
+  // Fade trail (0.5 radian arc behind sweep)
+  for (let t = 0; t < 12; t++) {
+    const a = sweepAngle - (t / 12) * 0.5;
+    const alpha = (1 - t / 12) * 0.08;
+    ctx.strokeStyle = `rgba(0,255,120,${alpha})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX + Math.cos(a) * sweepR, centerY + Math.sin(a) * sweepR);
+    ctx.stroke();
+  }
+  // Main sweep line
+  ctx.strokeStyle = 'rgba(0,255,120,0.15)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+  ctx.lineTo(centerX + Math.cos(sweepAngle) * sweepR, centerY + Math.sin(sweepAngle) * sweepR);
+  ctx.stroke();
 
   const vx0 = Math.max(0, Math.floor(-cam.x / (cam.zoom * CELL_PX)));
   const vy0 = Math.max(0, Math.floor(-cam.y / (cam.zoom * CELL_PX)));
