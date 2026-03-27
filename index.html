@@ -673,6 +673,10 @@
     z-index: 600;
     pointer-events: none;
   }
+  #nuke-overlay canvas {
+    width: 100%;
+    height: 100%;
+  }
 
   /* ── Nuke Ceremony Overlay ── */
   #nuke-ceremony-overlay {
@@ -4893,28 +4897,136 @@ function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, center
   content.scrollTop = content.scrollHeight;
   playSound('alarm');
 
-  // After 2.5s — white flash and damage
+  // After 2.5s — white flash → mushroom cloud → damage
   setTimeout(() => {
     ceremony.style.display = 'none';
     ceremony.classList.remove('alarm-flash');
-
-    nukeOverlay.style.display = 'block';
-    nukeOverlay.style.background = 'rgba(255,255,255,0.9)';
     playSound('nuke');
-
     launchNuclearStrike(attackerIdx, centerX, centerY);
 
-    setTimeout(() => {
-      nukeOverlay.style.background = 'rgba(255,255,255,0.5)';
-      setTimeout(() => {
-        nukeOverlay.style.background = 'transparent';
+    // Mushroom cloud animation on nuke-overlay
+    nukeOverlay.style.display = 'block';
+    nukeOverlay.innerHTML = '';
+    const cvs = document.createElement('canvas');
+    cvs.width = window.innerWidth;
+    cvs.height = window.innerHeight;
+    nukeOverlay.appendChild(cvs);
+    const nc = cvs.getContext('2d');
+    const W = cvs.width, H = cvs.height;
+    const startTime = Date.now();
+    const DURATION = 3500;
+
+    function drawMushroom() {
+      const elapsed = Date.now() - startTime;
+      const t = Math.min(elapsed / DURATION, 1);
+
+      nc.clearRect(0, 0, W, H);
+
+      // White flash (first 15%)
+      if (t < 0.15) {
+        const flashAlpha = (1 - t / 0.15) * 0.9;
+        nc.fillStyle = `rgba(255,255,255,${flashAlpha})`;
+        nc.fillRect(0, 0, W, H);
+      }
+
+      // Shockwave ring (10%-60%)
+      if (t > 0.1 && t < 0.6) {
+        const st = (t - 0.1) / 0.5;
+        const ringR = st * Math.max(W, H) * 0.6;
+        const ringAlpha = (1 - st) * 0.3;
+        nc.strokeStyle = `rgba(255,200,100,${ringAlpha})`;
+        nc.lineWidth = 3 + (1 - st) * 8;
+        nc.beginPath();
+        nc.arc(W / 2, H * 0.6, ringR, 0, Math.PI * 2);
+        nc.stroke();
+      }
+
+      // Ground fireball glow
+      if (t < 0.5) {
+        const gt = t / 0.5;
+        const grad = nc.createRadialGradient(W/2, H*0.8, 0, W/2, H*0.8, 80 + gt * 60);
+        grad.addColorStop(0, `rgba(255,200,50,${(1-gt)*0.4})`);
+        grad.addColorStop(1, 'rgba(255,100,0,0)');
+        nc.fillStyle = grad;
+        nc.beginPath();
+        nc.arc(W/2, H*0.8, 80 + gt * 60, 0, Math.PI * 2);
+        nc.fill();
+      }
+
+      // Stem (column of fire/smoke)
+      if (t > 0.1) {
+        const st = Math.min((t - 0.1) / 0.4, 1);
+        const stemTop = H * 0.8 - st * H * 0.5;
+        const stemW = 20 + st * 15;
+        const stemGrad = nc.createLinearGradient(0, stemTop, 0, H * 0.8);
+        stemGrad.addColorStop(0, `rgba(80,60,40,${0.6 * (1 - t*0.3)})`);
+        stemGrad.addColorStop(0.4, `rgba(200,100,30,${0.5 * (1 - t*0.3)})`);
+        stemGrad.addColorStop(1, `rgba(255,150,50,${0.3 * (1 - t*0.3)})`);
+        nc.fillStyle = stemGrad;
+        nc.beginPath();
+        nc.moveTo(W/2 - stemW, H * 0.8);
+        nc.lineTo(W/2 - stemW * 0.6, stemTop + 20);
+        nc.lineTo(W/2 + stemW * 0.6, stemTop + 20);
+        nc.lineTo(W/2 + stemW, H * 0.8);
+        nc.fill();
+      }
+
+      // Mushroom cap
+      if (t > 0.2) {
+        const ct = Math.min((t - 0.2) / 0.5, 1);
+        const capY = H * 0.8 - Math.min((t - 0.1) / 0.4, 1) * H * 0.5;
+        const capRx = 30 + ct * 60;
+        const capRy = 15 + ct * 30;
+        const capGrad = nc.createRadialGradient(W/2, capY, 0, W/2, capY, capRx);
+        capGrad.addColorStop(0, `rgba(255,220,150,${0.7 * (1-t*0.3)})`);
+        capGrad.addColorStop(0.4, `rgba(220,100,30,${0.6 * (1-t*0.3)})`);
+        capGrad.addColorStop(0.8, `rgba(100,60,40,${0.4 * (1-t*0.3)})`);
+        capGrad.addColorStop(1, `rgba(60,40,30,0)`);
+        nc.fillStyle = capGrad;
+        nc.beginPath();
+        nc.ellipse(W/2, capY, capRx, capRy, 0, 0, Math.PI * 2);
+        nc.fill();
+        // Smoke bumps on cap
+        for (let b = 0; b < 6; b++) {
+          const a = (b / 6) * Math.PI * 2 + t * 0.5;
+          const bx = W/2 + Math.cos(a) * capRx * 0.8;
+          const by = capY + Math.sin(a) * capRy * 0.7;
+          nc.fillStyle = `rgba(80,50,30,${0.3 * (1-t*0.3)})`;
+          nc.beginPath();
+          nc.arc(bx, by, 10 + ct * 12, 0, Math.PI * 2);
+          nc.fill();
+        }
+      }
+
+      // Vignette darkening
+      if (t > 0.3) {
+        const vt = (t - 0.3) / 0.7;
+        const vig = nc.createRadialGradient(W/2, H/2, W*0.2, W/2, H/2, W*0.7);
+        vig.addColorStop(0, 'rgba(0,0,0,0)');
+        vig.addColorStop(1, `rgba(0,0,0,${vt * 0.5})`);
+        nc.fillStyle = vig;
+        nc.fillRect(0, 0, W, H);
+      }
+
+      // Fade to black at end
+      if (t > 0.8) {
+        const ft = (t - 0.8) / 0.2;
+        nc.fillStyle = `rgba(10,22,40,${ft})`;
+        nc.fillRect(0, 0, W, H);
+      }
+
+      if (t < 1) {
+        requestAnimationFrame(drawMushroom);
+      } else {
+        nukeOverlay.innerHTML = '';
         nukeOverlay.style.display = 'none';
         battle.nuclearAnimating = false;
         gameState.actionDone = true;
         updateTopBar();
         updateActionBar();
-      }, 500);
-    }, 500);
+      }
+    }
+    requestAnimationFrame(drawMushroom);
   }, 2500);
 }
 
