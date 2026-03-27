@@ -2,24 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Naval Battle: Strategic Edition</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html, body {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-    overscroll-behavior: none;
-  }
 
   body {
     background: #0a1628;
     color: #c0d8f0;
     font-family: 'Segoe UI', 'Courier New', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
     user-select: none;
   }
 
@@ -29,15 +23,12 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    gap: clamp(8px, 2vh, 30px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 10px 0;
+    height: 100vh;
+    gap: 30px;
   }
 
   #menu-screen h1 {
-    font-size: clamp(24px, 6vh, 48px);
+    font-size: 48px;
     color: #4fc3f7;
     text-shadow: 0 0 20px rgba(79,195,247,0.5);
     letter-spacing: 6px;
@@ -45,18 +36,18 @@
   }
 
   #menu-screen h2 {
-    font-size: clamp(12px, 3vh, 18px);
+    font-size: 18px;
     color: #78909c;
     letter-spacing: 4px;
-    margin-top: -10px;
+    margin-top: -20px;
   }
 
   .menu-btn {
     background: linear-gradient(180deg, #1a3a5c, #0d2137);
     border: 1px solid #4fc3f7;
     color: #4fc3f7;
-    padding: clamp(8px, 2vh, 14px) 48px;
-    font-size: clamp(14px, 3vh, 20px);
+    padding: 14px 48px;
+    font-size: 20px;
     cursor: pointer;
     letter-spacing: 3px;
     text-transform: uppercase;
@@ -73,15 +64,13 @@
     display: none;
     flex-direction: column;
     align-items: center;
-    height: 100%;
-    gap: clamp(4px, 1vh, 24px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 10px 20px 30px;
+    justify-content: center;
+    height: 100vh;
+    gap: 24px;
   }
 
   #settings-screen h2 {
-    font-size: clamp(18px, 4vh, 32px);
+    font-size: 32px;
     color: #4fc3f7;
     letter-spacing: 4px;
     text-transform: uppercase;
@@ -90,8 +79,8 @@
   .settings-group {
     background: rgba(26,58,92,0.4);
     border: 1px solid #1e3a5f;
-    padding: clamp(8px, 1.5vh, 20px) clamp(14px, 2vw, 30px);
-    min-width: min(500px, 90vw);
+    padding: 20px 30px;
+    min-width: 500px;
   }
 
   .settings-group h3 {
@@ -99,7 +88,7 @@
     color: #78909c;
     text-transform: uppercase;
     letter-spacing: 2px;
-    margin-bottom: clamp(4px, 1vh, 12px);
+    margin-bottom: 12px;
   }
 
   .radio-group {
@@ -116,7 +105,7 @@
 
   .radio-option label {
     display: block;
-    padding: clamp(5px, 1vh, 10px) 20px;
+    padding: 10px 20px;
     background: #0d2137;
     border: 1px solid #1e3a5f;
     color: #78909c;
@@ -147,26 +136,18 @@
     background: #0d2137;
     border: 1px solid #4fc3f7;
     color: #a0c4e8;
-    padding: 8px 12px;
-    font-size: 11px;
-    width: min(240px, 60vw);
+    padding: 10px 14px;
+    font-size: 12px;
+    width: 260px;
     text-align: center;
-    line-height: 1.4;
+    line-height: 1.5;
     z-index: 10;
     pointer-events: none;
     margin-bottom: 6px;
   }
 
-  /* Desktop: hover shows tooltip */
-  @media (hover: hover) {
-    .radio-option:hover .flavor-tooltip,
-    .radio-option input:checked ~ .flavor-tooltip {
-      display: block;
-    }
-  }
-
-  /* Mobile: only show when explicitly activated via JS */
-  .flavor-tooltip.tooltip-active {
+  .radio-option:hover .flavor-tooltip,
+  .radio-option input:checked ~ .flavor-tooltip {
     display: block;
   }
 
@@ -174,15 +155,13 @@
     background: linear-gradient(180deg, #1b5e20, #0d3b12);
     border: 1px solid #4caf50;
     color: #4caf50;
-    padding: clamp(8px, 2vh, 16px) clamp(32px, 8vw, 64px);
-    font-size: clamp(16px, 3vh, 22px);
+    padding: 16px 64px;
+    font-size: 22px;
     cursor: pointer;
     letter-spacing: 4px;
     text-transform: uppercase;
     transition: all 0.2s;
-    margin-top: 4px;
-    position: relative;
-    z-index: 20;
+    margin-top: 10px;
   }
 
   .start-btn:hover {
@@ -199,8 +178,6 @@
     cursor: pointer;
     letter-spacing: 2px;
     transition: all 0.15s;
-    position: relative;
-    z-index: 20;
   }
 
   .back-btn:hover {
@@ -220,7 +197,6 @@
     display: block;
     width: 100%;
     height: 100%;
-    touch-action: none;
   }
 
   #game-hud {
@@ -467,24 +443,22 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: clamp(8px, 2vh, 20px);
-    overflow-y: auto;
-    padding: 10px 0;
+    gap: 20px;
   }
 
-  #choice-dialog h2 { color: #4fc3f7; font-size: clamp(16px, 4vh, 24px); letter-spacing: 3px; text-transform: uppercase; }
+  #choice-dialog h2 { color: #4fc3f7; font-size: 24px; letter-spacing: 3px; text-transform: uppercase; }
   #choice-dialog p { color: #78909c; font-size: 14px; max-width: 500px; text-align: center; line-height: 1.6; }
 
-  .choice-options { display: flex; gap: clamp(10px, 2vw, 20px); flex-wrap: wrap; justify-content: center; }
+  .choice-options { display: flex; gap: 20px; }
 
   .choice-card {
     background: #0d2137;
     border: 2px solid #1e3a5f;
-    padding: clamp(10px, 2vh, 20px) 28px;
+    padding: 20px 28px;
     cursor: pointer;
     text-align: center;
     transition: all 0.2s;
-    min-width: min(200px, 40vw);
+    min-width: 200px;
   }
   .choice-card:hover { border-color: #4fc3f7; box-shadow: 0 0 15px rgba(79,195,247,0.2); }
   .choice-card h3 { color: #4fc3f7; font-size: 18px; margin-bottom: 8px; letter-spacing: 1px; }
@@ -566,7 +540,6 @@
     display: block;
     width: 100%;
     height: 100%;
-    touch-action: none;
   }
 
   #fleet-panel { border-right: 2px solid #1e3a5f; }
@@ -699,10 +672,6 @@
     inset: 0;
     z-index: 600;
     pointer-events: none;
-  }
-  #nuke-overlay canvas {
-    width: 100%;
-    height: 100%;
   }
 
   /* ── Nuke Ceremony Overlay ── */
@@ -931,13 +900,11 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: clamp(10px, 2vh, 20px);
-    overflow-y: auto;
-    padding: 10px 0;
+    gap: 20px;
   }
 
   #victory-overlay h1 {
-    font-size: clamp(28px, 8vh, 48px);
+    font-size: 48px;
     letter-spacing: 6px;
     text-transform: uppercase;
   }
@@ -965,7 +932,7 @@
     background: linear-gradient(180deg, #0d2137, #091420);
     border: 1px solid #4fc3f7;
     border-radius: 8px;
-    padding: clamp(14px, 3vh, 30px) clamp(16px, 3vw, 40px);
+    padding: 30px 40px;
     max-width: 520px;
     width: 100%;
     text-align: center;
@@ -1384,20 +1351,6 @@
 //  Phase 1 (Menu/Landscape) + Phase 2 (Placement) + Phase 3 (Combat)
 // ============================================================
 
-// ── Prevent all page scrolling/bouncing on mobile ──
-document.addEventListener('touchmove', function(e) {
-  // Allow scrolling inside settings-screen and other overflow-y:auto containers
-  let el = e.target;
-  while (el && el !== document.body) {
-    const style = window.getComputedStyle(el);
-    if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
-      return; // allow native scroll inside scrollable containers
-    }
-    el = el.parentElement;
-  }
-  e.preventDefault();
-}, { passive: false });
-
 // ── Screen management ──
 
 function showMenu() {
@@ -1418,26 +1371,6 @@ function showSettings() {
   document.getElementById('menu-screen').style.display = 'none';
   document.getElementById('settings-screen').style.display = 'flex';
 }
-
-// ── Mobile tooltip tap-to-show ──
-(function() {
-  function dismissAllTooltips() {
-    document.querySelectorAll('.flavor-tooltip.tooltip-active').forEach(t => t.classList.remove('tooltip-active'));
-  }
-  document.addEventListener('click', (e) => {
-    const option = e.target.closest('.radio-option');
-    if (option) {
-      const tip = option.querySelector('.flavor-tooltip');
-      if (tip) {
-        const wasActive = tip.classList.contains('tooltip-active');
-        dismissAllTooltips();
-        if (!wasActive) tip.classList.add('tooltip-active');
-      }
-    } else {
-      dismissAllTooltips();
-    }
-  });
-})();
 
 function showGame() {
   document.getElementById('menu-screen').style.display = 'none';
@@ -1488,8 +1421,6 @@ const fleetCam = makeCamera();
 const radarCam = makeCamera();
 
 let renderFrameId = 0;
-let waterAnimTime = 0;
-let lastWaterFrameTime = 0;
 const CELL_PX = 16;
 
 // ── Sprite Preloading ──
@@ -1593,212 +1524,54 @@ function route(ctx, node, wetAmount) {
   }
 }
 
-// Ocean ambient — layered filtered noise with wave-like filter modulation
+// Ocean ambient — continuous low rumble + wave-like modulation
 function startAmbient() {
   if (!soundEnabled || ambientNode) return;
   try {
     const ctx = getAudioCtx();
+    // Brown noise via filtered white noise
     const sr = ctx.sampleRate;
-
-    // Layer 1: Low-pass filtered white noise (wave wash)
     const bufLen = sr * 4;
     const buf = ctx.createBuffer(1, bufLen, sr);
     const d = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+    let last = 0;
+    for (let i = 0; i < bufLen; i++) {
+      const white = Math.random() * 2 - 1;
+      last = (last + (0.02 * white)) / 1.02;
+      d[i] = last * 3.5;
+    }
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.loop = true;
 
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = 180;
-    lp.Q.value = 0.7;
+    lp.frequency.value = 150;
 
-    // LFO modulates filter cutoff — simulates waves crashing
+    // LFO for wave-like volume swell
     const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.1; // slow wave cycle ~10s
-    const lfoCutoff = ctx.createGain();
-    lfoCutoff.gain.value = 120; // cutoff sweeps 180 +/- 120 Hz
-    lfo.connect(lfoCutoff);
-    lfoCutoff.connect(lp.frequency);
-
-    // Second LFO for gentle volume swell (longer cycle)
-    const lfo2 = ctx.createOscillator();
-    lfo2.frequency.value = 0.07;
-    const lfo2Gain = ctx.createGain();
-    lfo2Gain.gain.value = 0.008;
-    lfo2.connect(lfo2Gain);
+    lfo.frequency.value = 0.12;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.003;
+    lfo.connect(lfoGain);
 
     ambientGain = ctx.createGain();
-    ambientGain.gain.value = 0.04;
-    lfo2Gain.connect(ambientGain.gain);
-
-    // Layer 2: Deep rumble (brown noise)
-    const buf2 = ctx.createBuffer(1, bufLen, sr);
-    const d2 = buf2.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < bufLen; i++) {
-      last = (last + (0.02 * (Math.random() * 2 - 1))) / 1.02;
-      d2[i] = last * 3.5;
-    }
-    const src2 = ctx.createBufferSource();
-    src2.buffer = buf2;
-    src2.loop = true;
-
-    const lp2 = ctx.createBiquadFilter();
-    lp2.type = 'lowpass';
-    lp2.frequency.value = 80;
-
-    const deepGain = ctx.createGain();
-    deepGain.gain.value = 0.03;
-
-    src2.connect(lp2).connect(deepGain).connect(ctx.destination);
+    ambientGain.gain.value = 0.025;
+    lfoGain.connect(ambientGain.gain);
 
     src.connect(lp).connect(ambientGain).connect(ctx.destination);
     src.start();
-    src2.start();
     lfo.start();
-    lfo2.start();
-    ambientNode = { src, src2, lfo, lfo2 };
+    ambientNode = { src, lfo };
   } catch(e) {}
 }
 
 function stopAmbient() {
   if (ambientNode) {
-    try {
-      ambientNode.src.stop(); ambientNode.lfo.stop();
-      if (ambientNode.src2) ambientNode.src2.stop();
-      if (ambientNode.lfo2) ambientNode.lfo2.stop();
-    } catch(e) {}
+    try { ambientNode.src.stop(); ambientNode.lfo.stop(); } catch(e) {}
     ambientNode = null;
     ambientGain = null;
   }
-  stopDasBootTheme();
-}
-
-// ── Das Boot Main Theme (Klaus Doldinger) — Web Audio synthesis ──
-let dasBootPlaying = false;
-let dasBootTimeouts = [];
-let dasBootOscillators = [];
-
-function playDasBootTheme() {
-  if (!soundEnabled || dasBootPlaying) return;
-  dasBootPlaying = true;
-  try {
-    const ctx = getAudioCtx();
-    const now = ctx.currentTime;
-
-    // Master gain for the theme
-    const master = ctx.createGain();
-    master.gain.value = 0.07;
-    master.connect(ctx.destination);
-
-    // Reverb via delay feedback
-    const delay = ctx.createDelay(0.5);
-    delay.delayTime.value = 0.25;
-    const feedback = ctx.createGain();
-    feedback.gain.value = 0.3;
-    const reverbGain = ctx.createGain();
-    reverbGain.gain.value = 0.4;
-    delay.connect(feedback);
-    feedback.connect(delay);
-    delay.connect(reverbGain);
-    reverbGain.connect(master);
-
-    // Das Boot main theme by Klaus Doldinger — brooding C minor
-    // Notes: [frequency, startTime, duration]
-    // Key of C minor, tempo ~80bpm, beat = 0.7s
-    const b = 0.7; // beat duration (slower, brooding)
-    const melody = [
-      // Phrase 1: G3 G3 | Bb3 . G3 | Bb3 C4 | D4 (held)
-      [196.00, 0,       b*0.8],    // G3
-      [196.00, b,       b*0.8],    // G3
-      [233.08, b*2,     b*1.5],    // Bb3 (longer)
-      [196.00, b*3.5,   b*0.8],    // G3
-      [233.08, b*4.5,   b*0.9],    // Bb3
-      [261.63, b*5.5,   b*0.9],    // C4
-      [293.66, b*6.5,   b*2.5],    // D4 (peak, held)
-
-      // Phrase 2: D4 D4 | F4 . D4 | Eb4 D4 | C4 (held)
-      [293.66, b*9,     b*0.8],    // D4
-      [293.66, b*10,    b*0.8],    // D4
-      [349.23, b*11,    b*1.5],    // F4 (longer)
-      [293.66, b*12.5,  b*0.8],    // D4
-      [311.13, b*13.5,  b*0.9],    // Eb4
-      [293.66, b*14.5,  b*0.9],    // D4
-      [261.63, b*15.5,  b*2.5],    // C4 (held)
-
-      // Phrase 3: C4 C4 | Eb4 . C4 | D4 C4 | Bb3 (held)
-      [261.63, b*18,    b*0.8],    // C4
-      [261.63, b*19,    b*0.8],    // C4
-      [311.13, b*20,    b*1.5],    // Eb4 (longer)
-      [261.63, b*21.5,  b*0.8],    // C4
-      [293.66, b*22.5,  b*0.9],    // D4
-      [261.63, b*23.5,  b*0.9],    // C4
-      [233.08, b*24.5,  b*2.5],    // Bb3 (held)
-
-      // Resolution: G3 (long hold, fade)
-      [196.00, b*27,    b*4.0],    // G3 (long, brooding fade)
-    ];
-
-    // Bass line — low octave root notes, dark and heavy
-    const bass = [
-      [98.00,  0,       b*4.5],    // G2
-      [98.00,  b*5,     b*4],      // G2
-      [146.83, b*9,     b*4.5],    // D3
-      [130.81, b*14,    b*4],      // C3
-      [130.81, b*18,    b*4.5],    // C3
-      [116.54, b*23,    b*4],      // Bb2
-      [98.00,  b*27,    b*4.0],    // G2 (resolution)
-    ];
-
-    function playNote(freq, start, dur, isBass) {
-      const osc = ctx.createOscillator();
-      const env = ctx.createGain();
-      // Melody: warm sawtooth filtered; bass: triangle
-      osc.type = isBass ? 'triangle' : 'sawtooth';
-      osc.frequency.value = freq;
-
-      // Low-pass filter for warmth (synth pad feel)
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = isBass ? 300 : 800;
-      filter.Q.value = 1;
-
-      osc.connect(filter);
-      filter.connect(env);
-      env.connect(delay); // through reverb
-      env.connect(master); // dry signal too
-
-      // Envelope
-      const t0 = now + start;
-      env.gain.setValueAtTime(0, t0);
-      env.gain.linearRampToValueAtTime(isBass ? 0.5 : 0.8, t0 + 0.05);
-      env.gain.setValueAtTime(isBass ? 0.5 : 0.8, t0 + dur * 0.7);
-      env.gain.linearRampToValueAtTime(0, t0 + dur);
-
-      osc.start(t0);
-      osc.stop(t0 + dur + 0.1);
-      dasBootOscillators.push(osc);
-    }
-
-    melody.forEach(n => playNote(n[0], n[1], n[2], false));
-    bass.forEach(n => playNote(n[0], n[1], n[2], true));
-
-    // Auto-stop flag after melody ends
-    const totalDur = (b * 31) * 1000;
-    const tid = setTimeout(() => { dasBootPlaying = false; }, totalDur);
-    dasBootTimeouts.push(tid);
-
-  } catch(e) { dasBootPlaying = false; }
-}
-
-function stopDasBootTheme() {
-  dasBootPlaying = false;
-  dasBootTimeouts.forEach(t => clearTimeout(t));
-  dasBootTimeouts = [];
-  dasBootOscillators.forEach(o => { try { o.stop(); } catch(e) {} });
-  dasBootOscillators = [];
 }
 
 function playSound(name) {
@@ -2166,33 +1939,18 @@ function playSound(name) {
         break;
       }
       case 'alarm': {
-        // Civil defense siren: rising-falling frequency sweep 400-800Hz
-        const siren = ctx.createOscillator();
-        siren.type = 'sawtooth';
-        // 3 rise-fall cycles over 3 seconds
-        for (let c = 0; c < 3; c++) {
-          const t0 = now + c * 1.0;
-          siren.frequency.setValueAtTime(400, t0);
-          siren.frequency.linearRampToValueAtTime(800, t0 + 0.5);
-          siren.frequency.linearRampToValueAtTime(400, t0 + 1.0);
+        // Harsh square wave alternating 440/880Hz
+        const a1 = ctx.createOscillator(); a1.type = 'square';
+        const aG = ctx.createGain();
+        aG.gain.setValueAtTime(0.12, now);
+        aG.gain.setValueAtTime(0.12, now + 2.5);
+        aG.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+        a1.frequency.setValueAtTime(440, now);
+        for (let t = 0; t < 6; t++) {
+          a1.frequency.setValueAtTime(t % 2 === 0 ? 440 : 880, now + t * 0.5);
         }
-        const sirenG = ctx.createGain();
-        sirenG.gain.setValueAtTime(0.001, now);
-        sirenG.gain.linearRampToValueAtTime(0.12, now + 0.15);
-        sirenG.gain.setValueAtTime(0.12, now + 2.5);
-        sirenG.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
-        // Soft-clip waveshaper for unsettling harmonic distortion
-        const ws = ctx.createWaveShaper();
-        const curve = new Float32Array(256);
-        for (let i = 0; i < 256; i++) {
-          const x = (i / 128) - 1;
-          curve[i] = (Math.PI + 3) * x / (Math.PI + 3 * Math.abs(x));
-        }
-        ws.curve = curve;
-        ws.oversample = '2x';
-        siren.connect(ws).connect(sirenG);
-        route(ctx, sirenG, 0.3);
-        siren.start(now); siren.stop(now + 3.0);
+        a1.connect(aG); route(ctx, aG, 0.2);
+        a1.start(now); a1.stop(now + 3.0);
         break;
       }
       case 'radar_ping': {
@@ -2224,32 +1982,32 @@ function playSound(name) {
         break;
       }
       case 'sonar_ping': {
-        // Classic submarine movie ping: short ~1200Hz sine with reverb tail
+        // Classic submarine sonar: descending sine with long reverb
         const ping = ctx.createOscillator();
         ping.type = 'sine';
-        ping.frequency.setValueAtTime(1200, now);
-        ping.frequency.exponentialRampToValueAtTime(1150, now + 0.1);
+        ping.frequency.setValueAtTime(1000, now);
+        ping.frequency.exponentialRampToValueAtTime(750, now + 0.8);
         const pG = ctx.createGain();
         pG.gain.setValueAtTime(0.001, now);
-        pG.gain.linearRampToValueAtTime(0.15, now + 0.005);
-        pG.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        pG.gain.linearRampToValueAtTime(0.12, now + 0.015);
+        pG.gain.setValueAtTime(0.1, now + 0.15);
+        pG.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
         ping.connect(pG);
-        // Heavy reverb send for long decay tail
-        route(ctx, pG, 1.5);
-        ping.start(now); ping.stop(now + 0.15);
+        route(ctx, pG, 1.0);
+        ping.start(now); ping.stop(now + 1.0);
 
-        // Subtle octave-up harmonic for metallic shimmer
-        const harm = ctx.createOscillator();
-        harm.type = 'sine';
-        harm.frequency.setValueAtTime(2400, now);
-        harm.frequency.exponentialRampToValueAtTime(2300, now + 0.1);
-        const hG = ctx.createGain();
-        hG.gain.setValueAtTime(0.001, now);
-        hG.gain.linearRampToValueAtTime(0.03, now + 0.005);
-        hG.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-        harm.connect(hG);
-        route(ctx, hG, 1.2);
-        harm.start(now); harm.stop(now + 0.12);
+        // Sub-harmonic
+        const sub = ctx.createOscillator();
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(500, now);
+        sub.frequency.exponentialRampToValueAtTime(375, now + 0.8);
+        const sG = ctx.createGain();
+        sG.gain.setValueAtTime(0.001, now);
+        sG.gain.linearRampToValueAtTime(0.04, now + 0.02);
+        sG.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        sub.connect(sG);
+        route(ctx, sG, 0.8);
+        sub.start(now); sub.stop(now + 0.8);
         break;
       }
       case 'striker': {
@@ -3135,115 +2893,8 @@ const battle = {
   strikerChain: [], // [{x,y,result}] for visual trail
   radarPulses: [],
   sinkExplosions: [],
-  nuclearAnimating: false,
-  damageParticles: [] // fire/smoke particles for hit cells
+  nuclearAnimating: false
 };
-
-// ── Damage Particle System ──
-// Each particle: { x, y, vx, vy, life, maxLife, r, g, b, size, type }
-// type: 'fire' | 'smoke' | 'explosion'
-
-function spawnDamageParticles(cellX, cellY, type, count) {
-  const particles = battle.damageParticles;
-  const cx = (cellX + 0.5) * CELL_PX;
-  const cy = (cellY + 0.5) * CELL_PX;
-  for (let i = 0; i < count && particles.length < 100; i++) {
-    if (type === 'fire') {
-      particles.push({
-        x: cx + (Math.random() - 0.5) * CELL_PX * 0.6,
-        y: cy + (Math.random() - 0.5) * CELL_PX * 0.3,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: -0.2 - Math.random() * 0.5,
-        life: 0, maxLife: 20 + Math.random() * 30,
-        r: 255, g: Math.floor(100 + Math.random() * 100), b: 0,
-        size: 0.8 + Math.random() * 1.2, type: 'fire',
-        cellX: cellX, cellY: cellY
-      });
-    } else if (type === 'smoke') {
-      particles.push({
-        x: cx + (Math.random() - 0.5) * CELL_PX * 0.4,
-        y: cy,
-        vx: (Math.random() - 0.5) * 0.15,
-        vy: -0.3 - Math.random() * 0.4,
-        life: 0, maxLife: 30 + Math.random() * 40,
-        r: 40 + Math.floor(Math.random() * 30), g: 30 + Math.floor(Math.random() * 20), b: 25,
-        size: 1 + Math.random() * 1.5, type: 'smoke',
-        cellX: cellX, cellY: cellY
-      });
-    } else if (type === 'explosion') {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 0.5 + Math.random() * 1.5;
-      particles.push({
-        x: cx, y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 0.5,
-        life: 0, maxLife: 15 + Math.random() * 15,
-        r: 255, g: Math.floor(60 + Math.random() * 140), b: 0,
-        size: 1 + Math.random() * 2, type: 'explosion',
-        cellX: cellX, cellY: cellY
-      });
-    }
-  }
-}
-
-function updateDamageParticles() {
-  const particles = battle.damageParticles;
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.life++;
-    if (p.type === 'fire') {
-      p.vy -= 0.01; // fire rises slightly faster over time
-      p.size *= 0.97;
-    } else if (p.type === 'smoke') {
-      p.vx += (Math.random() - 0.5) * 0.05; // slight drift
-      p.size *= 0.99;
-    }
-    if (p.life >= p.maxLife || p.size < 0.2) {
-      particles.splice(i, 1);
-    }
-  }
-}
-
-function drawDamageParticles(ctx) {
-  for (const p of battle.damageParticles) {
-    const alpha = Math.max(0, 1 - p.life / p.maxLife) * 0.6;
-    ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},${alpha})`;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function refreshDamageEffects() {
-  // Called each frame: spawn new particles for active damage cells on fleet map
-  if (!battle.active) return;
-  const cp = gameState.settings.gameMode === 'hotseat' ? gameState.currentPlayer : 0;
-  const myShips = gameState.players[cp].ships;
-  const sunkCellSet = new Set();
-  for (const ship of myShips) {
-    if (ship.sunk) {
-      for (const c of ship.cells) sunkCellSet.add(c.x + ',' + c.y);
-    }
-  }
-  for (const ship of myShips) {
-    if (!ship.hits) continue;
-    for (let i = 0; i < ship.cells.length; i++) {
-      if (!ship.hits[i]) continue;
-      const c = ship.cells[i];
-      const key = c.x + ',' + c.y;
-      if (ship.sunk) {
-        // Sunk: dark smoke only, 1 in 5 frames
-        if (Math.random() < 0.2) spawnDamageParticles(c.x, c.y, 'smoke', 1);
-      } else {
-        // Hit but not sunk: flickering fire + occasional smoke
-        if (Math.random() < 0.4) spawnDamageParticles(c.x, c.y, 'fire', 1);
-        if (Math.random() < 0.1) spawnDamageParticles(c.x, c.y, 'smoke', 1);
-      }
-    }
-  }
-}
 
 // ── Placement Functions ──
 
@@ -3698,7 +3349,6 @@ function startBattle() {
   showBattle();
   updateSoundButton();
   startAmbient();
-  playDasBootTheme();
 
   // Size canvases
   const fc = document.getElementById('fleet-canvas');
@@ -5179,186 +4829,29 @@ function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, center
   content.scrollTop = content.scrollHeight;
   playSound('alarm');
 
-  // After 2.5s — white flash then mushroom cloud
+  // After 2.5s — white flash and damage
   setTimeout(() => {
     ceremony.style.display = 'none';
     ceremony.classList.remove('alarm-flash');
 
     nukeOverlay.style.display = 'block';
     nukeOverlay.style.background = 'rgba(255,255,255,0.9)';
-    nukeOverlay.innerHTML = '';
     playSound('nuke');
 
     launchNuclearStrike(attackerIdx, centerX, centerY);
 
-    // White flash fades over 600ms, then mushroom cloud
     setTimeout(() => {
-      nukeOverlay.style.background = 'transparent';
-      renderMushroomCloud(nukeOverlay, () => {
+      nukeOverlay.style.background = 'rgba(255,255,255,0.5)';
+      setTimeout(() => {
+        nukeOverlay.style.background = 'transparent';
         nukeOverlay.style.display = 'none';
-        nukeOverlay.innerHTML = '';
         battle.nuclearAnimating = false;
         gameState.actionDone = true;
         updateTopBar();
         updateActionBar();
-      });
-    }, 600);
+      }, 500);
+    }, 500);
   }, 2500);
-}
-
-function renderMushroomCloud(overlay, onComplete) {
-  const cvs = document.createElement('canvas');
-  cvs.width = overlay.clientWidth || window.innerWidth;
-  cvs.height = overlay.clientHeight || window.innerHeight;
-  overlay.appendChild(cvs);
-  const ctx = cvs.getContext('2d');
-  const W = cvs.width, H = cvs.height;
-  const mcx = W / 2, groundY = H * 0.85;
-  const DURATION = 3000;
-  const startTime = performance.now();
-
-  // Pre-generate debris particles (max 60)
-  const debris = [];
-  for (let i = 0; i < 60; i++) {
-    debris.push({
-      angle: Math.random() * Math.PI * 2,
-      speed: 40 + Math.random() * 120,
-      size: 1 + Math.random() * 3,
-      color: Math.random() < 0.5 ? [255, Math.floor(80 + Math.random() * 100), 0] : [80 + Math.floor(Math.random() * 60), 40, 20],
-      drift: (Math.random() - 0.5) * 0.3
-    });
-  }
-
-  function frame(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / DURATION, 1);
-    ctx.clearRect(0, 0, W, H);
-
-    // Vignette darkening
-    const vigAlpha = 0.3 + t * 0.4;
-    const vigGrad = ctx.createRadialGradient(mcx, H * 0.45, W * 0.15, mcx, H * 0.45, W * 0.7);
-    vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
-    vigGrad.addColorStop(1, `rgba(0,0,0,${vigAlpha})`);
-    ctx.fillStyle = vigGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Shockwave ring (first 60%)
-    if (t < 0.6) {
-      const st = t / 0.6;
-      const ringR = st * W * 0.6;
-      const ringAlpha = (1 - st) * 0.5;
-      ctx.strokeStyle = `rgba(255,200,100,${ringAlpha})`;
-      ctx.lineWidth = 3 + (1 - st) * 8;
-      ctx.beginPath();
-      ctx.arc(mcx, groundY, ringR, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.strokeStyle = `rgba(255,255,200,${ringAlpha * 0.6})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(mcx, groundY, ringR * 0.9, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    // Stem (column of fire/smoke rising)
-    const stemTop = groundY - t * H * 0.55;
-    const stemW = W * 0.06 * (1 + t * 0.5);
-    const stemGrad = ctx.createLinearGradient(mcx, groundY, mcx, stemTop);
-    stemGrad.addColorStop(0, `rgba(200,80,10,${0.8 * (1 - t * 0.3)})`);
-    stemGrad.addColorStop(0.3, `rgba(180,60,10,${0.7 * (1 - t * 0.3)})`);
-    stemGrad.addColorStop(0.7, `rgba(100,40,20,${0.6 * (1 - t * 0.2)})`);
-    stemGrad.addColorStop(1, `rgba(50,30,20,${0.5 * (1 - t * 0.2)})`);
-    ctx.fillStyle = stemGrad;
-    ctx.beginPath();
-    ctx.moveTo(mcx - stemW, groundY);
-    const steps = 12;
-    for (let i = 0; i <= steps; i++) {
-      const sy = groundY - (i / steps) * (groundY - stemTop);
-      const wave = Math.sin(i * 0.8 + elapsed * 0.003) * stemW * 0.15;
-      ctx.lineTo(mcx - stemW + wave - (i / steps) * stemW * 0.3, sy);
-    }
-    for (let i = steps; i >= 0; i--) {
-      const sy = groundY - (i / steps) * (groundY - stemTop);
-      const wave = Math.sin(i * 0.8 + elapsed * 0.003 + 1) * stemW * 0.15;
-      ctx.lineTo(mcx + stemW + wave + (i / steps) * stemW * 0.3, sy);
-    }
-    ctx.closePath();
-    ctx.fill();
-
-    // Mushroom cap
-    if (t > 0.1) {
-      const capT = Math.min((t - 0.1) / 0.5, 1);
-      const capCY = stemTop - W * 0.02;
-      const capRX = capT * W * 0.18 * (1 + t * 0.3);
-      const capRY = capT * W * 0.10 * (1 + t * 0.2);
-      const capGrad = ctx.createRadialGradient(mcx, capCY, capRX * 0.1, mcx, capCY, capRX);
-      capGrad.addColorStop(0, `rgba(220,100,20,${0.7 * (1 - t * 0.3)})`);
-      capGrad.addColorStop(0.4, `rgba(160,50,10,${0.6 * (1 - t * 0.3)})`);
-      capGrad.addColorStop(0.7, `rgba(80,30,15,${0.5 * (1 - t * 0.2)})`);
-      capGrad.addColorStop(1, `rgba(40,20,10,${0.3 * (1 - t * 0.2)})`);
-      ctx.fillStyle = capGrad;
-      ctx.beginPath();
-      ctx.ellipse(mcx, capCY, capRX, capRY, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Inner bright core
-      const coreGrad = ctx.createRadialGradient(mcx, capCY, 0, mcx, capCY, capRX * 0.5);
-      coreGrad.addColorStop(0, `rgba(255,200,60,${0.6 * (1 - t * 0.5)})`);
-      coreGrad.addColorStop(1, 'rgba(255,120,20,0)');
-      ctx.fillStyle = coreGrad;
-      ctx.beginPath();
-      ctx.ellipse(mcx, capCY, capRX * 0.5, capRY * 0.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Rolling smoke bumps on cap edge
-      for (let i = 0; i < 8; i++) {
-        const ang = (i / 8) * Math.PI * 2 + elapsed * 0.001;
-        const bx = mcx + Math.cos(ang) * capRX * 0.85;
-        const by = capCY + Math.sin(ang) * capRY * 0.85;
-        const br = capRX * 0.18;
-        ctx.fillStyle = `rgba(60,25,10,${0.3 * (1 - t * 0.3)})`;
-        ctx.beginPath();
-        ctx.arc(bx, by, br, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Ground fireball glow
-    if (t < 0.5) {
-      const fbAlpha = (1 - t * 2) * 0.5;
-      const fbGrad = ctx.createRadialGradient(mcx, groundY, 0, mcx, groundY, W * 0.15);
-      fbGrad.addColorStop(0, `rgba(255,220,100,${fbAlpha})`);
-      fbGrad.addColorStop(0.5, `rgba(255,120,20,${fbAlpha * 0.6})`);
-      fbGrad.addColorStop(1, 'rgba(200,60,10,0)');
-      ctx.fillStyle = fbGrad;
-      ctx.beginPath();
-      ctx.arc(mcx, groundY, W * 0.15, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Debris particles
-    for (const d of debris) {
-      const px = mcx + Math.cos(d.angle + d.drift * t) * d.speed * t * 2;
-      const py = groundY - d.speed * t * 1.5 + d.speed * t * t * 2;
-      if (py > H || py < 0) continue;
-      const da = Math.max(0, (1 - t * 1.2)) * 0.7;
-      ctx.fillStyle = `rgba(${d.color[0]},${d.color[1]},${d.color[2]},${da})`;
-      ctx.beginPath();
-      ctx.arc(px, py, d.size * (1 - t * 0.5), 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Fade out in last 20%
-    if (t > 0.8) {
-      const fadeAlpha = (t - 0.8) / 0.2;
-      ctx.fillStyle = `rgba(10,22,40,${fadeAlpha})`;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    if (t < 1) {
-      requestAnimationFrame(frame);
-    } else {
-      onComplete();
-    }
-  }
-  requestAnimationFrame(frame);
 }
 
 function nukeCeremonyAbort(content, ceremony) {
@@ -6223,15 +5716,8 @@ function aiSpendMovePoints(aiIdx, ai, human) {
 //  RENDERING
 // ══════════════════════════════════════════════
 
-function renderLoop(timestamp) {
-  if (!lastWaterFrameTime) lastWaterFrameTime = timestamp;
-  const dt = (timestamp - lastWaterFrameTime) / 1000;
-  lastWaterFrameTime = timestamp;
-  waterAnimTime += dt;
-
+function renderLoop() {
   if (battle.active) {
-    refreshDamageEffects();
-    updateDamageParticles();
     renderFleetMap();
     renderRadar();
   } else if (placement.phase === 'placing' || placement.phase === 'done') {
@@ -6239,53 +5725,6 @@ function renderLoop(timestamp) {
     renderPlacementMinimap();
   }
   renderFrameId = requestAnimationFrame(renderLoop);
-}
-
-// ── Animated Water Background ──
-
-function drawAnimatedWater(ctx, worldSize, vx0, vy0, vx1, vy1) {
-  // Base ocean color is already filled by caller (#1a5276)
-  // Draw layered sine waves for subtle animated water
-  const t = waterAnimTime;
-  const step = 4; // pixel step for performance (draw every 4th pixel column)
-  const fieldL = vx0 * CELL_PX;
-  const fieldR = vx1 * CELL_PX;
-  const fieldT = vy0 * CELL_PX;
-  const fieldB = vy1 * CELL_PX;
-
-  // Wave layer 1: slow, wide undulation
-  ctx.beginPath();
-  for (let py = fieldT; py < fieldB; py += step) {
-    for (let px = fieldL; px < fieldR; px += step) {
-      const wave1 = Math.sin(px * 0.015 + t * 0.4) * Math.cos(py * 0.012 + t * 0.3) * 0.035;
-      const wave2 = Math.sin(px * 0.025 - t * 0.6 + py * 0.008) * 0.025;
-      const wave3 = Math.sin((px + py) * 0.01 + t * 0.5) * Math.cos(px * 0.02 - t * 0.35) * 0.02;
-      const brightness = wave1 + wave2 + wave3;
-      if (brightness > 0.01) {
-        // Lighter crests
-        ctx.fillStyle = `rgba(100,180,255,${brightness})`;
-        ctx.fillRect(px, py, step, step);
-      } else if (brightness < -0.01) {
-        // Darker troughs
-        ctx.fillStyle = `rgba(5,15,40,${-brightness * 0.8})`;
-        ctx.fillRect(px, py, step, step);
-      }
-    }
-  }
-
-  // Occasional subtle foam lines (very faint horizontal streaks)
-  ctx.strokeStyle = 'rgba(160,210,255,0.04)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 6; i++) {
-    const baseY = ((i * 137 + Math.floor(t * 8)) % (fieldB - fieldT)) + fieldT;
-    if (baseY < fieldT || baseY > fieldB) continue;
-    ctx.beginPath();
-    const startX = fieldL + ((i * 73) % ((fieldR - fieldL) / 2));
-    const endX = startX + 30 + Math.sin(t * 0.3 + i) * 15;
-    ctx.moveTo(startX, baseY + Math.sin(startX * 0.02 + t * 0.5) * 2);
-    ctx.lineTo(Math.min(endX, fieldR), baseY + Math.sin(endX * 0.02 + t * 0.5) * 2);
-    ctx.stroke();
-  }
 }
 
 // ── Placement Rendering (from Phase 2) ──
@@ -6310,7 +5749,6 @@ function renderPlacementField() {
   const vx1 = Math.min(sz, Math.ceil((-camera.x + canvas.width) / (camera.zoom * CELL_PX)));
   const vy1 = Math.min(sz, Math.ceil((-camera.y + canvas.height) / (camera.zoom * CELL_PX)));
 
-  drawAnimatedWater(ctx, worldSize, vx0, vy0, vx1, vy1);
   drawLandscape(ctx, vx0, vy0, vx1, vy1, 'fleet');
   drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(100,180,255,0.12)');
 
@@ -6361,7 +5799,6 @@ function renderFleetMap() {
   const vx1 = Math.min(sz, Math.ceil((-cam.x + canvas.width) / (cam.zoom * CELL_PX)));
   const vy1 = Math.min(sz, Math.ceil((-cam.y + canvas.height) / (cam.zoom * CELL_PX)));
 
-  drawAnimatedWater(ctx, worldSize, vx0, vy0, vx1, vy1);
   drawLandscape(ctx, vx0, vy0, vx1, vy1, 'fleet');
 
   // In AI mode always show player 0's perspective; in hotseat show current player
@@ -6526,11 +5963,6 @@ function renderFleetMap() {
   for (const exp of battle.sinkExplosions) {
     if (exp.onRadar) continue; // render on radar canvas instead
     const t = (nowFM - exp.startTime) / exp.duration;
-    // Spawn explosion burst particles once at start
-    if (!exp.burstSpawned) {
-      exp.burstSpawned = true;
-      for (const c of exp.cells) spawnDamageParticles(c.x, c.y, 'explosion', 6);
-    }
     for (const c of exp.cells) {
       const cx = (c.x + 0.5) * CELL_PX;
       const cy = (c.y + 0.5) * CELL_PX;
@@ -6555,9 +5987,6 @@ function renderFleetMap() {
       }
     }
   }
-
-  // Fire and smoke particles on damaged cells
-  drawDamageParticles(ctx);
 
   drawCoordLabels(ctx, vx0, vy0, vx1, vy1, sz);
   ctx.restore();
@@ -6624,42 +6053,11 @@ function renderRadar() {
   drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(0,80,0,0.2)');
 
   // Scan line (rotating)
-  battle.scanLineAngle = ((waterAnimTime * Math.PI * 2) / 4) % (Math.PI * 2);
+  battle.scanLineAngle = (battle.scanLineAngle + 0.008) % (Math.PI * 2);
   const centerX = worldSize / 2;
   const centerY = worldSize / 2;
-  const scanLen = worldSize * 0.75;
-
-  // Fading arc trail (cone behind the sweep line)
-  const trailSegments = 20;
-  const trailSpan = 0.6; // radians of trail behind the line
-  for (let i = trailSegments; i >= 0; i--) {
-    const frac = i / trailSegments;
-    const aStart = battle.scanLineAngle - trailSpan * frac;
-    const aEnd = battle.scanLineAngle - trailSpan * (i > 0 ? (i - 1) / trailSegments : 0);
-    const alpha = (1 - frac) * 0.07;
-    if (alpha < 0.002) continue;
-    const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, scanLen);
-    grad.addColorStop(0, `rgba(0,255,120,${alpha * 0.5})`);
-    grad.addColorStop(0.7, `rgba(0,255,80,${alpha})`);
-    grad.addColorStop(1, `rgba(0,200,60,0)`);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.arc(centerX, centerY, scanLen, aStart, aEnd);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // Bright sweep line with gradient fade
-  const sweepGrad = ctx.createLinearGradient(
-    centerX, centerY,
-    centerX + Math.cos(battle.scanLineAngle) * scanLen,
-    centerY + Math.sin(battle.scanLineAngle) * scanLen
-  );
-  sweepGrad.addColorStop(0, 'rgba(0,255,160,0.4)');
-  sweepGrad.addColorStop(0.5, 'rgba(0,255,120,0.25)');
-  sweepGrad.addColorStop(1, 'rgba(0,200,80,0)');
-  ctx.strokeStyle = sweepGrad;
+  const scanLen = worldSize * 0.7;
+  ctx.strokeStyle = 'rgba(0,255,0,0.15)';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(centerX, centerY);
@@ -6668,6 +6066,15 @@ function renderRadar() {
     centerY + Math.sin(battle.scanLineAngle) * scanLen
   );
   ctx.stroke();
+  // Fading trail
+  for (let i = 1; i <= 5; i++) {
+    const a = battle.scanLineAngle - i * 0.04;
+    ctx.strokeStyle = `rgba(0,255,0,${0.08 - i * 0.015})`;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX + Math.cos(a) * scanLen, centerY + Math.sin(a) * scanLen);
+    ctx.stroke();
+  }
 
   // Current player's radar data
   const player = gameState.players[me];
@@ -6755,57 +6162,6 @@ function renderRadar() {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(shipLabel(det.type),
         ((fc2.x + lc2.x) / 2 + 0.5) * CELL_PX, ((fc2.y + lc2.y) / 2 + 0.5) * CELL_PX);
-    }
-  }
-
-  // Sweep ping: detected ships flash brighter when the radar sweep passes over them
-  for (const det of player.radarData.detectedShips) {
-    const age = gameState.currentTurn - det.turnDetected;
-    if (age >= 5 || det.cells.length === 0) continue;
-    // Calculate angle from radar center to ship center
-    const shipCX = det.cells.reduce((s, c) => s + c.x, 0) / det.cells.length;
-    const shipCY = det.cells.reduce((s, c) => s + c.y, 0) / det.cells.length;
-    const shipPX = (shipCX + 0.5) * CELL_PX;
-    const shipPY = (shipCY + 0.5) * CELL_PX;
-    let shipAngle = Math.atan2(shipPY - centerY, shipPX - centerX);
-    if (shipAngle < 0) shipAngle += Math.PI * 2;
-    // How close is the sweep to this ship's angle? (within ~0.3 rad = bright ping)
-    let angleDiff = battle.scanLineAngle - shipAngle;
-    if (angleDiff < 0) angleDiff += Math.PI * 2;
-    if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
-    if (angleDiff < 0.35) {
-      const pingAlpha = (1 - angleDiff / 0.35) * 0.5;
-      ctx.fillStyle = `rgba(0,255,180,${pingAlpha})`;
-      for (const c of det.cells) {
-        ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
-      }
-      // Bright border
-      ctx.strokeStyle = `rgba(0,255,200,${pingAlpha * 0.8})`;
-      ctx.lineWidth = 2;
-      for (const c of det.cells) {
-        ctx.strokeRect(c.x * CELL_PX - 1, c.y * CELL_PX - 1, CELL_PX + 2, CELL_PX + 2);
-      }
-    }
-  }
-
-  // Sweep ping for sunk ships too (dimmer red flash)
-  for (const sunk of player.radarData.sunkShips) {
-    if (sunk.cells.length === 0) continue;
-    const sunkCX = sunk.cells.reduce((s, c) => s + c.x, 0) / sunk.cells.length;
-    const sunkCY = sunk.cells.reduce((s, c) => s + c.y, 0) / sunk.cells.length;
-    const sunkPX = (sunkCX + 0.5) * CELL_PX;
-    const sunkPY = (sunkCY + 0.5) * CELL_PX;
-    let sunkAngle = Math.atan2(sunkPY - centerY, sunkPX - centerX);
-    if (sunkAngle < 0) sunkAngle += Math.PI * 2;
-    let sunkDiff = battle.scanLineAngle - sunkAngle;
-    if (sunkDiff < 0) sunkDiff += Math.PI * 2;
-    if (sunkDiff > Math.PI) sunkDiff = Math.PI * 2 - sunkDiff;
-    if (sunkDiff < 0.3) {
-      const pingAlpha = (1 - sunkDiff / 0.3) * 0.25;
-      ctx.fillStyle = `rgba(255,50,50,${pingAlpha})`;
-      for (const c of sunk.cells) {
-        ctx.fillRect(c.x * CELL_PX, c.y * CELL_PX, CELL_PX, CELL_PX);
-      }
     }
   }
 
@@ -7145,123 +6501,6 @@ function setupCameraHandlers(canvasEl, cam) {
     cam.dragging = false;
     // Note: dragMoved is reset by the specific click handlers (fleet/radar/placement)
     // so they can check it before clearing
-  });
-
-  // ── Touch support: pinch-to-zoom, one-finger pan, double-tap reset ──
-  let touchState = { lastTap: 0, initialPinchDist: 0, initialZoom: 1, pinching: false, touchStartTime: 0 };
-
-  function getTouchDist(t1, t2) {
-    const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
-
-  function getTouchMid(t1, t2) {
-    return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
-  }
-
-  canvasEl.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (e.touches.length === 1) {
-      const now = Date.now();
-      // Double-tap detection
-      if (now - touchState.lastTap < 300) {
-        cam.zoom = 1;
-        const rect = canvasEl.getBoundingClientRect();
-        const sz = gameState.settings.fieldSize || 50;
-        cam.x = (canvasEl.width - sz * CELL_PX) / 2;
-        cam.y = (canvasEl.height - sz * CELL_PX) / 2;
-        const hudZoom = document.getElementById('hud-zoom');
-        if (hudZoom) hudZoom.textContent = '100%';
-        touchState.lastTap = 0;
-        return;
-      }
-      touchState.lastTap = now;
-      touchState.touchStartTime = now;
-      cam.dragging = true;
-      cam.dragMoved = false;
-      cam.lastMouse.x = e.touches[0].clientX;
-      cam.lastMouse.y = e.touches[0].clientY;
-      touchState.pinching = false;
-    } else if (e.touches.length === 2) {
-      touchState.pinching = true;
-      cam.dragging = false;
-      touchState.initialPinchDist = getTouchDist(e.touches[0], e.touches[1]);
-      touchState.initialZoom = cam.zoom;
-      touchState.lastMid = getTouchMid(e.touches[0], e.touches[1]);
-    }
-  }, { passive: false });
-
-  canvasEl.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (e.touches.length === 1 && !touchState.pinching) {
-      // One-finger pan
-      const rect = canvasEl.getBoundingClientRect();
-      const scX = canvasEl.width / rect.width, scY = canvasEl.height / rect.height;
-      const dx = (e.touches[0].clientX - cam.lastMouse.x) * scX;
-      const dy = (e.touches[0].clientY - cam.lastMouse.y) * scY;
-      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) cam.dragMoved = true;
-      cam.x += dx; cam.y += dy;
-      cam.lastMouse.x = e.touches[0].clientX;
-      cam.lastMouse.y = e.touches[0].clientY;
-    } else if (e.touches.length === 2) {
-      // Pinch-to-zoom + two-finger pan
-      touchState.pinching = true;
-      const dist = getTouchDist(e.touches[0], e.touches[1]);
-      const mid = getTouchMid(e.touches[0], e.touches[1]);
-      const rect = canvasEl.getBoundingClientRect();
-      const scX = canvasEl.width / rect.width, scY = canvasEl.height / rect.height;
-
-      // Zoom
-      const scale = dist / touchState.initialPinchDist;
-      const newZoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, touchState.initialZoom * scale));
-      const mx = (mid.x - rect.left) * scX, my = (mid.y - rect.top) * scY;
-      cam.x = mx - (mx - cam.x) * (newZoom / cam.zoom);
-      cam.y = my - (my - cam.y) * (newZoom / cam.zoom);
-      cam.zoom = newZoom;
-
-      // Two-finger pan
-      if (touchState.lastMid) {
-        const pdx = (mid.x - touchState.lastMid.x) * scX;
-        const pdy = (mid.y - touchState.lastMid.y) * scY;
-        cam.x += pdx; cam.y += pdy;
-      }
-      touchState.lastMid = mid;
-      cam.dragMoved = true;
-
-      // Update HUD zoom indicator
-      const hudZoom = document.getElementById('hud-zoom');
-      if (hudZoom) hudZoom.textContent = Math.round(cam.zoom * 100) + '%';
-    }
-  }, { passive: false });
-
-  canvasEl.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    if (e.touches.length === 0) {
-      // All fingers lifted
-      if (!touchState.pinching && !cam.dragMoved) {
-        // Simulate a click via mouseup at last touch position
-        const synth = new MouseEvent('mouseup', {
-          clientX: cam.lastMouse.x,
-          clientY: cam.lastMouse.y,
-          button: 0, bubbles: true
-        });
-        canvasEl.dispatchEvent(synth);
-      }
-      cam.dragging = false;
-      touchState.pinching = false;
-    } else if (e.touches.length === 1) {
-      // Went from 2 fingers to 1 — restart single-finger pan
-      touchState.pinching = false;
-      cam.dragging = true;
-      cam.dragMoved = true; // prevent tap from registering
-      cam.lastMouse.x = e.touches[0].clientX;
-      cam.lastMouse.y = e.touches[0].clientY;
-    }
-  }, { passive: false });
-
-  canvasEl.addEventListener('touchcancel', (e) => {
-    cam.dragging = false;
-    touchState.pinching = false;
   });
 }
 
