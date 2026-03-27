@@ -1572,6 +1572,69 @@ function stopAmbient() {
     ambientNode = null;
     ambientGain = null;
   }
+  stopDasBootTheme();
+}
+
+// ── Das Boot Main Theme (Klaus Doldinger, C minor) ──
+let dasBootPlaying = false;
+let dasBootOscillators = [];
+let dasBootTimeout = null;
+
+function playDasBootTheme() {
+  if (!soundEnabled || dasBootPlaying) return;
+  dasBootPlaying = true;
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.gain.value = 0.06;
+    master.connect(ctx.destination);
+    const delay = ctx.createDelay(0.5);
+    delay.delayTime.value = 0.3;
+    const fb = ctx.createGain(); fb.gain.value = 0.25;
+    const rv = ctx.createGain(); rv.gain.value = 0.35;
+    delay.connect(fb); fb.connect(delay); delay.connect(rv); rv.connect(master);
+    const b = 0.7;
+    // C minor melody: G3-Bb3-C4-D4 rising, then descending
+    const melody = [
+      [196.00,0,b*0.9],[196.00,b,b*0.5],[233.08,b*1.5,b*0.9],[196.00,b*2.5,b*0.5],
+      [233.08,b*3,b*0.9],[261.63,b*4,b*0.9],[293.66,b*5,b*1.8],
+      [293.66,b*7,b*0.5],[293.66,b*7.5,b*0.5],[349.23,b*8,b*0.9],[293.66,b*9,b*0.5],
+      [311.13,b*9.5,b*0.9],[293.66,b*10.5,b*0.9],[261.63,b*11.5,b*1.8],
+      [261.63,b*13.5,b*0.5],[261.63,b*14,b*0.5],[311.13,b*14.5,b*0.9],[261.63,b*15.5,b*0.5],
+      [293.66,b*16,b*0.9],[261.63,b*17,b*0.9],[233.08,b*18,b*1.8],
+      [196.00,b*20,b*3.0],
+    ];
+    const bass = [
+      [98.00,0,b*7],[146.83,b*7,b*6.5],[130.81,b*13.5,b*6.5],[98.00,b*20,b*3],
+    ];
+    function note(freq, start, dur, isBass) {
+      const o = ctx.createOscillator();
+      const e = ctx.createGain();
+      const f = ctx.createBiquadFilter();
+      o.type = isBass ? 'triangle' : 'sawtooth';
+      o.frequency.value = freq;
+      f.type = 'lowpass'; f.frequency.value = isBass ? 300 : 800; f.Q.value = 1;
+      o.connect(f); f.connect(e); e.connect(delay); e.connect(master);
+      const t0 = now + start;
+      e.gain.setValueAtTime(0, t0);
+      e.gain.linearRampToValueAtTime(isBass ? 0.5 : 0.8, t0 + 0.05);
+      e.gain.setValueAtTime(isBass ? 0.5 : 0.8, t0 + dur * 0.7);
+      e.gain.linearRampToValueAtTime(0, t0 + dur);
+      o.start(t0); o.stop(t0 + dur + 0.1);
+      dasBootOscillators.push(o);
+    }
+    melody.forEach(n => note(n[0], n[1], n[2], false));
+    bass.forEach(n => note(n[0], n[1], n[2], true));
+    dasBootTimeout = setTimeout(() => { dasBootPlaying = false; }, b * 23 * 1000);
+  } catch(e) { dasBootPlaying = false; }
+}
+
+function stopDasBootTheme() {
+  dasBootPlaying = false;
+  if (dasBootTimeout) { clearTimeout(dasBootTimeout); dasBootTimeout = null; }
+  dasBootOscillators.forEach(o => { try { o.stop(); } catch(e) {} });
+  dasBootOscillators = [];
 }
 
 function playSound(name) {
@@ -3349,6 +3412,7 @@ function startBattle() {
   showBattle();
   updateSoundButton();
   startAmbient();
+  playDasBootTheme();
 
   // Size canvases
   const fc = document.getElementById('fleet-canvas');
