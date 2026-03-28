@@ -62,25 +62,43 @@
   /* ── Settings Screen ── */
   #settings-screen {
     display: none;
+    flex-direction: row;
+    height: 100vh;
+    gap: 0;
+  }
+
+  #settings-left {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #settings-right {
+    width: 100px;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-    gap: 24px;
+    gap: 12px;
+    padding: 10px;
+    border-left: 1px solid #1e3a5f;
   }
 
   #settings-screen h2 {
-    font-size: 32px;
+    font-size: clamp(18px, 4vh, 28px);
     color: #4fc3f7;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
     text-transform: uppercase;
+    margin: 0;
   }
 
   .settings-group {
     background: rgba(26,58,92,0.4);
     border: 1px solid #1e3a5f;
-    padding: 20px 30px;
-    min-width: 500px;
+    padding: 10px 14px;
   }
 
   .settings-group h3 {
@@ -152,32 +170,35 @@
   }
 
   .start-btn {
-    background: linear-gradient(180deg, #1b5e20, #0d3b12);
-    border: 1px solid #4caf50;
-    color: #4caf50;
-    padding: 16px 64px;
-    font-size: 22px;
+    background: linear-gradient(180deg, #8b1a1a, #5c0e0e);
+    border: 2px solid #ff4444;
+    color: #ff4444;
+    padding: 12px 10px;
+    font-size: 16px;
     cursor: pointer;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
     text-transform: uppercase;
     transition: all 0.2s;
-    margin-top: 10px;
+    width: 80px;
+    text-align: center;
   }
 
   .start-btn:hover {
-    background: linear-gradient(180deg, #2e7d32, #1b5e20);
-    box-shadow: 0 0 20px rgba(76,175,80,0.3);
+    background: linear-gradient(180deg, #a52222, #8b1a1a);
+    box-shadow: 0 0 15px rgba(255,68,68,0.3);
   }
 
   .back-btn {
     background: none;
     border: 1px solid #78909c;
     color: #78909c;
-    padding: 8px 24px;
-    font-size: 13px;
+    padding: 8px 10px;
+    font-size: 11px;
     cursor: pointer;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     transition: all 0.15s;
+    width: 80px;
+    text-align: center;
   }
 
   .back-btn:hover {
@@ -1157,69 +1178,67 @@
 
 <!-- Settings Screen -->
 <div id="settings-screen">
-  <h2>Game Setup</h2>
+  <div id="settings-left">
+    <h2>Game Setup</h2>
 
-  <div class="settings-group">
-    <h3>Field Size</h3>
-    <div class="radio-group">
-      <div class="radio-option">
-        <input type="radio" name="fieldSize" id="fs30" value="30">
-        <label for="fs30">30 &times; 30</label>
+    <div class="settings-group">
+      <h3>Field Size</h3>
+      <div class="radio-group">
+        <div class="radio-option">
+          <input type="radio" name="fieldSize" id="fs30" value="30">
+          <label for="fs30">30×30</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="fieldSize" id="fs50" value="50" checked>
+          <label for="fs50">50×50</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="fieldSize" id="fs100" value="100">
+          <label for="fs100">100×100</label>
+        </div>
       </div>
-      <div class="radio-option">
-        <input type="radio" name="fieldSize" id="fs50" value="50" checked>
-        <label for="fs50">50 &times; 50</label>
+    </div>
+
+    <div class="settings-group">
+      <h3>Landscape</h3>
+      <div class="radio-group">
+        <div class="radio-option">
+          <input type="radio" name="landscape" id="lsOcean" value="ocean" checked>
+          <label for="lsOcean">Ocean</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="landscape" id="lsWrecks" value="wrecks">
+          <label for="lsWrecks">Wrecks</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="landscape" id="lsIslands" value="islands">
+          <label for="lsIslands">Islands</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="landscape" id="lsArchipelago" value="archipelago">
+          <label for="lsArchipelago">Archipelago</label>
+        </div>
       </div>
-      <div class="radio-option">
-        <input type="radio" name="fieldSize" id="fs100" value="100">
-        <label for="fs100">100 &times; 100</label>
+    </div>
+
+    <div class="settings-group">
+      <h3>Game Mode</h3>
+      <div class="radio-group">
+        <div class="radio-option">
+          <input type="radio" name="gameMode" id="gmAI" value="ai" checked>
+          <label for="gmAI">vs AI</label>
+        </div>
+        <div class="radio-option">
+          <input type="radio" name="gameMode" id="gmHotseat" value="hotseat">
+          <label for="gmHotseat">Hotseat</label>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="settings-group">
-    <h3>Landscape</h3>
-    <div class="radio-group">
-      <div class="radio-option">
-        <input type="radio" name="landscape" id="lsOcean" value="ocean" checked>
-        <label for="lsOcean">Ocean</label>
-        <div class="flavor-tooltip">Open waters. No obstacles — pure tactics and firepower decide the battle.</div>
-      </div>
-      <div class="radio-option">
-        <input type="radio" name="landscape" id="lsWrecks" value="wrecks">
-        <label for="lsWrecks">Wrecks</label>
-        <div class="flavor-tooltip">Scattered hulks of sunken vessels litter the seabed. Submarines slip beneath them unseen; torpedoes may not be so lucky. ~10% coverage.</div>
-      </div>
-      <div class="radio-option">
-        <input type="radio" name="landscape" id="lsIslands" value="islands">
-        <label for="lsIslands">Islands</label>
-        <div class="flavor-tooltip">Rocky island chains rise from the deep, visible on radar and impassable to all. Use them as cover — or get trapped. ~20% coverage.</div>
-      </div>
-      <div class="radio-option">
-        <input type="radio" name="landscape" id="lsArchipelago" value="archipelago">
-        <label for="lsArchipelago">Archipelago</label>
-        <div class="flavor-tooltip">Dense island formations carve the battlefield into narrow straits and hidden bays. Navigation is treacherous — but so is ambush. ~30% coverage.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="settings-group">
-    <h3>Game Mode</h3>
-    <div class="radio-group">
-      <div class="radio-option">
-        <input type="radio" name="gameMode" id="gmAI" value="ai" checked>
-        <label for="gmAI">vs AI</label>
-      </div>
-      <div class="radio-option">
-        <input type="radio" name="gameMode" id="gmHotseat" value="hotseat">
-        <label for="gmHotseat">Hotseat</label>
-      </div>
-    </div>
-  </div>
-
-  <div style="display:flex; gap:16px; align-items:center;">
-    <button class="back-btn" onclick="showMenu()">Back</button>
-    <button class="start-btn" onclick="startGame()">Start</button>
+  <div id="settings-right">
+    <button class="start-btn" onclick="startGame()">БОЙ!</button>
+    <button class="back-btn" onclick="showMenu()">← Back</button>
   </div>
 </div>
 
@@ -4829,28 +4848,118 @@ function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, center
   content.scrollTop = content.scrollHeight;
   playSound('alarm');
 
-  // After 2.5s — white flash and damage
+  // After 2.5s — mushroom cloud animation
   setTimeout(() => {
     ceremony.style.display = 'none';
     ceremony.classList.remove('alarm-flash');
-
-    nukeOverlay.style.display = 'block';
-    nukeOverlay.style.background = 'rgba(255,255,255,0.9)';
     playSound('nuke');
-
     launchNuclearStrike(attackerIdx, centerX, centerY);
 
-    setTimeout(() => {
-      nukeOverlay.style.background = 'rgba(255,255,255,0.5)';
-      setTimeout(() => {
-        nukeOverlay.style.background = 'transparent';
+    // Nuclear explosion — TOP-DOWN view at impact point
+    nukeOverlay.style.display = 'block';
+    nukeOverlay.innerHTML = '';
+    nukeOverlay.style.background = 'transparent';
+    const cvs = document.createElement('canvas');
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+    cvs.style.cssText = 'width:100%;height:100%';
+    nukeOverlay.appendChild(cvs);
+    const nc = cvs.getContext('2d');
+    const NW = cvs.width, NH = cvs.height;
+    // Map game coords to screen position via radar camera
+    const rcam = radarCam;
+    const cx = rcam.x + (centerX + 0.5) * CELL_PX * rcam.zoom;
+    const cy = rcam.y + (centerY + 0.5) * CELL_PX * rcam.zoom;
+    // Clamp to screen so it's always visible
+    const clampX = Math.max(NW * 0.15, Math.min(NW * 0.85, cx));
+    const clampY = Math.max(NH * 0.15, Math.min(NH * 0.85, cy));
+    const maxR = Math.max(NW, NH) * 0.7;
+    const t0 = Date.now();
+    const NUKE_DUR = 3000;
+
+    // Debris particles
+    const debris = [];
+    for (let i = 0; i < 40; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const spd = 2 + Math.random() * 5;
+      debris.push({ x: clampX, y: clampY, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd, life: 1 });
+    }
+
+    function drawNukeTopDown() {
+      const t = Math.min((Date.now() - t0) / NUKE_DUR, 1);
+      nc.clearRect(0, 0, NW, NH);
+
+      // White flash (first 20%)
+      if (t < 0.2) {
+        nc.fillStyle = `rgba(255,255,255,${(1 - t/0.2) * 0.95})`;
+        nc.fillRect(0, 0, NW, NH);
+      }
+
+      // Expanding shockwave ring (10%-70%)
+      if (t > 0.05 && t < 0.7) {
+        const s = (t - 0.05) / 0.65;
+        const r = s * maxR;
+        const ringW = 20 + (1 - s) * 40;
+        // Outer ring — hot white/orange
+        const rg = nc.createRadialGradient(clampX, clampY, Math.max(0, r - ringW), clampX, clampY, r + 5);
+        rg.addColorStop(0, 'rgba(255,100,0,0)');
+        rg.addColorStop(0.3, `rgba(255,200,50,${(1-s)*0.6})`);
+        rg.addColorStop(0.6, `rgba(255,120,20,${(1-s)*0.5})`);
+        rg.addColorStop(1, 'rgba(255,50,0,0)');
+        nc.fillStyle = rg;
+        nc.beginPath(); nc.arc(clampX, clampY, r + 5, 0, Math.PI * 2); nc.fill();
+      }
+
+      // Epicenter fireball (fades over time)
+      if (t < 0.7) {
+        const fb = (1 - t / 0.7);
+        const fr = 20 + t * 80;
+        const fg = nc.createRadialGradient(clampX, clampY, 0, clampX, clampY, fr);
+        fg.addColorStop(0, `rgba(255,255,200,${fb * 0.8})`);
+        fg.addColorStop(0.3, `rgba(255,180,50,${fb * 0.6})`);
+        fg.addColorStop(0.7, `rgba(255,80,0,${fb * 0.3})`);
+        fg.addColorStop(1, 'rgba(200,30,0,0)');
+        nc.fillStyle = fg;
+        nc.beginPath(); nc.arc(clampX, clampY, fr, 0, Math.PI * 2); nc.fill();
+      }
+
+      // Dark smoke expanding from center (appears after flash)
+      if (t > 0.2 && t < 0.9) {
+        const st = (t - 0.2) / 0.7;
+        const sr = st * maxR * 0.4;
+        const sg = nc.createRadialGradient(clampX, clampY, 0, clampX, clampY, sr);
+        sg.addColorStop(0, `rgba(40,30,20,${(1-st)*0.4})`);
+        sg.addColorStop(0.5, `rgba(60,40,25,${(1-st)*0.25})`);
+        sg.addColorStop(1, 'rgba(30,20,10,0)');
+        nc.fillStyle = sg;
+        nc.beginPath(); nc.arc(clampX, clampY, sr, 0, Math.PI * 2); nc.fill();
+      }
+
+      // Debris particles flying outward
+      for (const d of debris) {
+        d.x += d.vx; d.y += d.vy; d.life -= 0.008;
+        if (d.life > 0) {
+          nc.fillStyle = `rgba(255,${Math.floor(150*d.life)},${Math.floor(50*d.life)},${d.life * 0.7})`;
+          nc.beginPath(); nc.arc(d.x, d.y, 1.5 + d.life * 2, 0, Math.PI * 2); nc.fill();
+        }
+      }
+
+      // Screen darken at end
+      if (t > 0.75) {
+        nc.fillStyle = `rgba(10,22,40,${(t - 0.75) / 0.25})`;
+        nc.fillRect(0, 0, NW, NH);
+      }
+
+      if (t < 1) { requestAnimationFrame(drawNukeTopDown); }
+      else {
+        nukeOverlay.innerHTML = '';
         nukeOverlay.style.display = 'none';
         battle.nuclearAnimating = false;
         gameState.actionDone = true;
         updateTopBar();
         updateActionBar();
-      }, 500);
-    }, 500);
+      }
+    }
+    requestAnimationFrame(drawNukeTopDown);
   }, 2500);
 }
 
@@ -5749,6 +5858,16 @@ function renderPlacementField() {
   const vx1 = Math.min(sz, Math.ceil((-camera.x + canvas.width) / (camera.zoom * CELL_PX)));
   const vy1 = Math.min(sz, Math.ceil((-camera.y + canvas.height) / (camera.zoom * CELL_PX)));
 
+  // Animated waves (placement)
+  const _wt2 = Date.now() / 1000;
+  for (let py = vy0*CELL_PX; py < vy1*CELL_PX; py += 6) {
+    for (let px = vx0*CELL_PX; px < vx1*CELL_PX; px += 6) {
+      const v = (Math.sin(px*0.015+_wt2*0.8)*Math.sin(py*0.012+_wt2*0.5)+Math.sin(px*0.008-_wt2*0.6+py*0.01)*0.5)*0.5;
+      if(v>0.2){ctx.fillStyle=`rgba(100,180,255,${v*0.08})`;ctx.fillRect(px,py,6,6);}
+      else if(v<-0.2){ctx.fillStyle=`rgba(5,15,40,${-v*0.06})`;ctx.fillRect(px,py,6,6);}
+    }
+  }
+
   drawLandscape(ctx, vx0, vy0, vx1, vy1, 'fleet');
   drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(100,180,255,0.12)');
 
@@ -5798,6 +5917,16 @@ function renderFleetMap() {
   const vy0 = Math.max(0, Math.floor(-cam.y / (cam.zoom * CELL_PX)));
   const vx1 = Math.min(sz, Math.ceil((-cam.x + canvas.width) / (cam.zoom * CELL_PX)));
   const vy1 = Math.min(sz, Math.ceil((-cam.y + canvas.height) / (cam.zoom * CELL_PX)));
+
+  // Animated waves
+  const _wt = Date.now() / 1000;
+  for (let py = vy0 * CELL_PX; py < vy1 * CELL_PX; py += 6) {
+    for (let px = vx0 * CELL_PX; px < vx1 * CELL_PX; px += 6) {
+      const v = (Math.sin(px*0.015+_wt*0.8)*Math.sin(py*0.012+_wt*0.5)+Math.sin(px*0.008-_wt*0.6+py*0.01)*0.5)*0.5;
+      if(v>0.2){ctx.fillStyle=`rgba(100,180,255,${v*0.08})`;ctx.fillRect(px,py,6,6);}
+      else if(v<-0.2){ctx.fillStyle=`rgba(5,15,40,${-v*0.06})`;ctx.fillRect(px,py,6,6);}
+    }
+  }
 
   drawLandscape(ctx, vx0, vy0, vx1, vy1, 'fleet');
 
@@ -6499,8 +6628,67 @@ function setupCameraHandlers(canvasEl, cam) {
 
   canvasEl.addEventListener('mouseup', (e) => {
     cam.dragging = false;
-    // Note: dragMoved is reset by the specific click handlers (fleet/radar/placement)
-    // so they can check it before clearing
+  });
+
+  // ── Pinch-to-zoom (mobile) ──
+  let pinchDist = 0, pinchMid = null, pinchActive = false;
+  let touchDragId = null, touchDragStart = null;
+
+  canvasEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchActive = true;
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      pinchDist = Math.sqrt(dx*dx + dy*dy);
+      pinchMid = { x: (e.touches[0].clientX + e.touches[1].clientX)/2,
+                   y: (e.touches[0].clientY + e.touches[1].clientY)/2 };
+      e.preventDefault();
+    } else if (e.touches.length === 1) {
+      touchDragId = e.touches[0].identifier;
+      touchDragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      cam.dragMoved = false;
+    }
+  }, { passive: false });
+
+  canvasEl.addEventListener('touchmove', (e) => {
+    if (pinchActive && e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      const newDist = Math.sqrt(dx*dx + dy*dy);
+      const scale = newDist / pinchDist;
+      pinchDist = newDist;
+
+      const rect = canvasEl.getBoundingClientRect();
+      const scX = canvasEl.width / rect.width, scY = canvasEl.height / rect.height;
+      const mid = { x: (e.touches[0].clientX + e.touches[1].clientX)/2,
+                    y: (e.touches[0].clientY + e.touches[1].clientY)/2 };
+      const mx = (mid.x - rect.left) * scX, my = (mid.y - rect.top) * scY;
+
+      const newZoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, cam.zoom * scale));
+      cam.x = mx - (mx - cam.x) * (newZoom / cam.zoom);
+      cam.y = my - (my - cam.y) * (newZoom / cam.zoom);
+      cam.zoom = newZoom;
+
+      // Pan with two fingers
+      const dmx = (mid.x - pinchMid.x) * scX, dmy = (mid.y - pinchMid.y) * scY;
+      cam.x += dmx; cam.y += dmy;
+      pinchMid = mid;
+      e.preventDefault();
+    } else if (!pinchActive && e.touches.length === 1 && touchDragStart) {
+      const rect = canvasEl.getBoundingClientRect();
+      const scX = canvasEl.width / rect.width, scY = canvasEl.height / rect.height;
+      const dx = (e.touches[0].clientX - touchDragStart.x) * scX;
+      const dy = (e.touches[0].clientY - touchDragStart.y) * scY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) cam.dragMoved = true;
+      cam.x += dx; cam.y += dy;
+      touchDragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  canvasEl.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) pinchActive = false;
+    if (e.touches.length === 0) touchDragStart = null;
   });
 }
 
