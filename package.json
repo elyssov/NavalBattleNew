@@ -1,0 +1,26 @@
+{
+  "name": "naval-battle",
+  "version": "1.0.0",
+  "description": "A turn-based naval strategy game — advanced Battleship with fog of war, recon mechanics, nuclear weapons, and diverse ship classes. Built with vanilla JS, HTML5 Canvas, no frameworks.",
+  "main": "index.js",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elyssov/NavalBattleNew.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/elyssov/NavalBattleNew/issues"
+  },
+  "homepage": "https://github.com/elyssov/NavalBattleNew#readme",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.10.1"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+src-tauri/target/
+*.rar
+qr_b64.txt
+.claude/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

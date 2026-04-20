@@ -1,0 +1,26 @@
+{
+  "productName": "Sea Tactics",
+  "version": "1.0.0",
+  "identifier": "com.seatactics.game",
+  "build": {
+    "frontendDist": "../dist",
+    "beforeBuildCommand": "node copy-dist.js",
+    "beforeDevCommand": "node copy-dist.js"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Sea Tactics — Naval Battle: Strategic Edition",
+        "width": 1400,
+        "height": 900,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "icon": ["icons/icon.png"]
+  }
+}
