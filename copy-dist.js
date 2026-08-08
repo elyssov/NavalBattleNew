@@ -15,8 +15,14 @@ const spriteSrc = path.join(__dirname, 'sprites');
 const spriteDst = path.join(dist, 'sprites');
 if (fs.existsSync(spriteSrc)) {
   if (!fs.existsSync(spriteDst)) fs.mkdirSync(spriteDst);
-  for (const f of fs.readdirSync(spriteSrc)) {
-    fs.copyFileSync(path.join(spriteSrc, f), path.join(spriteDst, f));
+  fs.cpSync(spriteSrc, spriteDst, { recursive: true });
+
+  // Keep temporary chroma-key sources out of the distributable showcase bundle.
+  const showcaseDst = path.join(spriteDst, 'showcase');
+  if (fs.existsSync(showcaseDst)) {
+    fs.readdirSync(showcaseDst)
+      .filter(file => file.endsWith('-source.png'))
+      .forEach(file => fs.rmSync(path.join(showcaseDst, file), { force: true }));
   }
 }
 

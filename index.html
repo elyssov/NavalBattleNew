@@ -1763,6 +1763,104 @@ function preloadSprites() {
 // Start preloading immediately
 preloadSprites();
 
+// Showcase raster sheets are deliberately separate from the Classic control.
+// They are loaded as external project assets so the single-file app remains editable.
+const SHOWCASE_SHEETS = {
+  ships: new Image(),
+  effects: new Image(),
+  nuke: new Image()
+};
+let showcaseSheetsReady = false;
+
+function preloadShowcaseSheets() {
+  const sources = {
+    ships: 'sprites/showcase/ship-sheet.png',
+    effects: 'sprites/showcase/effects-sheet.png',
+    nuke: 'sprites/showcase/nuke-sheet.png'
+  };
+  let loaded = 0;
+  Object.entries(sources).forEach(([key, src]) => {
+    SHOWCASE_SHEETS[key].onload = () => {
+      loaded++;
+      if (loaded === Object.keys(sources).length) showcaseSheetsReady = true;
+    };
+    SHOWCASE_SHEETS[key].src = src;
+  });
+}
+
+preloadShowcaseSheets();
+
+const SHOWCASE_SHIP_FRAMES = {
+  tarkr: { col: 0, row: 0 },
+  carrier: { col: 1, row: 0 },
+  cruiser: { col: 2, row: 0 },
+  destroyer: { col: 0, row: 1 },
+  mrk: { col: 1, row: 1 },
+  submarine: { col: 2, row: 1 },
+  missile_boat: { col: 3, row: 1 }
+};
+
+const SHOWCASE_EFFECT_FRAMES = {
+  muzzle: { col: 0, row: 0 },
+  tracer: { col: 1, row: 0 },
+  splash: { col: 2, row: 0 },
+  torpedo_launch: { col: 3, row: 0 },
+  torpedo_trail: { col: 0, row: 1 },
+  impact_splash: { col: 1, row: 1 },
+  missile_exhaust: { col: 2, row: 1 },
+  radar_pulse: { col: 3, row: 1 },
+  sonar_ping: { col: 0, row: 2 },
+  hit_spark: { col: 1, row: 2 },
+  hull_breach: { col: 2, row: 2 },
+  smoke: { col: 3, row: 2 },
+  burning_wreck: { col: 0, row: 3 },
+  shockwave: { col: 1, row: 3 },
+  strike_marker: { col: 2, row: 3 },
+  emp: { col: 3, row: 3 }
+};
+
+function isShowcaseMode() {
+  return document.body.dataset.visualMode === 'showcase';
+}
+
+function drawShowcaseFrame(ctx, sheet, frame, cols, rows, x, y, w, h, alpha = 1, rotation = 0) {
+  if (!showcaseSheetsReady || !sheet.complete || !sheet.naturalWidth || !frame) return false;
+  const sw = sheet.naturalWidth / cols;
+  const sh = sheet.naturalHeight / rows;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  if (rotation) {
+    ctx.translate(x + w / 2, y + h / 2);
+    ctx.rotate(rotation);
+    ctx.drawImage(sheet, frame.col * sw, frame.row * sh, sw, sh, -w / 2, -h / 2, w, h);
+  } else {
+    ctx.drawImage(sheet, frame.col * sw, frame.row * sh, sw, sh, x, y, w, h);
+  }
+  ctx.restore();
+  return true;
+}
+
+function drawShowcaseEffect(ctx, effect, x, y, size, alpha = 1, rotation = 0) {
+  return drawShowcaseFrame(ctx, SHOWCASE_SHEETS.effects, SHOWCASE_EFFECT_FRAMES[effect], 4, 4,
+    x - size / 2, y - size / 2, size, size, alpha, rotation);
+}
+
+function drawShowcaseShip(ctx, frame, first, size, isVertical) {
+  const length = size * CELL_PX;
+  // The source art is intentionally narrow and detailed. Give it a little
+  // breathing room on the tactical grid without changing occupied cells.
+  const beam = Math.min(length, Math.max(CELL_PX * 1.3, Math.min(CELL_PX * 2, length * 0.26)));
+  if (isVertical) {
+    drawShowcaseFrame(ctx, SHOWCASE_SHEETS.ships, frame, 4, 3,
+      first.x * CELL_PX + (CELL_PX - beam) / 2, first.y * CELL_PX,
+      beam, length);
+  } else {
+    drawShowcaseFrame(ctx, SHOWCASE_SHEETS.ships, frame, 4, 3,
+      first.x * CELL_PX + (length - beam) / 2, first.y * CELL_PX + (CELL_PX - length) / 2,
+      beam, length, 1, Math.PI / 2);
+  }
+}
+
 // ── Procedural Sound System (Web Audio API) ──
 
 let audioCtx = null;
@@ -5151,13 +5249,19 @@ function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, center
     nukeOverlay.appendChild(cvs);
     const nc = cvs.getContext('2d');
     const NW = cvs.width, NH = cvs.height;
-    // Map game coords to screen position via radar camera
-    const rcam = radarCam;
-    const cx = rcam.x + (centerX + 0.5) * CELL_PX * rcam.zoom;
-    const cy = rcam.y + (centerY + 0.5) * CELL_PX * rcam.zoom;
-    // Clamp to screen so it's always visible
-    const clampX = Math.max(NW * 0.15, Math.min(NW * 0.85, cx));
-    const clampY = Math.max(NH * 0.15, Math.min(NH * 0.85, cy));
+    // The target field depends on the attacker: player 0 fires into Radar,
+    // while AI/player 1 fires into Fleet. The old code always used radarCam,
+    // which made enemy nuclear detonations appear on the player's own map.
+    const targetIsRadar = attackerIdx === 0;
+    const targetCanvas = document.getElementById(targetIsRadar ? 'radar-canvas' : 'fleet-canvas');
+    const targetCam = targetIsRadar ? radarCam : fleetCam;
+    const targetRect = targetCanvas.getBoundingClientRect();
+    const cx = targetRect.left + targetCam.x + (centerX + 0.5) * CELL_PX * targetCam.zoom;
+    const cy = targetRect.top + targetCam.y + (centerY + 0.5) * CELL_PX * targetCam.zoom;
+    const panelRect = targetCanvas.parentElement.getBoundingClientRect();
+    // Keep the cinematic readable without relocating it to the wrong panel.
+    const clampX = Math.max(panelRect.left + 48, Math.min(panelRect.right - 48, cx));
+    const clampY = Math.max(panelRect.top + 48, Math.min(panelRect.bottom - 48, cy));
     const maxR = Math.max(NW, NH) * 0.7;
     const t0 = Date.now();
     const NUKE_DUR = 3000;
@@ -5173,6 +5277,21 @@ function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, center
     function drawNukeTopDown() {
       const t = Math.min((Date.now() - t0) / NUKE_DUR, 1);
       nc.clearRect(0, 0, NW, NH);
+
+      if (isShowcaseMode() && showcaseSheetsReady) {
+        const frame = Math.min(8, Math.floor(t * 9));
+        const frameSize = Math.max(160, Math.min(360, Math.min(targetRect.width, targetRect.height) * 0.58));
+        drawShowcaseFrame(nc, SHOWCASE_SHEETS.nuke, { col: frame % 3, row: Math.floor(frame / 3) },
+          3, 3, clampX - frameSize / 2, clampY - frameSize / 2, frameSize, frameSize, 0.98);
+        if (t < 0.14) {
+          nc.fillStyle = `rgba(255,255,255,${(1 - t / 0.14) * 0.65})`;
+          nc.fillRect(0, 0, NW, NH);
+        }
+        if (t > 0.76) {
+          nc.fillStyle = `rgba(8,18,28,${(t - 0.76) / 0.24 * 0.72})`;
+          nc.fillRect(0, 0, NW, NH);
+        }
+      } else {
 
       // White flash (first 20%)
       if (t < 0.2) {
@@ -5233,6 +5352,7 @@ function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, center
       if (t > 0.75) {
         nc.fillStyle = `rgba(10,22,40,${(t - 0.75) / 0.25})`;
         nc.fillRect(0, 0, NW, NH);
+      }
       }
 
       if (t < 1) { requestAnimationFrame(drawNukeTopDown); }
@@ -6352,6 +6472,9 @@ function renderFleetMap() {
     if (torp.attackerIdx === me) continue; // only show incoming (from enemy)
     const cx = torp.currentX * CELL_PX + CELL_PX / 2;
     const cy = torp.currentY * CELL_PX + CELL_PX / 2;
+    if (isShowcaseMode()) {
+      drawShowcaseEffect(ctx, 'torpedo_trail', cx, cy, CELL_PX * 3.2, 0.8);
+    }
     // Red triangle
     ctx.fillStyle = 'rgba(255,23,68,0.8)';
     ctx.beginPath();
@@ -6382,6 +6505,9 @@ function renderFleetMap() {
       const cx = (c.x + 0.5) * CELL_PX;
       const cy = (c.y + 0.5) * CELL_PX;
       const r = CELL_PX * (0.3 + t * 1.2);
+      if (isShowcaseMode()) {
+        drawShowcaseEffect(ctx, t < 0.45 ? 'hull_breach' : 'smoke', cx, cy, CELL_PX * 3.2, (1 - t) * 0.95);
+      }
       // White core flash (first 300ms)
       if (t < 0.2) {
         ctx.fillStyle = `rgba(255,255,255,${1 - t * 5})`;
@@ -6506,6 +6632,7 @@ function renderRadar() {
       ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r);
       ctx.moveTo(cx + r, cy - r); ctx.lineTo(cx - r, cy + r);
       ctx.stroke();
+      if (isShowcaseMode()) drawShowcaseEffect(ctx, 'hit_spark', cx, cy, CELL_PX * 2.2, 0.85);
     } else {
       // Blue hand-drawn hatches (seeded by coords for consistency)
       ctx.strokeStyle = '#29b6f6';
@@ -6585,6 +6712,9 @@ function renderRadar() {
     if (torp.attackerIdx !== me) continue; // only show our torpedoes
     const cx = torp.currentX * CELL_PX + CELL_PX / 2;
     const cy = torp.currentY * CELL_PX + CELL_PX / 2;
+    if (isShowcaseMode()) {
+      drawShowcaseEffect(ctx, 'torpedo_trail', cx, cy, CELL_PX * 3.2, 0.85);
+    }
     ctx.fillStyle = 'rgba(0,230,118,0.8)';
     ctx.beginPath();
     const r = CELL_PX * 0.4;
@@ -6681,6 +6811,9 @@ function renderRadar() {
       const cx = (c.x + 0.5) * CELL_PX;
       const cy = (c.y + 0.5) * CELL_PX;
       const r = CELL_PX * (0.3 + t * 1.2);
+      if (isShowcaseMode()) {
+        drawShowcaseEffect(ctx, t < 0.45 ? 'hull_breach' : 'smoke', cx, cy, CELL_PX * 3.2, (1 - t) * 0.95);
+      }
       if (t < 0.2) {
         ctx.fillStyle = `rgba(255,255,255,${1 - t * 5})`;
         ctx.beginPath(); ctx.arc(cx, cy, r * 0.5, 0, Math.PI * 2); ctx.fill();
@@ -6757,7 +6890,12 @@ function drawShipSprite(ctx, ship) {
   const sprW = ship.size * CELL_PX;
   const sprH = CELL_PX;
 
-  if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+  const showcaseFrame = SHOWCASE_SHIP_FRAMES[ship.type];
+  if (isShowcaseMode() && showcaseFrame && showcaseSheetsReady && SHOWCASE_SHEETS.ships.complete) {
+    // Generated source ships are north-facing vertical silhouettes. Rotate the
+    // source for horizontal placement and keep the enlarged beam visual-only.
+    drawShowcaseShip(ctx, showcaseFrame, first, ship.size, isVertical);
+  } else if (sprite && sprite.complete && sprite.naturalWidth > 0) {
     ctx.save();
     if (isVertical) {
       // Translate to top-left of the ship bounding box, rotate 90° CW
