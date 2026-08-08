@@ -1704,10 +1704,19 @@
   }
 
   body[data-visual-mode="cic"] .battle-panel {
+    flex: 0 0 calc(50% - 5px);
+    aspect-ratio: 1;
+    height: auto;
+    max-height: 100%;
     margin: 0;
     border: 2px solid #4c5549;
     background: #050806;
     box-shadow: inset 0 0 48px rgba(0,0,0,0.78), 0 8px 24px rgba(0,0,0,0.54);
+  }
+
+  body[data-visual-mode="cic"] #battle-area {
+    align-items: center;
+    justify-content: center;
   }
 
   body[data-visual-mode="cic"] #fleet-panel { border-right: 2px solid #596450; }
@@ -2111,6 +2120,10 @@ function setVisualMode(mode) {
   const nextMode = ['showcase', 'cic'].includes(mode) ? mode : 'classic';
   document.body.dataset.visualMode = nextMode;
   localStorage.setItem(VISUAL_MODE_KEY, nextMode);
+  const fleetLabel = document.querySelector('#fleet-panel .panel-label');
+  const radarLabel = document.querySelector('#radar-panel .panel-label');
+  if (fleetLabel) fleetLabel.textContent = nextMode === 'cic' ? 'OWN CONTACTS' : 'Fleet Map';
+  if (radarLabel) radarLabel.textContent = nextMode === 'cic' ? 'UNKNOWN CONTACTS' : 'Radar';
   updateVisualModeButtons();
 }
 
@@ -6836,7 +6849,226 @@ function renderPlacementField() {
 
 // ── Fleet Map Rendering ──
 
+function cicContactCenter(cells) {
+  if (!cells || cells.length === 0) return null;
+  return {
+    x: cells.reduce((sum, cell) => sum + cell.x, 0) / cells.length,
+    y: cells.reduce((sum, cell) => sum + cell.y, 0) / cells.length
+  };
+}
+
+function drawCicContactTick(ctx, cells, color, alpha = 1, label = '') {
+  const center = cicContactCenter(cells);
+  if (!center) return;
+  const first = cells[0];
+  const last = cells[cells.length - 1] || first;
+  const horizontal = first.y === last.y;
+  const span = Math.max(CELL_PX * 0.9, cells.length * CELL_PX * 0.62);
+  const half = span / 2;
+  const cx = (center.x + 0.5) * CELL_PX;
+  const cy = (center.y + 0.5) * CELL_PX;
+  const dx = horizontal ? half : 0;
+  const dy = horizontal ? 0 : half;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 9;
+  ctx.lineWidth = Math.max(1.8, CELL_PX * 0.055);
+  ctx.beginPath();
+  ctx.moveTo(cx - dx, cy - dy);
+  ctx.lineTo(cx + dx, cy + dy);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = Math.max(1, CELL_PX * 0.035);
+  ctx.beginPath();
+  if (horizontal) {
+    ctx.moveTo(cx, cy - CELL_PX * 0.24);
+    ctx.lineTo(cx, cy + CELL_PX * 0.24);
+  } else {
+    ctx.moveTo(cx - CELL_PX * 0.24, cy);
+    ctx.lineTo(cx + CELL_PX * 0.24, cy);
+  }
+  ctx.stroke();
+
+  if (label) {
+    ctx.font = `bold ${Math.max(9, CELL_PX * 0.25)}px "Courier New", monospace`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(label, cx + CELL_PX * 0.34, cy - CELL_PX * 0.28);
+  }
+  ctx.restore();
+}
+
+function drawCicRadarGrid(ctx, worldSize, now) {
+  const center = worldSize / 2;
+  const radius = worldSize * 0.47;
+  const pulse = 0.48 + Math.sin(now / 550) * 0.08;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(center, center, radius, 0, Math.PI * 2);
+  ctx.clip();
+
+  const glow = ctx.createRadialGradient(center, center, 0, center, center, radius);
+  glow.addColorStop(0, 'rgba(28,130,52,0.2)');
+  glow.addColorStop(0.62, 'rgba(6,52,20,0.12)');
+  glow.addColorStop(1, 'rgba(0,8,3,0.65)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, worldSize, worldSize);
+
+  ctx.strokeStyle = 'rgba(84,255,116,0.34)';
+  ctx.lineWidth = Math.max(0.8, CELL_PX * 0.018);
+  for (let ring = 1; ring <= 5; ring++) {
+    ctx.globalAlpha = ring === 5 ? 0.85 : 0.48;
+    ctx.beginPath();
+    ctx.arc(center, center, radius * ring / 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.22;
+  ctx.lineWidth = Math.max(0.6, CELL_PX * 0.012);
+  for (let bearing = 0; bearing < 12; bearing++) {
+    const angle = bearing * Math.PI / 6;
+    ctx.beginPath();
+    ctx.moveTo(center, center);
+    ctx.lineTo(center + Math.cos(angle) * radius, center + Math.sin(angle) * radius);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.48;
+  ctx.beginPath();
+  ctx.moveTo(center - radius, center);
+  ctx.lineTo(center + radius, center);
+  ctx.moveTo(center, center - radius);
+  ctx.lineTo(center, center + radius);
+  ctx.stroke();
+
+  battle.scanLineAngle = (battle.scanLineAngle + 0.008) % (Math.PI * 2);
+  const sweep = battle.scanLineAngle;
+  const sweepGradient = ctx.createLinearGradient(center, center, center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
+  sweepGradient.addColorStop(0, 'rgba(144,255,143,0.5)');
+  sweepGradient.addColorStop(1, 'rgba(49,255,103,0)');
+  ctx.strokeStyle = sweepGradient;
+  ctx.globalAlpha = 0.9;
+  ctx.lineWidth = Math.max(1, CELL_PX * 0.04);
+  ctx.beginPath();
+  ctx.moveTo(center, center);
+  ctx.lineTo(center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = `rgba(146,255,139,${pulse})`;
+  ctx.shadowColor = '#72ff86';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(center, center, Math.max(2, CELL_PX * 0.12), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function renderCicRadarScreen(screen) {
+  const canvas = document.getElementById(screen === 'fleet' ? 'fleet-canvas' : 'radar-canvas');
+  const ctx = canvas.getContext('2d');
+  const sz = gameState.settings.fieldSize;
+  const worldSize = sz * CELL_PX;
+  const cam = screen === 'fleet' ? fleetCam : radarCam;
+  const me = gameState.settings.gameMode === 'hotseat' ? gameState.currentPlayer : 0;
+  const player = gameState.players[me];
+  const now = Date.now();
+
+  ctx.fillStyle = '#010703';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(cam.x, cam.y);
+  ctx.scale(cam.zoom, cam.zoom);
+  drawCicRadarGrid(ctx, worldSize, now);
+
+  const ownShips = player.ships.filter(ship => ship.type !== 'submarine' || ship.deployed);
+  const contacts = player.radarData.detectedShips.filter(det => gameState.currentTurn - det.turnDetected < 5);
+
+  if (screen === 'fleet') {
+    ownShips.forEach((ship, index) => {
+      drawCicContactTick(ctx, ship.cells, ship.sunk ? '#ffad57' : '#a2ff9b', ship.sunk ? 0.68 : 1, String(index + 1).padStart(2, '0'));
+    });
+    contacts.forEach(det => drawCicContactTick(ctx, det.cells, '#54bf70', 0.34));
+  } else {
+    ownShips.forEach((ship, index) => drawCicContactTick(ctx, ship.cells, '#73c987', 0.3, String(index + 1).padStart(2, '0')));
+    contacts.forEach(det => {
+      const age = gameState.currentTurn - det.turnDetected;
+      const opacity = [1, 0.82, 0.64, 0.46, 0.28][Math.min(age, 4)];
+      drawCicContactTick(ctx, det.cells, age === 0 ? '#d9ff87' : '#73d98b', opacity);
+    });
+    for (const sunk of player.radarData.sunkShips) {
+      const center = cicContactCenter(sunk.cells);
+      if (!center) continue;
+      ctx.strokeStyle = 'rgba(255,92,82,0.88)';
+      ctx.lineWidth = Math.max(1.2, CELL_PX * 0.04);
+      const cx = (center.x + 0.5) * CELL_PX;
+      const cy = (center.y + 0.5) * CELL_PX;
+      const r = CELL_PX * 0.3;
+      ctx.beginPath();
+      ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r);
+      ctx.moveTo(cx + r, cy - r); ctx.lineTo(cx - r, cy + r);
+      ctx.stroke();
+    }
+  }
+
+  for (const shot of player.radarData.shots) {
+    const cx = (shot.x + 0.5) * CELL_PX;
+    const cy = (shot.y + 0.5) * CELL_PX;
+    ctx.strokeStyle = shot.hit ? 'rgba(255,98,72,0.88)' : 'rgba(96,194,122,0.55)';
+    ctx.lineWidth = Math.max(1, CELL_PX * 0.028);
+    const r = CELL_PX * 0.22;
+    ctx.beginPath();
+    if (shot.hit) {
+      ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r);
+      ctx.moveTo(cx + r, cy - r); ctx.lineTo(cx - r, cy + r);
+    } else {
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    }
+    ctx.stroke();
+  }
+
+  if (battle.radarMouseCell && screen === 'radar') {
+    const mc = battle.radarMouseCell;
+    const cx = (mc.x + 0.5) * CELL_PX;
+    const cy = (mc.y + 0.5) * CELL_PX;
+    ctx.strokeStyle = 'rgba(190,255,171,0.75)';
+    ctx.lineWidth = Math.max(0.8, CELL_PX * 0.018);
+    ctx.beginPath();
+    ctx.arc(cx, cy, CELL_PX * 0.48, 0, Math.PI * 2);
+    ctx.moveTo(cx - CELL_PX * 0.85, cy); ctx.lineTo(cx + CELL_PX * 0.85, cy);
+    ctx.moveTo(cx, cy - CELL_PX * 0.85); ctx.lineTo(cx, cy + CELL_PX * 0.85);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const scale = Math.max(0.7, Math.min(canvas.width, canvas.height) / 280);
+  ctx.save();
+  ctx.fillStyle = 'rgba(175,255,163,0.86)';
+  ctx.font = `bold ${Math.round(10 * scale)}px "Courier New", monospace`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(screen === 'fleet' ? 'OWN / IFF' : 'CONTACTS / UNKNOWN', 10, 9);
+  ctx.fillStyle = 'rgba(130,222,137,0.56)';
+  ctx.font = `${Math.round(8 * scale)}px "Courier New", monospace`;
+  ctx.textAlign = 'right';
+  ctx.fillText(screen === 'fleet' ? 'TACTICAL PICTURE' : 'PASSIVE ARRAY', canvas.width - 10, 10);
+  ctx.fillText('N', canvas.width / 2, 20);
+  ctx.fillText('S', canvas.width / 2, canvas.height - 18);
+  ctx.textAlign = 'left'; ctx.fillText('W', 10, canvas.height / 2 - 5);
+  ctx.textAlign = 'right'; ctx.fillText('E', canvas.width - 10, canvas.height / 2 - 5);
+  ctx.restore();
+}
+
 function renderFleetMap() {
+  if (isCicMode()) {
+    renderCicRadarScreen('fleet');
+    return;
+  }
   const canvas = document.getElementById('fleet-canvas');
   const ctx = canvas.getContext('2d');
   const sz = gameState.settings.fieldSize;
@@ -7070,6 +7302,10 @@ function renderFleetMap() {
 // ── Radar Rendering ──
 
 function renderRadar() {
+  if (isCicMode()) {
+    renderCicRadarScreen('radar');
+    return;
+  }
   const canvas = document.getElementById('radar-canvas');
   const ctx = canvas.getContext('2d');
   const sz = gameState.settings.fieldSize;
