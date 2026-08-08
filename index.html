@@ -551,6 +551,8 @@
     overflow: hidden;
   }
 
+  #cic-stage { display: contents; }
+
   .battle-panel {
     flex: 1;
     position: relative;
@@ -1575,9 +1577,93 @@
   body[data-visual-mode="cic"] #visual-cic { text-transform: none; }
 
   body[data-visual-mode="cic"] #battle-area {
+    position: absolute;
+    inset: 7% 12% 7%;
+    z-index: 5;
     gap: 10px;
-    padding: 10px 12px 0;
-    background: #090c0a;
+    padding: 10px;
+    border: 2px solid #5b6554;
+    border-radius: 7px;
+    background: rgba(2,5,3,0.68);
+    box-shadow:
+      0 26px 42px rgba(0,0,0,0.76),
+      0 0 0 7px rgba(28,32,27,0.94),
+      0 0 0 8px rgba(89,98,79,0.48),
+      inset 0 0 24px rgba(0,0,0,0.78);
+  }
+
+  body[data-visual-mode="cic"] #cic-stage {
+    display: block;
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(5,7,6,0.18), rgba(3,5,4,0.44)),
+      url("sprites/showcase/cic-console.png") center / cover no-repeat;
+  }
+
+  body[data-visual-mode="cic"] #cic-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background:
+      linear-gradient(90deg, rgba(40,111,129,0.22), transparent 12% 88%, rgba(40,111,129,0.22)),
+      linear-gradient(180deg, transparent 0 80%, rgba(177,190,149,0.08));
+    mix-blend-mode: screen;
+  }
+
+  body[data-visual-mode="cic"] .cic-parallax-window {
+    position: absolute;
+    top: 10%;
+    bottom: 12%;
+    width: 13%;
+    z-index: 1;
+    border: 1px solid rgba(93,166,183,0.54);
+    background: linear-gradient(110deg, rgba(48,160,184,0.2), rgba(16,52,65,0.04));
+    box-shadow: inset 0 0 28px rgba(34,142,166,0.25), 0 0 20px rgba(16,92,112,0.17);
+    opacity: 0.78;
+  }
+
+  body[data-visual-mode="cic"] .cic-window-left {
+    left: -1%;
+    clip-path: polygon(0 0, 100% 16%, 88% 84%, 0 100%);
+  }
+
+  body[data-visual-mode="cic"] .cic-window-right {
+    right: -1%;
+    clip-path: polygon(0 16%, 100% 0, 100% 100%, 12% 84%);
+  }
+
+  body[data-visual-mode="cic"] .cic-wall-apparatus {
+    position: absolute;
+    top: 18%;
+    bottom: 22%;
+    width: 4.8%;
+    z-index: 3;
+    border: 1px solid rgba(126,137,109,0.44);
+    background:
+      radial-gradient(circle at 50% 10%, rgba(213,165,74,0.48) 0 2px, transparent 3px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 16px),
+      linear-gradient(90deg, #080a08, #3a4037 50%, #080a08);
+    box-shadow: inset 0 0 16px rgba(0,0,0,0.8), 0 14px 28px rgba(0,0,0,0.48);
+    opacity: 0.86;
+  }
+
+  body[data-visual-mode="cic"] .cic-apparatus-left { left: 7%; }
+  body[data-visual-mode="cic"] .cic-apparatus-right { right: 7%; }
+
+  body[data-visual-mode="cic"] #battle-area::before {
+    content: "MFD / TACTICAL PICTURE / DETACHED CONSOLE";
+    position: absolute;
+    left: 18px;
+    top: -25px;
+    color: rgba(203,219,164,0.78);
+    font: 10px "Courier New", monospace;
+    letter-spacing: 2px;
+    pointer-events: none;
   }
 
   body[data-visual-mode="cic"] .battle-panel {
@@ -1691,7 +1777,7 @@
       flex: 1;
     }
 
-    body[data-visual-mode="cic"] #battle-area { padding: 5px 5px 0; gap: 5px; }
+    body[data-visual-mode="cic"] #battle-area { inset: 5% 2% 4%; padding: 5px; gap: 5px; }
     body[data-visual-mode="cic"] #cic-console { min-height: 72px; flex-wrap: wrap; justify-content: center; }
   }
 </style>
@@ -1894,14 +1980,20 @@
       <span>LINK <b class="cic-link-live">LIVE</b></span>
     </div>
   </div>
-  <div id="battle-area">
-    <div class="battle-panel" id="fleet-panel">
-      <div class="panel-label">Fleet Map</div>
-      <canvas id="fleet-canvas"></canvas>
-    </div>
-    <div class="battle-panel" id="radar-panel">
-      <div class="panel-label">Radar</div>
-      <canvas id="radar-canvas"></canvas>
+  <div id="cic-stage">
+    <div class="cic-parallax-window cic-window-left" aria-hidden="true"></div>
+    <div class="cic-parallax-window cic-window-right" aria-hidden="true"></div>
+    <div class="cic-wall-apparatus cic-apparatus-left" aria-hidden="true"></div>
+    <div class="cic-wall-apparatus cic-apparatus-right" aria-hidden="true"></div>
+    <div id="battle-area">
+      <div class="battle-panel" id="fleet-panel">
+        <div class="panel-label">Fleet Map</div>
+        <canvas id="fleet-canvas"></canvas>
+      </div>
+      <div class="battle-panel" id="radar-panel">
+        <div class="panel-label">Radar</div>
+        <canvas id="radar-canvas"></canvas>
+      </div>
     </div>
   </div>
   <div id="battle-log-bar" onclick="toggleBattleLog()">
