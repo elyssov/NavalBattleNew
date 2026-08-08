@@ -1368,6 +1368,311 @@
     color: rgba(92,255,151,0.78);
   }
 
+  /* Usagi CIC: a second, hard-surface command-room treatment. The game canvas
+     remains the same; this skin turns the surrounding instrument panel into a
+     functional flagship console. */
+  body[data-visual-mode="cic"] {
+    background:
+      radial-gradient(ellipse at 50% 12%, rgba(96,102,86,0.18), transparent 42%),
+      linear-gradient(135deg, #0b0d0c, #1d201d 48%, #080a09);
+    color: #d4d2c3;
+    font-family: "Bahnschrift", "Segoe UI", Arial, sans-serif;
+  }
+
+  body[data-visual-mode="cic"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      linear-gradient(105deg, rgba(255,255,255,0.045), transparent 20% 78%, rgba(0,0,0,0.24)),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.014) 0 1px, transparent 1px 5px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0 1px, transparent 1px 7px);
+    opacity: 0.72;
+  }
+
+  body[data-visual-mode="cic"] > * { position: relative; z-index: 1; }
+
+  body[data-visual-mode="cic"] #menu-screen {
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: min(9vh, 86px) 8vw;
+    gap: 14px;
+    background:
+      linear-gradient(90deg, rgba(5,7,6,0.94), rgba(5,7,6,0.42) 55%, rgba(5,7,6,0.86)),
+      radial-gradient(ellipse at 78% 44%, rgba(169,181,145,0.16), transparent 22%);
+    overflow: hidden;
+  }
+
+  body[data-visual-mode="cic"] #menu-screen::after {
+    content: "USAGI / FLEET COMMAND INFORMATION CENTER / SYSTEM READY";
+    position: absolute;
+    left: 8vw;
+    bottom: 8vh;
+    color: rgba(170,188,142,0.72);
+    font: 11px "Courier New", monospace;
+    letter-spacing: 3px;
+  }
+
+  body[data-visual-mode="cic"] #menu-title {
+    margin-top: 8vh;
+    color: #e2ddc8;
+    font-size: clamp(48px, 8vw, 112px);
+    line-height: 0.88;
+    letter-spacing: 5px;
+    text-shadow: 0 2px 0 #050606, 0 0 24px rgba(174,194,146,0.17);
+  }
+
+  body[data-visual-mode="cic"] #menu-subtitle {
+    color: #aebe8e;
+    letter-spacing: 6px;
+    font: 13px "Courier New", monospace;
+  }
+
+  body[data-visual-mode="cic"] .menu-btn,
+  body[data-visual-mode="cic"] #rules-close-btn,
+  body[data-visual-mode="cic"] .placement-btn,
+  body[data-visual-mode="cic"] .action-btn,
+  body[data-visual-mode="cic"] .start-btn,
+  body[data-visual-mode="cic"] .back-btn {
+    border-radius: 1px;
+    border-color: rgba(181,188,157,0.52);
+    background: linear-gradient(180deg, rgba(68,72,64,0.96), rgba(19,22,20,0.98));
+    color: #d8d6c5;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 8px 20px rgba(0,0,0,0.34);
+  }
+
+  body[data-visual-mode="cic"] .menu-btn:hover,
+  body[data-visual-mode="cic"] #rules-close-btn:hover,
+  body[data-visual-mode="cic"] .placement-btn:hover,
+  body[data-visual-mode="cic"] .action-btn:hover:not(:disabled) {
+    border-color: #d9e7ae;
+    color: #f2f0d7;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 0 22px rgba(180,205,135,0.22);
+  }
+
+  body[data-visual-mode="cic"] #menu-donate {
+    border-color: #b95c47 !important;
+    color: #ffb08f !important;
+    background: linear-gradient(180deg, rgba(78,38,28,0.96), rgba(25,13,11,0.98)) !important;
+  }
+
+  body[data-visual-mode="cic"] .visual-mode-panel {
+    border-color: rgba(181,188,157,0.36);
+    background: rgba(10,13,11,0.78);
+  }
+
+  body[data-visual-mode="cic"] .visual-mode-btn {
+    border-color: #565f52;
+    background: #1a1e1a;
+    color: #939e87;
+  }
+
+  body[data-visual-mode="cic"] .visual-mode-btn.active {
+    border-color: #cbd99f;
+    color: #ebf2c9;
+    background: linear-gradient(180deg, #59644f, #1e251d);
+    box-shadow: 0 0 15px rgba(190,215,145,0.18);
+  }
+
+  body[data-visual-mode="cic"] #settings-screen,
+  body[data-visual-mode="cic"] #game-screen,
+  body[data-visual-mode="cic"] #battle-screen {
+    background:
+      linear-gradient(180deg, rgba(13,16,14,0.96), rgba(4,6,5,0.99)),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 92px);
+  }
+
+  body[data-visual-mode="cic"] #battle-screen {
+    background-image:
+      linear-gradient(180deg, rgba(6,8,7,0.74), rgba(3,5,4,0.92)),
+      url("sprites/showcase/cic-console.png");
+    background-position: center, center;
+    background-size: cover, cover;
+  }
+
+  body[data-visual-mode="cic"] #settings-left,
+  body[data-visual-mode="cic"] #settings-right,
+  body[data-visual-mode="cic"] #placement-panel,
+  body[data-visual-mode="cic"] #top-bar,
+  body[data-visual-mode="cic"] #bottom-bar,
+  body[data-visual-mode="cic"] #battle-log-bar,
+  body[data-visual-mode="cic"] .settings-group,
+  body[data-visual-mode="cic"] .choice-card {
+    background: linear-gradient(180deg, rgba(39,43,38,0.94), rgba(8,11,9,0.98));
+    border-color: rgba(181,188,157,0.36);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 34px rgba(0,0,0,0.42);
+  }
+
+  body[data-visual-mode="cic"] #top-bar {
+    height: 48px;
+    border-bottom-color: rgba(181,188,157,0.38);
+    background: linear-gradient(180deg, #3e433b, #131613);
+    color: #d6d8c6;
+  }
+
+  body[data-visual-mode="cic"] .tb-item,
+  body[data-visual-mode="cic"] .tb-item span { color: #bdc8a1; }
+  body[data-visual-mode="cic"] .tb-phase { border-color: #c1d38e; color: #d9e9a7; background: rgba(166,196,112,0.1); }
+
+  body[data-visual-mode="cic"] #cic-console {
+    display: flex;
+    min-height: 72px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 6px 18px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(181,188,157,0.42);
+    background:
+      linear-gradient(180deg, rgba(84,88,77,0.22), rgba(19,23,20,0.52)),
+      url("sprites/showcase/cic-console.png") center top / cover,
+      repeating-linear-gradient(90deg, transparent 0 38px, rgba(255,255,255,0.06) 39px, transparent 40px);
+    background-blend-mode: screen, normal, screen;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 18px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  body[data-visual-mode="cic"] #cic-console::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("sprites/showcase/cic-console.png") center 8% / cover no-repeat;
+    opacity: 0.58;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .cic-console-id,
+  .cic-mfd-group,
+  .cic-readout { display: flex; align-items: center; gap: 9px; }
+  .cic-console > * { position: relative; z-index: 1; }
+  .cic-console-id { min-width: 250px; }
+  .cic-lamp { width: 8px; height: 8px; border-radius: 50%; background: #bded8e; box-shadow: 0 0 12px #b9ed87; }
+  .cic-call { color: #edf0d3; font-weight: 700; letter-spacing: 3px; text-transform: none; }
+  .cic-unit { color: #a9b19a; font: 9px "Courier New", monospace; letter-spacing: 1px; }
+  .cic-mfd-group { flex-wrap: wrap; justify-content: center; }
+  .cic-control {
+    min-width: 64px;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid #7f8974;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #4f574c, #1b201b);
+    color: #dde4c5;
+    cursor: pointer;
+    font: 10px "Courier New", monospace;
+    letter-spacing: 1px;
+  }
+  .cic-control:hover, .cic-control.active { border-color: #e0f1ab; color: #f3f7db; box-shadow: 0 0 13px rgba(210,240,157,0.22); }
+  .cic-ping { border-color: #79b7a1; color: #a9e1bd; }
+  .cic-readout { justify-content: flex-end; color: #929c84; font: 9px "Courier New", monospace; letter-spacing: 1px; white-space: nowrap; }
+  .cic-readout b { color: #d9e9a7; font-weight: 400; }
+  .cic-link-live { color: #8ce5a3 !important; text-shadow: 0 0 8px rgba(140,229,163,0.7); }
+  body[data-visual-mode="cic"] #visual-cic { text-transform: none; }
+
+  body[data-visual-mode="cic"] #battle-area {
+    gap: 10px;
+    padding: 10px 12px 0;
+    background: #090c0a;
+  }
+
+  body[data-visual-mode="cic"] .battle-panel {
+    margin: 0;
+    border: 2px solid #4c5549;
+    background: #050806;
+    box-shadow: inset 0 0 48px rgba(0,0,0,0.78), 0 8px 24px rgba(0,0,0,0.54);
+  }
+
+  body[data-visual-mode="cic"] #fleet-panel { border-right: 2px solid #596450; }
+  body[data-visual-mode="cic"] #radar-panel { background: radial-gradient(circle at center, rgba(116,182,112,0.11), transparent 56%), #020503; }
+  body[data-visual-mode="cic"] .battle-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(213,242,183,0.035) 0 1px, transparent 1px 4px);
+    mix-blend-mode: screen;
+    opacity: 0.55;
+  }
+
+  body[data-visual-mode="cic"] .panel-label {
+    left: 14px;
+    top: 12px;
+    transform: none;
+    padding: 4px 9px;
+    border-left: 3px solid #c5d995;
+    background: rgba(3,6,4,0.72);
+    color: #bdcda2;
+    font: 11px "Courier New", monospace;
+    letter-spacing: 2px;
+  }
+
+  body[data-visual-mode="cic"] #bottom-bar {
+    min-height: 64px;
+    border-top-color: rgba(181,188,157,0.4);
+    background: linear-gradient(180deg, #30362f, #111511);
+  }
+
+  body[data-visual-mode="cic"] #battle-log-bar {
+    background: #090d0a;
+    border-top-color: rgba(181,188,157,0.3);
+    color: #b8c89b;
+  }
+
+  body[data-visual-mode="cic"] #fleet-panel canvas,
+  body[data-visual-mode="cic"] #radar-panel canvas { filter: contrast(1.08) saturate(0.82); }
+  body[data-visual-mode="cic"][data-cic-sensor="thermal"] #radar-panel canvas { filter: sepia(0.7) saturate(1.8) hue-rotate(330deg) contrast(1.15); }
+  body[data-visual-mode="cic"][data-cic-sensor="passive"] #radar-panel canvas { filter: saturate(0.75) contrast(1.05); }
+  body[data-visual-mode="cic"][data-cic-crt="off"] #battle-screen::after { display: none; }
+  body[data-visual-mode="cic"] #battle-screen::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(218,242,183,0.018) 0 1px, transparent 1px 4px);
+    mix-blend-mode: screen;
+  }
+
+  body[data-visual-mode="cic"] #nuke-overlay.cic-impact {
+    background:
+      linear-gradient(90deg, rgba(220,245,215,0.08), transparent 30% 70%, rgba(220,245,215,0.08)),
+      url("sprites/showcase/cic-nuclear-plate.png") center / cover;
+    animation: cicImpactPlate 3s ease-out both;
+  }
+
+  body[data-visual-mode="cic"] #nuke-overlay.cic-impact::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(240,255,225,0.38), transparent 48%);
+    animation: cicImpactFlash 3s ease-out both;
+  }
+
+  @keyframes cicImpactPlate {
+    0%, 18% { filter: brightness(2.4) saturate(0.72); }
+    32% { filter: brightness(1.3) saturate(0.9); }
+    100% { filter: brightness(0.65) saturate(0.76); }
+  }
+
+  @keyframes cicImpactFlash {
+    0% { opacity: 0; }
+    12% { opacity: 1; }
+    30% { opacity: 0.26; }
+    100% { opacity: 0.04; }
+  }
+
+  @media (max-width: 900px) {
+    body[data-visual-mode="cic"] #cic-console { gap: 8px; padding: 6px 8px; }
+    .cic-console-id { min-width: 0; }
+    .cic-unit { display: none; }
+    .cic-readout { display: none; }
+  }
+
   @media (max-width: 760px) {
     body[data-visual-mode="showcase"] #menu-screen {
       padding: 36px 22px;
@@ -1385,6 +1690,9 @@
     .visual-mode-btn {
       flex: 1;
     }
+
+    body[data-visual-mode="cic"] #battle-area { padding: 5px 5px 0; gap: 5px; }
+    body[data-visual-mode="cic"] #cic-console { min-height: 72px; flex-wrap: wrap; justify-content: center; }
   }
 </style>
 </head>
@@ -1405,6 +1713,7 @@
     <span class="visual-mode-label">Visual</span>
     <button class="visual-mode-btn" id="visual-classic" onclick="setVisualMode('classic')">Classic</button>
     <button class="visual-mode-btn" id="visual-showcase" onclick="setVisualMode('showcase')">Showcase</button>
+    <button class="visual-mode-btn" id="visual-cic" onclick="setVisualMode('cic')">Usagi CIC</button>
   </div>
 </div>
 
@@ -1565,6 +1874,26 @@
     <button id="tb-sound-btn" onclick="toggleSound()" style="background:none;border:1px solid #546e7a;color:#546e7a;padding:3px 8px;font-size:14px;cursor:pointer;letter-spacing:0;">&#x1F50A;</button>
     <button id="tb-menu-btn" onclick="backToMenu()">Menu</button>
   </div>
+  <div id="cic-console" aria-label="Usagi command information center">
+    <div class="cic-console-id">
+      <span class="cic-lamp"></span>
+      <span class="cic-call">Usagi</span>
+      <span class="cic-unit">FLAGSHIP CIC / BATTLE MANAGEMENT</span>
+    </div>
+    <div class="cic-mfd-group" aria-label="MFD controls">
+      <button class="cic-control" onclick="cicAdjustZoom(-1)" title="Reduce map magnification">ZOOM -</button>
+      <button class="cic-control" onclick="cicAdjustZoom(1)" title="Increase map magnification">ZOOM +</button>
+      <button class="cic-control" onclick="cicSetSensor('passive')" title="Passive radar picture">PASSIVE</button>
+      <button class="cic-control" onclick="cicSetSensor('thermal')" title="Thermal contact filter">THERMAL</button>
+      <button class="cic-control cic-ping" onclick="cicStartPing()" title="Open active sonar targeting">PING</button>
+      <button class="cic-control" onclick="cicToggleCrt()" title="Toggle CRT bloom and scanlines">CRT</button>
+    </div>
+    <div class="cic-readout">
+      <span>ENV <b id="cic-env-readout">PASSIVE</b></span>
+      <span>CRT <b id="cic-crt-readout">ON</b></span>
+      <span>LINK <b class="cic-link-live">LIVE</b></span>
+    </div>
+  </div>
   <div id="battle-area">
     <div class="battle-panel" id="fleet-panel">
       <div class="panel-label">Fleet Map</div>
@@ -1639,7 +1968,7 @@
 const VISUAL_MODE_KEY = 'naval_visual_mode';
 
 function setVisualMode(mode) {
-  const nextMode = mode === 'showcase' ? 'showcase' : 'classic';
+  const nextMode = ['showcase', 'cic'].includes(mode) ? mode : 'classic';
   document.body.dataset.visualMode = nextMode;
   localStorage.setItem(VISUAL_MODE_KEY, nextMode);
   updateVisualModeButtons();
@@ -1649,12 +1978,71 @@ function updateVisualModeButtons() {
   const mode = document.body.dataset.visualMode || 'classic';
   const classicBtn = document.getElementById('visual-classic');
   const showcaseBtn = document.getElementById('visual-showcase');
+  const cicBtn = document.getElementById('visual-cic');
   if (classicBtn) classicBtn.classList.toggle('active', mode === 'classic');
   if (showcaseBtn) showcaseBtn.classList.toggle('active', mode === 'showcase');
+  if (cicBtn) cicBtn.classList.toggle('active', mode === 'cic');
 }
 
 function initVisualMode() {
   setVisualMode(localStorage.getItem(VISUAL_MODE_KEY) || 'classic');
+}
+
+let cicSensorMode = 'passive';
+let cicCrtEnabled = true;
+
+function updateCicConsole() {
+  const env = document.getElementById('cic-env-readout');
+  const crt = document.getElementById('cic-crt-readout');
+  if (env) env.textContent = cicSensorMode.toUpperCase();
+  if (crt) crt.textContent = cicCrtEnabled ? 'ON' : 'OFF';
+  document.body.dataset.cicSensor = cicSensorMode;
+  document.body.dataset.cicCrt = cicCrtEnabled ? 'on' : 'off';
+}
+
+function cicAdjustZoom(direction) {
+  if (!battle.active) {
+    showToast('CIC zoom is available during combat.', 'info', 1800);
+    return;
+  }
+  const factor = direction > 0 ? 1.22 : 1 / 1.22;
+  [
+    [fleetCam, document.getElementById('fleet-canvas')],
+    [radarCam, document.getElementById('radar-canvas')]
+  ].forEach(([cam, canvas]) => {
+    if (!canvas) return;
+    const oldZoom = cam.zoom;
+    const newZoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, oldZoom * factor));
+    const mx = canvas.width / 2;
+    const my = canvas.height / 2;
+    cam.x = mx - (mx - cam.x) * (newZoom / oldZoom);
+    cam.y = my - (my - cam.y) * (newZoom / oldZoom);
+    cam.zoom = newZoom;
+  });
+  renderFleetMap();
+  renderRadar();
+  showToast('CIC magnification: ' + Math.round(fleetCam.zoom * 100) + '%', 'info', 1200);
+}
+
+function cicSetSensor(mode) {
+  cicSensorMode = mode === 'thermal' ? 'thermal' : 'passive';
+  updateCicConsole();
+  showToast(cicSensorMode === 'thermal' ? 'Thermal contact filter engaged.' : 'Passive radar picture restored.', 'info', 1600);
+  if (battle.active) renderRadar();
+}
+
+function cicStartPing() {
+  if (!battle.active) {
+    showToast('Active ping is available during combat.', 'info', 1800);
+    return;
+  }
+  startSonarSelect();
+}
+
+function cicToggleCrt() {
+  cicCrtEnabled = !cicCrtEnabled;
+  updateCicConsole();
+  showToast(cicCrtEnabled ? 'CRT bloom and scanlines online.' : 'CRT bloom bypassed.', 'info', 1400);
 }
 
 function showMenu() {
@@ -1820,7 +2208,11 @@ const SHOWCASE_EFFECT_FRAMES = {
 };
 
 function isShowcaseMode() {
-  return document.body.dataset.visualMode === 'showcase';
+  return ['showcase', 'cic'].includes(document.body.dataset.visualMode);
+}
+
+function isCicMode() {
+  return document.body.dataset.visualMode === 'cic';
 }
 
 function drawShowcaseFrame(ctx, sheet, frame, cols, rows, x, y, w, h, alpha = 1, rotation = 0) {
@@ -5241,6 +5633,7 @@ function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, center
 
     // Nuclear explosion — TOP-DOWN view at impact point
     nukeOverlay.style.display = 'block';
+    nukeOverlay.classList.toggle('cic-impact', isCicMode());
     nukeOverlay.innerHTML = '';
     nukeOverlay.style.background = 'transparent';
     const cvs = document.createElement('canvas');
@@ -5359,6 +5752,7 @@ function nukeCeremonySuccess(content, ceremony, nukeOverlay, attackerIdx, center
       else {
         nukeOverlay.innerHTML = '';
         nukeOverlay.style.display = 'none';
+        nukeOverlay.classList.remove('cic-impact');
         battle.nuclearAnimating = false;
         gameState.actionDone = true;
         updateTopBar();
@@ -7703,6 +8097,7 @@ function getRulesEN() {
 
 // ── Init locale on load ──
 initVisualMode();
+updateCicConsole();
 applyLocaleToDOM();
 
 </script>
