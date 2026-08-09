@@ -7092,27 +7092,56 @@ function drawCicContactTick(ctx, cells, color, alpha = 1, label = '', sweepPulse
   const dy = horizontal ? 0 : half;
 
   ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
   const pulse = Math.max(0, Math.min(1, sweepPulse));
-  const liveColor = pulse > 0.04 ? '#f5ffd0' : color;
-  ctx.globalAlpha = Math.min(1, alpha + pulse * 0.86);
-  ctx.strokeStyle = liveColor;
-  ctx.fillStyle = liveColor;
-  ctx.shadowColor = pulse > 0.04 ? '#f4ffb0' : color;
-  ctx.shadowBlur = 14 + pulse * 34;
-  ctx.lineWidth = Math.max(2, CELL_PX * (0.06 + pulse * 0.055));
+  const liveColor = pulse > 0.04 ? '#faffd8' : '#b9ffb1';
+  const brightness = Math.min(1, alpha * 0.9 + pulse * 0.98);
+
+  // Additive layers make a contact read like a phosphor strike rather than
+  // a green line painted on top of the glass.
+  ctx.globalAlpha = Math.min(1, alpha * 0.58 + pulse * 0.74);
+  ctx.strokeStyle = color;
+  ctx.shadowColor = '#2dff68';
+  ctx.shadowBlur = 30 + pulse * 52;
+  ctx.lineWidth = Math.max(3, CELL_PX * (0.13 + pulse * 0.08));
   ctx.beginPath();
   ctx.moveTo(cx - dx, cy - dy);
   ctx.lineTo(cx + dx, cy + dy);
   ctx.stroke();
+
+  ctx.globalAlpha = brightness;
+  ctx.strokeStyle = liveColor;
+  ctx.shadowColor = '#d5ff9e';
+  ctx.shadowBlur = 14 + pulse * 32;
+  ctx.lineWidth = Math.max(2, CELL_PX * (0.075 + pulse * 0.07));
+  ctx.beginPath();
+  ctx.moveTo(cx - dx, cy - dy);
+  ctx.lineTo(cx + dx, cy + dy);
+  ctx.stroke();
+
+  ctx.globalAlpha = Math.min(1, alpha * 0.95 + pulse * 0.3);
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#f3ffd0';
+  ctx.lineWidth = Math.max(1.2, CELL_PX * (0.028 + pulse * 0.02));
+  ctx.beginPath();
+  ctx.moveTo(cx - dx, cy - dy);
+  ctx.lineTo(cx + dx, cy + dy);
+  ctx.stroke();
+
   if (pulse > 0.04) {
-    ctx.globalAlpha = pulse * 0.82;
-    ctx.lineWidth = Math.max(1, CELL_PX * 0.025);
+    ctx.globalAlpha = pulse * 0.95;
+    ctx.strokeStyle = '#efffc1';
+    ctx.shadowColor = '#8dff76';
+    ctx.shadowBlur = 24 + pulse * 28;
+    ctx.lineWidth = Math.max(1.5, CELL_PX * 0.04);
     ctx.beginPath();
     ctx.arc(cx, cy, CELL_PX * (0.44 + (1 - pulse) * 0.72), 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.shadowBlur = 0;
-  ctx.lineWidth = Math.max(1, CELL_PX * 0.035);
+  ctx.globalAlpha = Math.min(1, brightness * 0.95);
+  ctx.strokeStyle = '#efffc8';
+  ctx.lineWidth = Math.max(1, CELL_PX * 0.04);
   ctx.beginPath();
   if (horizontal) {
     ctx.moveTo(cx, cy - CELL_PX * 0.24);
@@ -7174,10 +7203,11 @@ function drawCicOwnContact(ctx, ship, index, cam, screen, worldSize, now) {
       ctx.font = `bold ${Math.max(9, CELL_PX * 0.25)}px "Courier New", monospace`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'bottom';
-      ctx.fillStyle = '#d7ffad';
-      ctx.shadowColor = '#6dff85';
-      ctx.shadowBlur = 8 + pulse * 16;
-      ctx.fillText(label, cx + CELL_PX * 0.34, cy - CELL_PX * 0.28);
+    ctx.fillStyle = '#efffc8';
+    ctx.shadowColor = '#4dff70';
+    ctx.shadowBlur = 14 + pulse * 24;
+    ctx.globalAlpha = Math.min(1, brightness + 0.12);
+    ctx.fillText(label, cx + CELL_PX * 0.34, cy - CELL_PX * 0.28);
       ctx.restore();
     }
     return;
@@ -7241,10 +7271,12 @@ function drawCicRadarGrid(ctx, worldSize, now) {
   // The beam tail is deliberately short: it dies almost immediately behind the sweep.
   for (let trail = 9; trail >= 1; trail--) {
     const trailAngle = sweep - trail * 0.028;
-    const trailAlpha = Math.pow((10 - trail) / 10, 2.4) * 0.22;
-    ctx.strokeStyle = '#39ff6b';
+    const trailAlpha = Math.pow((10 - trail) / 10, 2.4) * 0.34;
+    ctx.strokeStyle = '#24ff5f';
     ctx.globalAlpha = trailAlpha;
-    ctx.lineWidth = Math.max(1, CELL_PX * (0.022 + (10 - trail) * 0.002));
+    ctx.shadowColor = '#19ff55';
+    ctx.shadowBlur = 12;
+    ctx.lineWidth = Math.max(1, CELL_PX * (0.032 + (10 - trail) * 0.003));
     ctx.beginPath();
     ctx.moveTo(center, center);
     ctx.lineTo(center + Math.cos(trailAngle) * radius, center + Math.sin(trailAngle) * radius);
@@ -7252,25 +7284,36 @@ function drawCicRadarGrid(ctx, worldSize, now) {
   }
 
   const sweepGradient = ctx.createLinearGradient(center, center, center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
-  sweepGradient.addColorStop(0, '#f1ffb4');
-  sweepGradient.addColorStop(0.22, '#99ff8c');
-  sweepGradient.addColorStop(0.72, '#39ff6b');
-  sweepGradient.addColorStop(1, 'rgba(38,255,91,0.62)');
+  sweepGradient.addColorStop(0, '#ffffff');
+  sweepGradient.addColorStop(0.1, '#eaffba');
+  sweepGradient.addColorStop(0.34, '#8dff78');
+  sweepGradient.addColorStop(0.78, '#25ff58');
+  sweepGradient.addColorStop(1, 'rgba(38,255,91,0.82)');
   ctx.strokeStyle = sweepGradient;
   ctx.globalAlpha = 1;
-  ctx.shadowColor = '#54ff75';
-  ctx.shadowBlur = 18;
-  ctx.lineWidth = Math.max(2, CELL_PX * 0.052);
+  ctx.shadowColor = '#19ff5c';
+  ctx.shadowBlur = 48;
+  ctx.lineWidth = Math.max(3, CELL_PX * 0.15);
   ctx.beginPath();
   ctx.moveTo(center, center);
   ctx.lineTo(center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
   ctx.stroke();
 
-  // A thin pale core makes the active sweep read as an optical instrument, not a flat line.
-  ctx.strokeStyle = '#eaffbd';
-  ctx.shadowColor = '#d9ff9a';
-  ctx.shadowBlur = 10;
-  ctx.lineWidth = Math.max(1, CELL_PX * 0.018);
+  // A hard luminous core keeps the sweep eye-searing even through the
+  // translucent tablet and cabin plate.
+  ctx.strokeStyle = '#d8ffab';
+  ctx.shadowColor = '#efffc0';
+  ctx.shadowBlur = 26;
+  ctx.lineWidth = Math.max(2, CELL_PX * 0.072);
+  ctx.beginPath();
+  ctx.moveTo(center, center);
+  ctx.lineTo(center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#f7ffd9';
+  ctx.shadowColor = '#ffffff';
+  ctx.shadowBlur = 12;
+  ctx.lineWidth = Math.max(1.2, CELL_PX * 0.024);
   ctx.beginPath();
   ctx.moveTo(center, center);
   ctx.lineTo(center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
@@ -7278,11 +7321,12 @@ function drawCicRadarGrid(ctx, worldSize, now) {
   ctx.restore();
 
   ctx.globalAlpha = 1;
-  ctx.fillStyle = '#dfffad';
-  ctx.shadowColor = '#67ff7e';
-  ctx.shadowBlur = 22;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = '#f3ffd0';
+  ctx.shadowColor = '#69ff7e';
+  ctx.shadowBlur = 40;
   ctx.beginPath();
-  ctx.arc(center, center, Math.max(2, CELL_PX * 0.12), 0, Math.PI * 2);
+  ctx.arc(center, center, Math.max(2.5, CELL_PX * 0.16), 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
