@@ -4025,7 +4025,9 @@ const battle = {
   sinkExplosions: [],
   nuclearAnimating: false,
   cicAnimating: false,
-  cicSweepPulses: Object.create(null)
+  cicSweepPulses: Object.create(null),
+  cicSweepCount: 0,
+  cicDetectionSweeps: Object.create(null)
 };
 
 // ── Placement Functions ──
@@ -4469,6 +4471,9 @@ function startBattle() {
   battle.pcrSelectedLauncher = -1;
   battle.cicAnimating = false;
   battle.cicSweepPulses = Object.create(null);
+  battle.cicSweepCount = 0;
+  battle.cicDetectionSweeps = Object.create(null);
+  battle.scanLineAngle = 0;
   battle.strikerMode = false;
   battle.strikerChain = [];
   gameState.blastZones = [];
@@ -7145,6 +7150,42 @@ function cicSweepPulse(screen, cells, worldCenter, now) {
   return started ? Math.max(0, 1 - age / 3200) : 0;
 }
 
+function cicDetectionKey(det) {
+  return `${det.source || 'unknown'}:${det.turnDetected}:${det.type || ''}:${det.cells.map(c => `${c.x},${c.y}`).join(';')}`;
+}
+
+function drawCicOwnContact(ctx, ship, index, cam, screen, worldSize, now) {
+  const pulse = cicSweepPulse(screen, ship.cells, worldSize / 2, now);
+  const label = String(index + 1).padStart(2, '0');
+
+  // The fleet is still a radar instrument at overview scale. Once the
+  // operator leans in, friendly contacts resolve into the actual ship art.
+  if (!ship.sunk && cam.zoom >= 1.05) {
+    ctx.save();
+    ctx.globalAlpha = 0.96 + pulse * 0.04;
+    drawShipSprite(ctx, ship);
+    ctx.restore();
+
+    const center = cicContactCenter(ship.cells);
+    if (center) {
+      const cx = (center.x + 0.5) * CELL_PX;
+      const cy = (center.y + 0.5) * CELL_PX;
+      ctx.save();
+      ctx.font = `bold ${Math.max(9, CELL_PX * 0.25)}px "Courier New", monospace`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#d7ffad';
+      ctx.shadowColor = '#6dff85';
+      ctx.shadowBlur = 8 + pulse * 16;
+      ctx.fillText(label, cx + CELL_PX * 0.34, cy - CELL_PX * 0.28);
+      ctx.restore();
+    }
+    return;
+  }
+
+  drawCicContactTick(ctx, ship.cells, ship.sunk ? '#ffad57' : '#caffaa', ship.sunk ? 0.68 : 1, label, pulse);
+}
+
 function drawCicRadarGrid(ctx, worldSize, now) {
   const center = worldSize / 2;
   const radius = worldSize * 0.47;
@@ -7189,7 +7230,10 @@ function drawCicRadarGrid(ctx, worldSize, now) {
   ctx.lineTo(center, center + radius);
   ctx.stroke();
 
-  battle.scanLineAngle = (battle.scanLineAngle + 0.008) % (Math.PI * 2);
+  const previousSweepAngle = battle.scanLineAngle;
+  const nextSweepAngle = (battle.scanLineAngle + 0.008) % (Math.PI * 2);
+  if (nextSweepAngle < previousSweepAngle) battle.cicSweepCount += 1;
+  battle.scanLineAngle = nextSweepAngle;
   const sweep = battle.scanLineAngle;
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
@@ -7262,20 +7306,27 @@ function renderCicRadarScreen(screen) {
   drawCicRadarGrid(ctx, worldSize, now);
 
   const ownShips = player.ships.filter(ship => ship.type !== 'submarine' || ship.deployed);
-  const contacts = player.radarData.detectedShips.filter(det => gameState.currentTurn - det.turnDetected < 5);
+  const contacts = [];
+  for (const det of player.radarData.detectedShips) {
+    if (gameState.currentTurn - det.turnDetected >= 5) continue;
+    const key = cicDetectionKey(det);
+    const pulse = cicSweepPulse(screen, det.cells, worldSize / 2, now);
+    if (battle.cicDetectionSweeps[key] == null) battle.cicDetectionSweeps[key] = battle.cicSweepCount;
+    if (pulse > 0.04) battle.cicDetectionSweeps[key] = battle.cicSweepCount;
+    const sweepAge = battle.cicSweepCount - battle.cicDetectionSweeps[key];
+    if (sweepAge < 3) contacts.push({ det, pulse, sweepAge });
+  }
 
   if (screen === 'fleet') {
-    ownShips.forEach((ship, index) => {
-      const pulse = cicSweepPulse(screen, ship.cells, worldSize / 2, now);
-      drawCicContactTick(ctx, ship.cells, ship.sunk ? '#ffad57' : '#caffaa', ship.sunk ? 0.68 : 1, String(index + 1).padStart(2, '0'), pulse);
+    ownShips.forEach((ship, index) => drawCicOwnContact(ctx, ship, index, cam, screen, worldSize, now));
+    contacts.forEach(({ det, pulse, sweepAge }) => {
+      drawCicContactTick(ctx, det.cells, '#83ff96', [1, 0.58, 0.22][Math.min(sweepAge, 2)], '', pulse);
     });
-    contacts.forEach(det => drawCicContactTick(ctx, det.cells, '#83ff96', 0.74, '', cicSweepPulse(screen, det.cells, worldSize / 2, now)));
   } else {
-    ownShips.forEach((ship, index) => drawCicContactTick(ctx, ship.cells, '#aaffaa', 0.58, String(index + 1).padStart(2, '0'), cicSweepPulse(screen, ship.cells, worldSize / 2, now)));
-    contacts.forEach(det => {
-      const age = gameState.currentTurn - det.turnDetected;
-      const opacity = [1, 0.82, 0.64, 0.46, 0.28][Math.min(age, 4)];
-      drawCicContactTick(ctx, det.cells, age === 0 ? '#ddff91' : '#8dff9b', opacity, '', cicSweepPulse(screen, det.cells, worldSize / 2, now));
+    ownShips.forEach((ship, index) => drawCicOwnContact(ctx, ship, index, cam, screen, worldSize, now));
+    contacts.forEach(({ det, pulse, sweepAge }) => {
+      const color = sweepAge === 0 ? '#ddff91' : '#8dff9b';
+      drawCicContactTick(ctx, det.cells, color, [1, 0.58, 0.22][Math.min(sweepAge, 2)], '', pulse);
     });
     for (const sunk of player.radarData.sunkShips) {
       const center = cicContactCenter(sunk.cells);
