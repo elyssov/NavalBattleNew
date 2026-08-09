@@ -1817,7 +1817,10 @@
   body[data-visual-mode="cic"] .cic-apparatus-right { right: 7%; }
 
   body[data-visual-mode="cic"] .cic-deck-rail {
-    display: flex;
+    display: none;
+    /* The duplicated hardware controls moved to the console strip above the MFD. */
+    /* Keeping this layer out of the picture preserves the radar's full playable area. */
+    /* display: flex; */
     position: absolute;
     top: 45%;
     z-index: 7;
