@@ -1579,7 +1579,7 @@
 
   body[data-visual-mode="cic"] #battle-area {
     position: absolute;
-    inset: 26% 20% 24%;
+    inset: 21% 14% 18%;
     z-index: 5;
     gap: 10px;
     padding: 10px;
@@ -1623,6 +1623,30 @@
     background:
       linear-gradient(180deg, rgba(5,7,6,0.08), rgba(3,5,4,0.18)),
       url("sprites/showcase/cic-pcr-launch.png") center / cover no-repeat;
+  }
+
+  body[data-visual-mode="cic"] .cic-pcr-video {
+    display: none;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 360ms ease;
+    filter: saturate(0.88) contrast(1.04);
+  }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-launching .cic-pcr-video {
+    display: block;
+    opacity: 1;
+  }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-returning .cic-pcr-video {
+    display: block;
+    opacity: 0;
   }
 
   body[data-visual-mode="cic"] #cic-stage.cic-pcr-launching #battle-area {
@@ -1956,7 +1980,7 @@
       flex: 1;
     }
 
-    body[data-visual-mode="cic"] #battle-area { inset: 18% 3% 23%; padding: 5px; gap: 5px; transform: none; }
+    body[data-visual-mode="cic"] #battle-area { inset: 14% 1% 18%; padding: 5px; gap: 5px; transform: none; }
     body[data-visual-mode="cic"] #cic-console { min-height: 72px; flex-wrap: wrap; justify-content: center; }
   }
 </style>
@@ -2181,6 +2205,7 @@
       <div class="cic-pcr-missile"></div>
       <div class="cic-pcr-flash"></div>
     </div>
+    <video id="cic-pcr-video" class="cic-pcr-video" src="sprites/showcase/cic-pcr-launch.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
     <div id="battle-area">
       <div class="battle-panel" id="fleet-panel">
         <div class="panel-label">Fleet Map</div>
@@ -3981,7 +4006,8 @@ const battle = {
   radarPulses: [],
   sinkExplosions: [],
   nuclearAnimating: false,
-  cicAnimating: false
+  cicAnimating: false,
+  cicSweepPulses: Object.create(null)
 };
 
 // ── Placement Functions ──
@@ -4424,6 +4450,7 @@ function startBattle() {
   battle.pcrMode = false;
   battle.pcrSelectedLauncher = -1;
   battle.cicAnimating = false;
+  battle.cicSweepPulses = Object.create(null);
   battle.strikerMode = false;
   battle.strikerChain = [];
   gameState.blastZones = [];
@@ -6250,6 +6277,11 @@ function playCicPcrSequence() {
   if (!stage) return Promise.resolve();
 
   battle.cicAnimating = true;
+  const video = document.getElementById('cic-pcr-video');
+  if (video) {
+    video.currentTime = 0;
+    video.play().catch(() => {});
+  }
   stage.classList.remove('cic-pcr-returning');
   stage.classList.add('cic-pcr-launching');
 
@@ -6260,6 +6292,7 @@ function playCicPcrSequence() {
     }, 1380);
     window.setTimeout(() => {
       stage.classList.remove('cic-pcr-returning');
+      if (video) video.pause();
       battle.cicAnimating = false;
       resolve();
     }, 1900);
@@ -7022,7 +7055,7 @@ function cicContactCenter(cells) {
   };
 }
 
-function drawCicContactTick(ctx, cells, color, alpha = 1, label = '') {
+function drawCicContactTick(ctx, cells, color, alpha = 1, label = '', sweepPulse = 0) {
   const center = cicContactCenter(cells);
   if (!center) return;
   const first = cells[0];
@@ -7036,16 +7069,25 @@ function drawCicContactTick(ctx, cells, color, alpha = 1, label = '') {
   const dy = horizontal ? 0 : half;
 
   ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 9;
-  ctx.lineWidth = Math.max(1.8, CELL_PX * 0.055);
+  const pulse = Math.max(0, Math.min(1, sweepPulse));
+  const liveColor = pulse > 0.04 ? '#efffc4' : color;
+  ctx.globalAlpha = Math.min(1, alpha + pulse * 0.72);
+  ctx.strokeStyle = liveColor;
+  ctx.fillStyle = liveColor;
+  ctx.shadowColor = pulse > 0.04 ? '#f4ffb0' : color;
+  ctx.shadowBlur = 9 + pulse * 24;
+  ctx.lineWidth = Math.max(1.8, CELL_PX * (0.055 + pulse * 0.04));
   ctx.beginPath();
   ctx.moveTo(cx - dx, cy - dy);
   ctx.lineTo(cx + dx, cy + dy);
   ctx.stroke();
+  if (pulse > 0.04) {
+    ctx.globalAlpha = pulse * 0.72;
+    ctx.lineWidth = Math.max(1, CELL_PX * 0.025);
+    ctx.beginPath();
+    ctx.arc(cx, cy, CELL_PX * (0.44 + (1 - pulse) * 0.72), 0, Math.PI * 2);
+    ctx.stroke();
+  }
   ctx.shadowBlur = 0;
   ctx.lineWidth = Math.max(1, CELL_PX * 0.035);
   ctx.beginPath();
@@ -7065,6 +7107,24 @@ function drawCicContactTick(ctx, cells, color, alpha = 1, label = '') {
     ctx.fillText(label, cx + CELL_PX * 0.34, cy - CELL_PX * 0.28);
   }
   ctx.restore();
+}
+
+function cicSweepPulse(screen, cells, worldCenter, now) {
+  const center = cicContactCenter(cells);
+  if (!center) return 0;
+  const key = `${screen}:${cells.map(c => `${c.x},${c.y}`).join(';')}`;
+  const contactAngle = Math.atan2(center.y * CELL_PX + CELL_PX / 2 - worldCenter, center.x * CELL_PX + CELL_PX / 2 - worldCenter);
+  const delta = Math.atan2(Math.sin(contactAngle - battle.scanLineAngle), Math.cos(contactAngle - battle.scanLineAngle));
+  const closeToBeam = Math.abs(delta) < 0.032;
+  const prior = battle.cicSweepPulses[key] || 0;
+  if (closeToBeam && now - prior > 1050) battle.cicSweepPulses[key] = now;
+  const started = battle.cicSweepPulses[key] || 0;
+  const age = now - started;
+  if (age > 1900) {
+    delete battle.cicSweepPulses[key];
+    return 0;
+  }
+  return started ? Math.max(0, 1 - age / 1900) : 0;
 }
 
 function drawCicRadarGrid(ctx, worldSize, now) {
@@ -7156,15 +7216,16 @@ function renderCicRadarScreen(screen) {
 
   if (screen === 'fleet') {
     ownShips.forEach((ship, index) => {
-      drawCicContactTick(ctx, ship.cells, ship.sunk ? '#ffad57' : '#a2ff9b', ship.sunk ? 0.68 : 1, String(index + 1).padStart(2, '0'));
+      const pulse = cicSweepPulse(screen, ship.cells, worldSize / 2, now);
+      drawCicContactTick(ctx, ship.cells, ship.sunk ? '#ffad57' : '#b8ff9e', ship.sunk ? 0.68 : 1, String(index + 1).padStart(2, '0'), pulse);
     });
-    contacts.forEach(det => drawCicContactTick(ctx, det.cells, '#54bf70', 0.34));
+    contacts.forEach(det => drawCicContactTick(ctx, det.cells, '#70ed8a', 0.42, '', cicSweepPulse(screen, det.cells, worldSize / 2, now)));
   } else {
-    ownShips.forEach((ship, index) => drawCicContactTick(ctx, ship.cells, '#73c987', 0.3, String(index + 1).padStart(2, '0')));
+    ownShips.forEach((ship, index) => drawCicContactTick(ctx, ship.cells, '#86e79a', 0.42, String(index + 1).padStart(2, '0'), cicSweepPulse(screen, ship.cells, worldSize / 2, now)));
     contacts.forEach(det => {
       const age = gameState.currentTurn - det.turnDetected;
       const opacity = [1, 0.82, 0.64, 0.46, 0.28][Math.min(age, 4)];
-      drawCicContactTick(ctx, det.cells, age === 0 ? '#d9ff87' : '#73d98b', opacity);
+      drawCicContactTick(ctx, det.cells, age === 0 ? '#d9ff87' : '#73d98b', opacity, '', cicSweepPulse(screen, det.cells, worldSize / 2, now));
     });
     for (const sunk of player.radarData.sunkShips) {
       const center = cicContactCenter(sunk.cells);
