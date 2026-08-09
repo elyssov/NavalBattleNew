@@ -7088,19 +7088,19 @@ function drawCicContactTick(ctx, cells, color, alpha = 1, label = '', sweepPulse
 
   ctx.save();
   const pulse = Math.max(0, Math.min(1, sweepPulse));
-  const liveColor = pulse > 0.04 ? '#efffc4' : color;
-  ctx.globalAlpha = Math.min(1, alpha + pulse * 0.72);
+  const liveColor = pulse > 0.04 ? '#f5ffd0' : color;
+  ctx.globalAlpha = Math.min(1, alpha + pulse * 0.86);
   ctx.strokeStyle = liveColor;
   ctx.fillStyle = liveColor;
   ctx.shadowColor = pulse > 0.04 ? '#f4ffb0' : color;
-  ctx.shadowBlur = 9 + pulse * 24;
-  ctx.lineWidth = Math.max(1.8, CELL_PX * (0.055 + pulse * 0.04));
+  ctx.shadowBlur = 14 + pulse * 34;
+  ctx.lineWidth = Math.max(2, CELL_PX * (0.06 + pulse * 0.055));
   ctx.beginPath();
   ctx.moveTo(cx - dx, cy - dy);
   ctx.lineTo(cx + dx, cy + dy);
   ctx.stroke();
   if (pulse > 0.04) {
-    ctx.globalAlpha = pulse * 0.72;
+    ctx.globalAlpha = pulse * 0.82;
     ctx.lineWidth = Math.max(1, CELL_PX * 0.025);
     ctx.beginPath();
     ctx.arc(cx, cy, CELL_PX * (0.44 + (1 - pulse) * 0.72), 0, Math.PI * 2);
@@ -7135,14 +7135,14 @@ function cicSweepPulse(screen, cells, worldCenter, now) {
   const delta = Math.atan2(Math.sin(contactAngle - battle.scanLineAngle), Math.cos(contactAngle - battle.scanLineAngle));
   const closeToBeam = Math.abs(delta) < 0.032;
   const prior = battle.cicSweepPulses[key] || 0;
-  if (closeToBeam && now - prior > 1050) battle.cicSweepPulses[key] = now;
+  if (closeToBeam && now - prior > 1400) battle.cicSweepPulses[key] = now;
   const started = battle.cicSweepPulses[key] || 0;
   const age = now - started;
-  if (age > 1900) {
+  if (age > 3200) {
     delete battle.cicSweepPulses[key];
     return 0;
   }
-  return started ? Math.max(0, 1 - age / 1900) : 0;
+  return started ? Math.max(0, 1 - age / 3200) : 0;
 }
 
 function drawCicRadarGrid(ctx, worldSize, now) {
@@ -7191,21 +7191,52 @@ function drawCicRadarGrid(ctx, worldSize, now) {
 
   battle.scanLineAngle = (battle.scanLineAngle + 0.008) % (Math.PI * 2);
   const sweep = battle.scanLineAngle;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  // The beam tail is deliberately short: it dies almost immediately behind the sweep.
+  for (let trail = 9; trail >= 1; trail--) {
+    const trailAngle = sweep - trail * 0.028;
+    const trailAlpha = Math.pow((10 - trail) / 10, 2.4) * 0.22;
+    ctx.strokeStyle = '#39ff6b';
+    ctx.globalAlpha = trailAlpha;
+    ctx.lineWidth = Math.max(1, CELL_PX * (0.022 + (10 - trail) * 0.002));
+    ctx.beginPath();
+    ctx.moveTo(center, center);
+    ctx.lineTo(center + Math.cos(trailAngle) * radius, center + Math.sin(trailAngle) * radius);
+    ctx.stroke();
+  }
+
   const sweepGradient = ctx.createLinearGradient(center, center, center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
-  sweepGradient.addColorStop(0, 'rgba(144,255,143,0.5)');
-  sweepGradient.addColorStop(1, 'rgba(49,255,103,0)');
+  sweepGradient.addColorStop(0, '#f1ffb4');
+  sweepGradient.addColorStop(0.22, '#99ff8c');
+  sweepGradient.addColorStop(0.72, '#39ff6b');
+  sweepGradient.addColorStop(1, 'rgba(38,255,91,0.62)');
   ctx.strokeStyle = sweepGradient;
-  ctx.globalAlpha = 0.9;
-  ctx.lineWidth = Math.max(1, CELL_PX * 0.04);
+  ctx.globalAlpha = 1;
+  ctx.shadowColor = '#54ff75';
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = Math.max(2, CELL_PX * 0.052);
   ctx.beginPath();
   ctx.moveTo(center, center);
   ctx.lineTo(center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
   ctx.stroke();
 
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = `rgba(146,255,139,${pulse})`;
-  ctx.shadowColor = '#72ff86';
-  ctx.shadowBlur = 12;
+  // A thin pale core makes the active sweep read as an optical instrument, not a flat line.
+  ctx.strokeStyle = '#eaffbd';
+  ctx.shadowColor = '#d9ff9a';
+  ctx.shadowBlur = 10;
+  ctx.lineWidth = Math.max(1, CELL_PX * 0.018);
+  ctx.beginPath();
+  ctx.moveTo(center, center);
+  ctx.lineTo(center + Math.cos(sweep) * radius, center + Math.sin(sweep) * radius);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#dfffad';
+  ctx.shadowColor = '#67ff7e';
+  ctx.shadowBlur = 22;
   ctx.beginPath();
   ctx.arc(center, center, Math.max(2, CELL_PX * 0.12), 0, Math.PI * 2);
   ctx.fill();
@@ -7236,15 +7267,15 @@ function renderCicRadarScreen(screen) {
   if (screen === 'fleet') {
     ownShips.forEach((ship, index) => {
       const pulse = cicSweepPulse(screen, ship.cells, worldSize / 2, now);
-      drawCicContactTick(ctx, ship.cells, ship.sunk ? '#ffad57' : '#b8ff9e', ship.sunk ? 0.68 : 1, String(index + 1).padStart(2, '0'), pulse);
+      drawCicContactTick(ctx, ship.cells, ship.sunk ? '#ffad57' : '#caffaa', ship.sunk ? 0.68 : 1, String(index + 1).padStart(2, '0'), pulse);
     });
-    contacts.forEach(det => drawCicContactTick(ctx, det.cells, '#70ed8a', 0.42, '', cicSweepPulse(screen, det.cells, worldSize / 2, now)));
+    contacts.forEach(det => drawCicContactTick(ctx, det.cells, '#83ff96', 0.74, '', cicSweepPulse(screen, det.cells, worldSize / 2, now)));
   } else {
-    ownShips.forEach((ship, index) => drawCicContactTick(ctx, ship.cells, '#86e79a', 0.42, String(index + 1).padStart(2, '0'), cicSweepPulse(screen, ship.cells, worldSize / 2, now)));
+    ownShips.forEach((ship, index) => drawCicContactTick(ctx, ship.cells, '#aaffaa', 0.58, String(index + 1).padStart(2, '0'), cicSweepPulse(screen, ship.cells, worldSize / 2, now)));
     contacts.forEach(det => {
       const age = gameState.currentTurn - det.turnDetected;
       const opacity = [1, 0.82, 0.64, 0.46, 0.28][Math.min(age, 4)];
-      drawCicContactTick(ctx, det.cells, age === 0 ? '#d9ff87' : '#73d98b', opacity, '', cicSweepPulse(screen, det.cells, worldSize / 2, now));
+      drawCicContactTick(ctx, det.cells, age === 0 ? '#ddff91' : '#8dff9b', opacity, '', cicSweepPulse(screen, det.cells, worldSize / 2, now));
     });
     for (const sunk of player.radarData.sunkShips) {
       const center = cicContactCenter(sunk.cells);
