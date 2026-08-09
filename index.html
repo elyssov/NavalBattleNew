@@ -1579,7 +1579,7 @@
 
   body[data-visual-mode="cic"] #battle-area {
     position: absolute;
-    inset: 31% 27% 30%;
+    inset: 26% 20% 24%;
     z-index: 5;
     gap: 10px;
     padding: 10px;
@@ -1593,6 +1593,7 @@
       inset 0 0 24px rgba(0,0,0,0.78);
     transform: perspective(1400px) rotateX(0.8deg);
     transform-origin: center bottom;
+    transition: transform 420ms cubic-bezier(0.2,0.82,0.22,1), opacity 320ms ease, filter 320ms ease;
   }
 
   body[data-visual-mode="cic"] #cic-stage {
@@ -1617,6 +1618,138 @@
       linear-gradient(180deg, transparent 0 80%, rgba(177,190,149,0.08));
     mix-blend-mode: screen;
   }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-launching {
+    background:
+      linear-gradient(180deg, rgba(5,7,6,0.08), rgba(3,5,4,0.18)),
+      url("sprites/showcase/cic-pcr-launch.png") center / cover no-repeat;
+  }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-launching #battle-area {
+    transform: perspective(1400px) rotateX(0.8deg) translateY(118%) scale(0.84);
+    opacity: 0.02;
+    filter: blur(2px);
+    pointer-events: none;
+  }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-returning #battle-area {
+    transform: perspective(1400px) rotateX(0.8deg) translateY(0) scale(1);
+    opacity: 1;
+    filter: none;
+    pointer-events: auto;
+  }
+
+  .cic-pcr-sequence {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    overflow: hidden;
+    pointer-events: none;
+    color: #d8efad;
+    font: 10px "Courier New", monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-launching .cic-pcr-sequence,
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-returning .cic-pcr-sequence {
+    display: block;
+  }
+
+  .cic-pcr-sequence::before {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: 34%;
+    height: 32%;
+    background: radial-gradient(ellipse, rgba(106,173,143,0.16), transparent 68%);
+    mix-blend-mode: screen;
+  }
+
+  .cic-pcr-status {
+    position: absolute;
+    left: 50%;
+    top: 12%;
+    transform: translateX(-50%);
+    padding: 7px 14px;
+    border: 1px solid rgba(188,220,144,0.6);
+    background: rgba(2,7,5,0.72);
+    box-shadow: 0 0 18px rgba(111,191,142,0.22);
+    white-space: nowrap;
+  }
+
+  .cic-pcr-status::after {
+    content: " / LAUNCH WINDOW OPEN";
+    color: #8ce5a3;
+  }
+
+  .cic-pcr-track {
+    position: absolute;
+    left: 19%;
+    bottom: 38%;
+    width: 56%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(190,238,158,0.48), transparent);
+    transform: rotate(-10deg);
+    transform-origin: left center;
+    opacity: 0;
+  }
+
+  .cic-pcr-missile {
+    position: absolute;
+    left: 24%;
+    bottom: 37%;
+    width: 46%;
+    height: 4px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, rgba(255,171,87,0.1), #f5d797 24%, #ffffff 68%, rgba(255,255,255,0.1));
+    box-shadow: 0 0 8px #fff1bd, 0 0 22px rgba(255,158,73,0.86);
+    opacity: 0;
+    transform-origin: left center;
+    transform: rotate(-10deg) translate(-24%, 30%) scaleX(0.3);
+  }
+
+  .cic-pcr-missile::before {
+    content: "";
+    position: absolute;
+    left: -38px;
+    top: -7px;
+    width: 48px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255,244,184,0.98), rgba(255,124,50,0.68) 42%, transparent 75%);
+    filter: blur(1px);
+  }
+
+  .cic-pcr-flash {
+    position: absolute;
+    left: 20%;
+    bottom: 31%;
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff7c6 0 4%, rgba(255,191,85,0.92) 12%, rgba(255,101,37,0.28) 42%, transparent 72%);
+    opacity: 0;
+    transform: scale(0.15);
+  }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-launching .cic-pcr-track {
+    animation: cicPcrTrack 1.45s ease-out forwards;
+  }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-launching .cic-pcr-missile {
+    animation: cicPcrFlight 1.38s cubic-bezier(0.18,0.72,0.24,1) 0.12s forwards;
+  }
+
+  body[data-visual-mode="cic"] #cic-stage.cic-pcr-launching .cic-pcr-flash {
+    animation: cicPcrFlash 0.48s ease-out 0.08s forwards;
+  }
+
+  @keyframes cicPcrTrack { 0% { opacity: 0; transform: rotate(-10deg) scaleX(0); } 18% { opacity: 0.9; } 100% { opacity: 0.2; transform: rotate(-10deg) scaleX(1); } }
+  @keyframes cicPcrFlight { 0% { opacity: 0; transform: rotate(-10deg) translate(-24%, 30%) scaleX(0.3); } 16% { opacity: 1; } 100% { opacity: 0.95; transform: rotate(-10deg) translate(48%, -64%) scaleX(1); } }
+  @keyframes cicPcrFlash { 0% { opacity: 0; transform: scale(0.15); } 25% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.55); } }
 
   body[data-visual-mode="cic"] .cic-parallax-window {
     position: absolute;
@@ -1823,7 +1956,7 @@
       flex: 1;
     }
 
-    body[data-visual-mode="cic"] #battle-area { inset: 24% 6% 28%; padding: 5px; gap: 5px; transform: none; }
+    body[data-visual-mode="cic"] #battle-area { inset: 18% 3% 23%; padding: 5px; gap: 5px; transform: none; }
     body[data-visual-mode="cic"] #cic-console { min-height: 72px; flex-wrap: wrap; justify-content: center; }
   }
 </style>
@@ -2041,6 +2174,12 @@
       <button class="cic-deck-switch" onclick="cicStartPing()" title="Open active sonar targeting">PING</button>
       <button class="cic-deck-switch" onclick="cicSetSensor('thermal')" title="Thermal contact filter">IR</button>
       <button class="cic-deck-switch" onclick="cicAdjustZoom(1)" title="Increase map magnification">+</button>
+    </div>
+    <div id="cic-pcr-sequence" class="cic-pcr-sequence" aria-hidden="true">
+      <div class="cic-pcr-status">PCR / PU-READY</div>
+      <div class="cic-pcr-track"></div>
+      <div class="cic-pcr-missile"></div>
+      <div class="cic-pcr-flash"></div>
     </div>
     <div id="battle-area">
       <div class="battle-panel" id="fleet-panel">
@@ -3841,7 +3980,8 @@ const battle = {
   strikerChain: [], // [{x,y,result}] for visual trail
   radarPulses: [],
   sinkExplosions: [],
-  nuclearAnimating: false
+  nuclearAnimating: false,
+  cicAnimating: false
 };
 
 // ── Placement Functions ──
@@ -4283,6 +4423,7 @@ function startBattle() {
   battle.nuclearStrikeMode = false;
   battle.pcrMode = false;
   battle.pcrSelectedLauncher = -1;
+  battle.cicAnimating = false;
   battle.strikerMode = false;
   battle.strikerChain = [];
   gameState.blastZones = [];
@@ -6037,6 +6178,7 @@ function showConfirmDialog(title, text, onConfirm, onCancel) {
 // ── PCR P-1000 "Vulkan" ──
 
 function startPcrMode() {
+  if (battle.cicAnimating) return;
   const player = gameState.players[gameState.currentPlayer];
   const tarkr = player.ships.find(s => s.type === 'tarkr' && !s.sunk);
   if (!tarkr) { showToast(L('toast.no_tarkr'), 'info'); return; }
@@ -6099,6 +6241,29 @@ function selectLauncher(index) {
   battle.pcrSelectedLauncher = index;
   showToast(T('toast.pcr_selected', {n: index + 1}), 'info', 3000);
   updateActionBar();
+}
+
+function playCicPcrSequence() {
+  if (!isCicMode() || battle.cicAnimating) return Promise.resolve();
+
+  const stage = document.getElementById('cic-stage');
+  if (!stage) return Promise.resolve();
+
+  battle.cicAnimating = true;
+  stage.classList.remove('cic-pcr-returning');
+  stage.classList.add('cic-pcr-launching');
+
+  return new Promise(resolve => {
+    window.setTimeout(() => {
+      stage.classList.remove('cic-pcr-launching');
+      stage.classList.add('cic-pcr-returning');
+    }, 1380);
+    window.setTimeout(() => {
+      stage.classList.remove('cic-pcr-returning');
+      battle.cicAnimating = false;
+      resolve();
+    }, 1900);
+  });
 }
 
 function firePCR(attackerIdx, x, y) {
@@ -8045,6 +8210,7 @@ function setupBattleInput() {
     if (gameState.settings.gameMode === 'ai' && gameState.currentPlayer !== 0) return;
     if (gameState.actionDone) return;
     if (battle.nuclearAnimating) return;
+    if (battle.cicAnimating) return;
 
     const cp = gameState.currentPlayer;
     const cell = screenToCell(e.clientX, e.clientY, rc, radarCam);
@@ -8078,7 +8244,10 @@ function setupBattleInput() {
 
     if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) {
       const result = firePCR(cp, cell.x, cell.y);
-      if (result) setTimeout(markActionDone, 1500);
+      if (result) {
+        const ceremony = isCicMode() ? playCicPcrSequence() : Promise.resolve();
+        ceremony.then(markActionDone);
+      }
       return;
     }
 
