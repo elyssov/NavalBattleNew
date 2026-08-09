@@ -1869,9 +1869,17 @@
     height: auto;
     max-height: 100%;
     margin: 0;
-    border: 2px solid #4c5549;
-    background: #050806;
-    box-shadow: inset 0 0 48px rgba(0,0,0,0.78), 0 8px 24px rgba(0,0,0,0.54);
+    isolation: isolate;
+    border: 2px solid rgba(206,233,185,0.52);
+    border-radius: 5px;
+    background: linear-gradient(145deg, rgba(13,34,23,0.8), rgba(2,9,5,0.94));
+    backdrop-filter: blur(12px) saturate(138%);
+    box-shadow:
+      inset 0 1px 0 rgba(239,255,220,0.5),
+      inset 0 -18px 34px rgba(0,0,0,0.52),
+      inset 0 0 48px rgba(0,0,0,0.78),
+      0 8px 24px rgba(0,0,0,0.54),
+      0 0 20px rgba(132,221,156,0.08);
   }
 
   body[data-visual-mode="cic"] #battle-area {
@@ -1881,14 +1889,48 @@
 
   body[data-visual-mode="cic"] #fleet-panel { border-right: 2px solid #596450; }
   body[data-visual-mode="cic"] #radar-panel { background: radial-gradient(circle at center, rgba(116,182,112,0.11), transparent 56%), #020503; }
+  body[data-visual-mode="cic"] .battle-panel::before {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: 2px;
+    background:
+      radial-gradient(58% 38% at 18% 14%, rgba(204,255,211,0.15), transparent 72%),
+      radial-gradient(48% 55% at 82% 84%, rgba(39,210,139,0.12), transparent 70%),
+      linear-gradient(118deg, transparent 0 34%, rgba(231,255,222,0.12) 42%, transparent 50% 100%);
+    mix-blend-mode: screen;
+    opacity: 0.72;
+    animation: cicGlassDrift 8s ease-in-out infinite alternate;
+  }
   body[data-visual-mode="cic"] .battle-panel::after {
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 2;
     pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(213,242,183,0.035) 0 1px, transparent 1px 4px);
+    background:
+      linear-gradient(118deg, transparent 0 32%, rgba(236,255,219,0.11) 39%, transparent 47% 100%),
+      repeating-linear-gradient(0deg, rgba(213,242,183,0.045) 0 1px, transparent 1px 4px);
     mix-blend-mode: screen;
-    opacity: 0.55;
+    opacity: 0.62;
+  }
+
+  body[data-visual-mode="cic"] .battle-panel canvas {
+    position: relative;
+    z-index: 0;
+    filter: contrast(1.12) saturate(0.92) brightness(0.92);
+  }
+
+  @keyframes cicGlassDrift {
+    0% { transform: translate3d(-2%, -1%, 0) scale(1.02); filter: blur(0); }
+    50% { transform: translate3d(1%, 1%, 0) scale(1.06); filter: blur(0.4px); }
+    100% { transform: translate3d(3%, -1%, 0) scale(1.02); filter: blur(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body[data-visual-mode="cic"] .battle-panel::before { animation: none; }
   }
 
   body[data-visual-mode="cic"] .panel-label {
