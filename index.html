@@ -1579,18 +1579,19 @@
 
   body[data-visual-mode="cic"] #battle-area {
     position: absolute;
-    inset: 21% 14% 18%;
+    inset: 7% 3% 9%;
     z-index: 5;
     gap: 10px;
     padding: 10px;
     border: 2px solid #5b6554;
     border-radius: 7px;
-    background: rgba(2,5,3,0.68);
+    background: rgba(2,5,3,0.24);
+    backdrop-filter: blur(2px) saturate(120%);
     box-shadow:
-      0 26px 42px rgba(0,0,0,0.76),
-      0 0 0 7px rgba(28,32,27,0.94),
-      0 0 0 8px rgba(89,98,79,0.48),
-      inset 0 0 24px rgba(0,0,0,0.78);
+      0 18px 34px rgba(0,0,0,0.48),
+      0 0 0 5px rgba(28,32,27,0.42),
+      0 0 0 6px rgba(89,98,79,0.22),
+      inset 0 0 24px rgba(0,0,0,0.38);
     transform: perspective(1400px) rotateX(0.8deg);
     transform-origin: center bottom;
     transition: transform 420ms cubic-bezier(0.2,0.82,0.22,1), opacity 320ms ease, filter 320ms ease;
@@ -1603,7 +1604,7 @@
     min-height: 0;
     overflow: hidden;
     background:
-      linear-gradient(180deg, rgba(5,7,6,0.18), rgba(3,5,4,0.44)),
+      linear-gradient(180deg, rgba(5,7,6,0.06), rgba(3,5,4,0.14)),
       url("sprites/showcase/cic-console.png") center / cover no-repeat;
   }
 
@@ -1870,16 +1871,15 @@
     max-height: 100%;
     margin: 0;
     isolation: isolate;
-    border: 2px solid rgba(206,233,185,0.52);
+    border: 2px solid rgba(206,233,185,0.42);
     border-radius: 5px;
-    background: linear-gradient(145deg, rgba(13,34,23,0.8), rgba(2,9,5,0.94));
-    backdrop-filter: blur(12px) saturate(138%);
+    background: linear-gradient(145deg, rgba(13,34,23,0.28), rgba(2,9,5,0.42));
+    backdrop-filter: blur(3px) saturate(125%);
     box-shadow:
-      inset 0 1px 0 rgba(239,255,220,0.5),
-      inset 0 -18px 34px rgba(0,0,0,0.52),
-      inset 0 0 48px rgba(0,0,0,0.78),
-      0 8px 24px rgba(0,0,0,0.54),
-      0 0 20px rgba(132,221,156,0.08);
+      inset 0 1px 0 rgba(239,255,220,0.28),
+      inset 0 -18px 34px rgba(0,0,0,0.22),
+      inset 0 0 48px rgba(0,0,0,0.34),
+      0 8px 24px rgba(0,0,0,0.36);
   }
 
   body[data-visual-mode="cic"] #battle-area {
@@ -1888,33 +1888,16 @@
   }
 
   body[data-visual-mode="cic"] #fleet-panel { border-right: 2px solid #596450; }
-  body[data-visual-mode="cic"] #radar-panel { background: radial-gradient(circle at center, rgba(116,182,112,0.11), transparent 56%), #020503; }
-  body[data-visual-mode="cic"] .battle-panel::before {
-    content: "";
-    position: absolute;
-    inset: 3px;
-    z-index: 1;
-    pointer-events: none;
-    border-radius: 2px;
-    background:
-      radial-gradient(58% 38% at 18% 14%, rgba(204,255,211,0.15), transparent 72%),
-      radial-gradient(48% 55% at 82% 84%, rgba(39,210,139,0.12), transparent 70%),
-      linear-gradient(118deg, transparent 0 34%, rgba(231,255,222,0.12) 42%, transparent 50% 100%);
-    mix-blend-mode: screen;
-    opacity: 0.72;
-    animation: cicGlassDrift 8s ease-in-out infinite alternate;
-  }
+  body[data-visual-mode="cic"] #radar-panel { background: radial-gradient(circle at center, rgba(116,182,112,0.1), transparent 56%), rgba(2,5,3,0.24); }
   body[data-visual-mode="cic"] .battle-panel::after {
     content: "";
     position: absolute;
     inset: 0;
     z-index: 2;
     pointer-events: none;
-    background:
-      linear-gradient(118deg, transparent 0 32%, rgba(236,255,219,0.11) 39%, transparent 47% 100%),
-      repeating-linear-gradient(0deg, rgba(213,242,183,0.045) 0 1px, transparent 1px 4px);
+    background: repeating-linear-gradient(0deg, rgba(213,242,183,0.04) 0 1px, transparent 1px 4px);
     mix-blend-mode: screen;
-    opacity: 0.62;
+    opacity: 0.34;
   }
 
   body[data-visual-mode="cic"] .battle-panel canvas {
@@ -1923,23 +1906,13 @@
     filter: contrast(1.12) saturate(0.92) brightness(0.92);
   }
 
-  @keyframes cicGlassDrift {
-    0% { transform: translate3d(-2%, -1%, 0) scale(1.02); filter: blur(0); }
-    50% { transform: translate3d(1%, 1%, 0) scale(1.06); filter: blur(0.4px); }
-    100% { transform: translate3d(3%, -1%, 0) scale(1.02); filter: blur(0); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body[data-visual-mode="cic"] .battle-panel::before { animation: none; }
-  }
-
   body[data-visual-mode="cic"] .panel-label {
     left: 14px;
     top: 12px;
     transform: none;
     padding: 4px 9px;
     border-left: 3px solid #c5d995;
-    background: rgba(3,6,4,0.72);
+    background: rgba(3,6,4,0.4);
     color: #bdcda2;
     font: 11px "Courier New", monospace;
     letter-spacing: 2px;
@@ -7249,7 +7222,8 @@ function renderCicRadarScreen(screen) {
   const player = gameState.players[me];
   const now = Date.now();
 
-  ctx.fillStyle = '#010703';
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(1,7,3,0.42)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.save();
   ctx.translate(cam.x, cam.y);
