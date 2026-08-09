@@ -1160,12 +1160,21 @@
 
   .visual-mode-panel {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
     margin-top: 4px;
-    padding: 6px;
+    padding: 8px;
     border: 1px solid rgba(120,144,156,0.3);
     background: rgba(6,14,22,0.58);
+    width: min(100%, 620px);
+  }
+
+  .visual-mode-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .visual-mode-label {
@@ -1175,15 +1184,30 @@
     text-transform: uppercase;
   }
 
+  .visual-mode-note {
+    color: #607d8b;
+    font-family: "Courier New", monospace;
+    font-size: 10px;
+    letter-spacing: 0.7px;
+    text-align: right;
+  }
+
+  .visual-mode-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
   .visual-mode-btn {
-    min-width: 82px;
-    height: 28px;
+    min-width: 0;
+    height: 38px;
     border: 1px solid #34516a;
     background: rgba(13,33,55,0.8);
     color: #78909c;
     cursor: pointer;
-    font-size: 11px;
-    letter-spacing: 1px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
   }
 
@@ -1994,6 +2018,20 @@
       flex-wrap: wrap;
     }
 
+    .visual-mode-heading {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .visual-mode-note {
+      text-align: left;
+    }
+
+    .visual-mode-options {
+      grid-template-columns: 1fr;
+    }
+
     .visual-mode-btn {
       flex: 1;
     }
@@ -2016,11 +2054,16 @@
     <button class="lang-btn" onclick="setLang('ru')"><svg viewBox="0 0 9 6"><rect width="9" height="2" fill="#fff"/><rect y="2" width="9" height="2" fill="#0039A6"/><rect y="4" width="9" height="2" fill="#D52B1E"/></svg></button>
     <button class="lang-btn" onclick="setLang('en')"><svg viewBox="0 0 19 10"><rect width="19" height="10" fill="#B22234"/><rect y="0" width="19" height="1" fill="#fff"/><rect y="2" width="19" height="1" fill="#fff"/><rect y="4" width="19" height="1" fill="#fff"/><rect y="6" width="19" height="1" fill="#fff"/><rect y="8" width="19" height="1" fill="#fff"/><rect width="7.6" height="5" fill="#3C3B6E"/><circle cx="1" cy="0.7" r="0.3" fill="#fff"/><circle cx="2.5" cy="0.7" r="0.3" fill="#fff"/><circle cx="4" cy="0.7" r="0.3" fill="#fff"/><circle cx="5.5" cy="0.7" r="0.3" fill="#fff"/><circle cx="7" cy="0.7" r="0.3" fill="#fff"/><circle cx="1.7" cy="1.5" r="0.3" fill="#fff"/><circle cx="3.2" cy="1.5" r="0.3" fill="#fff"/><circle cx="4.7" cy="1.5" r="0.3" fill="#fff"/><circle cx="6.2" cy="1.5" r="0.3" fill="#fff"/><circle cx="1" cy="2.3" r="0.3" fill="#fff"/><circle cx="2.5" cy="2.3" r="0.3" fill="#fff"/><circle cx="4" cy="2.3" r="0.3" fill="#fff"/><circle cx="5.5" cy="2.3" r="0.3" fill="#fff"/><circle cx="7" cy="2.3" r="0.3" fill="#fff"/><circle cx="1.7" cy="3.1" r="0.3" fill="#fff"/><circle cx="3.2" cy="3.1" r="0.3" fill="#fff"/><circle cx="4.7" cy="3.1" r="0.3" fill="#fff"/><circle cx="6.2" cy="3.1" r="0.3" fill="#fff"/><circle cx="1" cy="3.9" r="0.3" fill="#fff"/><circle cx="2.5" cy="3.9" r="0.3" fill="#fff"/><circle cx="4" cy="3.9" r="0.3" fill="#fff"/><circle cx="5.5" cy="3.9" r="0.3" fill="#fff"/><circle cx="7" cy="3.9" r="0.3" fill="#fff"/></svg></button>
   </div>
-  <div class="visual-mode-panel" aria-label="Visual mode">
-    <span class="visual-mode-label">Visual</span>
-    <button class="visual-mode-btn" id="visual-classic" onclick="setVisualMode('classic')">Classic</button>
-    <button class="visual-mode-btn" id="visual-showcase" onclick="setVisualMode('showcase')">Showcase</button>
-    <button class="visual-mode-btn" id="visual-cic" onclick="setVisualMode('cic')">Usagi CIC</button>
+  <div class="visual-mode-panel" aria-label="Visual profile">
+    <div class="visual-mode-heading">
+      <span class="visual-mode-label">Lobby Visual Profile</span>
+      <span class="visual-mode-note" id="visual-mode-note">C / CIC Phosphor</span>
+    </div>
+    <div class="visual-mode-options" role="group" aria-label="Choose visual profile">
+      <button class="visual-mode-btn" id="visual-classic" aria-pressed="false" onclick="setVisualMode('classic')" title="Original gameplay skin">A / Control</button>
+      <button class="visual-mode-btn" id="visual-showcase" aria-pressed="false" onclick="setVisualMode('showcase')" title="Showcase presentation skin">B / Showcase</button>
+      <button class="visual-mode-btn" id="visual-cic" aria-pressed="false" onclick="setVisualMode('cic')" title="Usagi CIC phosphor skin">C / CIC Phosphor</button>
+    </div>
   </div>
 </div>
 
@@ -2297,6 +2340,11 @@
 // ── Screen management ──
 
 const VISUAL_MODE_KEY = 'naval_visual_mode';
+const VISUAL_MODE_META = {
+  classic: { label: 'A / Control', note: 'Original gameplay skin' },
+  showcase: { label: 'B / Showcase', note: 'Misfits presentation skin' },
+  cic: { label: 'C / CIC Phosphor', note: 'Usagi flagship command skin' }
+};
 
 function setVisualMode(mode) {
   const nextMode = ['showcase', 'cic'].includes(mode) ? mode : 'classic';
@@ -2307,6 +2355,7 @@ function setVisualMode(mode) {
   if (fleetLabel) fleetLabel.textContent = nextMode === 'cic' ? 'OWN CONTACTS' : 'Fleet Map';
   if (radarLabel) radarLabel.textContent = nextMode === 'cic' ? 'UNKNOWN CONTACTS' : 'Radar';
   updateVisualModeButtons();
+  updateVisualModeReadout();
 }
 
 function updateVisualModeButtons() {
@@ -2317,6 +2366,16 @@ function updateVisualModeButtons() {
   if (classicBtn) classicBtn.classList.toggle('active', mode === 'classic');
   if (showcaseBtn) showcaseBtn.classList.toggle('active', mode === 'showcase');
   if (cicBtn) cicBtn.classList.toggle('active', mode === 'cic');
+  if (classicBtn) classicBtn.setAttribute('aria-pressed', mode === 'classic');
+  if (showcaseBtn) showcaseBtn.setAttribute('aria-pressed', mode === 'showcase');
+  if (cicBtn) cicBtn.setAttribute('aria-pressed', mode === 'cic');
+}
+
+function updateVisualModeReadout() {
+  const mode = document.body.dataset.visualMode || 'classic';
+  const meta = VISUAL_MODE_META[mode] || VISUAL_MODE_META.classic;
+  const note = document.getElementById('visual-mode-note');
+  if (note) note.textContent = `${meta.label} - ${meta.note}`;
 }
 
 function initVisualMode() {
