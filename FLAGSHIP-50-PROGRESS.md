@@ -57,3 +57,32 @@ No new worker, task or automation.
 Remaining: further combat edge cases, save/resume, ship/terrain/effect art,
 audio and event pacing, nuclear cinematic and owner visual acceptance.
 This first phase is not a completed game; public main has not been replaced.
+
+## Second phase — combat, persistence and initial ship/effect pass
+
+- Historical misses no longer prevent shooting a cell after a ship moved into it.
+- Reactor detonation requires two center hits, matching the displayed rules.
+- ASROC surface hits block carriers and participate in compartment detonation.
+- Striker chain stays on one ship, rejects already-hit sections and ends on sinking.
+- Nuclear launch requires a live deployed submarine, unused launch and ammunition.
+- Battle-generation guards prevent old AI callbacks from advancing a new game/menu.
+- Victory resolves after completed human attack, including the nuclear ceremony.
+- `save-game.js` provides versioned validated local snapshots. Model, action/movement
+  budget, fleets, weapons, damage, intel, terrain, pending torpedoes and nuclear
+  effects are preserved. Logs use textContent on restoration, never saved HTML.
+- Save + Continue controls, stable-action autosaves, honest storage/invalid-save
+  errors. Mid-animation/sortie saves are refused; previous stable bytes retained.
+- No extra AI move, cooldown decrement or begin-turn reset on Continue.
+- Tauri distribution copies the codec alongside HTML.
+- Existing irregular ship atlas now uses measured class rectangles, not a false
+  uniform grid that clipped hulls/mapped the destroyer to the wrong ship.
+  Detailed ships are enabled in CIC. First effects: transient wake after movement,
+  damaged-hull fire/smoke, hit flash and water splash/rings at known shot coordinates.
+  Effects do not advance game state and do not reveal unscanned enemy ships.
+
+Node checks: 22 passing across mechanics, persistence and visual crops/render purity.
+Live browser: create 50x50, fire, Save, actual reload, Continue; same shot/log,
+action still consumed, 9 movement points retained; End Turn -> AI -> player turn 2.
+No full campaign, every AI edge case or every special-weapon cinematic claimed.
+The art pass reuses existing raster assets; no new raster generation this phase.
+Large cinematic nuclear treatment remains a separate later stage.
