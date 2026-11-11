@@ -9,6 +9,7 @@ fs.copyFileSync(
   path.join(__dirname, 'index.html'),
   path.join(dist, 'index.html')
 );
+fs.copyFileSync(path.join(__dirname, 'save-game.js'), path.join(dist, 'save-game.js'));
 
 // Copy sprites folder if it exists
 const spriteSrc = path.join(__dirname, 'sprites');

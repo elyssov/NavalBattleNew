@@ -24,9 +24,9 @@ function world() {
     battle:{sinkExplosions:[]},gridCache:Array.from({length:50},()=>Array(50).fill(0)),
     addLog(){},playSound(){},showToast(){},L:x=>x,T:x=>x,shipTypeName:x=>x,
     shipProperName:s=>s.type,coordStr:()=>'',sunkDescription:()=>'',captainLastWords:()=>'',
-    showVictory(w){c.winner=w;},console};
+    showVictory(w){c.winner=w;},saveBattle(){},setTimeout(){},console};
   vm.createContext(c);
-  for(const name of ['getShipAt','checkVictory','fireTorpedo','advanceTorpedoes',
+  for(const name of ['validCombatTarget','getShipAt','checkVictory','fireTorpedo','advanceTorpedoes',
     'launchNuclearStrike','applyRadiationDamage','decrementNuclearZones']) vm.runInContext(source(name),c);
   return c;
 }
@@ -36,8 +36,9 @@ test('nuclear strike is 11x11, clipped at map edges',()=>{
   const z=c.gameState.nuclearZones[0];
   assert.equal(z.x1-z.x0+1,11); assert.equal(z.y1-z.y0+1,11);
   assert.equal(c.gameState.players[0].radarData.shots.length,121);
-  c.launchNuclearStrike(0,0,0);
-  assert.equal(c.gameState.nuclearZones[1].x0,0);
+  const edge=world();edge.gameState.players[0].ships=[{...ship('submarine',0,0),t10:1}];
+  edge.launchNuclearStrike(0,0,0);
+  assert.equal(edge.gameState.nuclearZones[0].x0,0);
 });
 test('reserve submarine prevents early victory, expires after turn ten',()=>{
   const c=world();
@@ -102,6 +103,7 @@ test('rapid repeated mouse clicks cannot spend more than one action',()=>{
   c.document={getElementById:id=>({addEventListener:(name,fn)=>events[id+':'+name]=fn,style:{}})};
   Object.assign(c,{battleInputInitialized:false,setupCameraHandlers(){},fleetCam:{},radarCam:{},
     screenToCell:()=>({x:5,y:5}),updateActionBar(){},updateTopBar(){},resetFireModes(){},
+    checkVictory:()=>false,
     shots:0,regularShot(){c.shots++;return true;}});
   vm.runInContext(source('setupBattleInput'),c);c.setupBattleInput();
   events['radar-canvas:mouseup']({button:0});events['radar-canvas:mouseup']({button:0});
@@ -110,4 +112,47 @@ test('rapid repeated mouse clicks cannot spend more than one action',()=>{
 test('CIC uses the functional maps rather than duplicating own contacts on enemy radar',()=>{
   assert.doesNotMatch(source('renderRadar'),/renderCicRadarScreen/);
   assert.doesNotMatch(source('renderFleetMap'),/renderCicRadarScreen/);
+});
+test('a ship moving into a previous miss can be hit there',()=>{
+  const c=world();c.gameState.players[0].ships=[ship('destroyer',0,0)];
+  const target=ship('destroyer',10,10);c.gameState.players[1].ships=[target];
+  c.checkReactorDetonation=()=>false;
+  c.gameState.players[0].radarData.shots=[{x:10,y:10,hit:false}];
+  vm.runInContext(source('regularShot'),c);
+  assert.equal(c.regularShot(0,10,10),true);
+  assert.equal(target.hits[0],true);
+  assert.equal(c.gameState.players[0].radarData.shots.length,1);
+  assert.equal(c.gameState.players[0].radarData.shots[0].hit,true);
+});
+test('reactor needs two hits, not an instant random destruction',()=>{
+  const c=world();let explosions=0;c.Math=Object.create(Math);c.Math.random=()=>0;
+  c.triggerNuclearExplosion=()=>explosions++;
+  vm.runInContext(source('checkReactorDetonation'),c);
+  const target={...ship('tarkr',10,10,5),reactor:2};
+  assert.equal(c.checkReactorDetonation(0,target,2,1),false);
+  assert.equal(explosions,0);
+  assert.equal(c.checkReactorDetonation(0,target,2,1),true);
+  assert.equal(explosions,1);
+});
+test('nuclear launch requires a deployed live submarine and remaining T15',()=>{
+  const c=world();assert.equal(c.launchNuclearStrike(0,20,20),false);
+  c.gameState.players[0].ships=[{...ship('submarine',0,0),t10:1}];
+  assert.equal(c.launchNuclearStrike(0,20,20),true);
+  assert.equal(c.launchNuclearStrike(0,20,20),false);
+  assert.equal(c.gameState.nuclearZones.length,1);
+});
+test('striker chain cannot jump to another ship or re-hit a damaged section',()=>{
+  const c=world();const a={...ship('destroyer',5,5),id:'a'},b={...ship('cruiser',15,15,4),id:'b'};
+  c.gameState.players[1].ships=[a,b];c.battle.strikerTargetId='a';c.currentLang='en';
+  vm.runInContext(source('strikerAttack'),c);
+  assert.equal(c.strikerAttack(0,15,15),'continue');assert.equal(b.hits.some(Boolean),false);
+  a.hits[0]=true;assert.equal(c.strikerAttack(0,5,5),'continue');
+  assert.equal(a.hits.filter(Boolean).length,1);
+});
+test('old AI callbacks cannot change a new game or a menu',()=>{
+  const c=world();const callbacks=[];
+  c.setTimeout=fn=>callbacks.push(fn);c.battleGeneration=1;c.battle.active=true;
+  vm.runInContext(source('scheduleBattle'),c);let calls=0;
+  c.scheduleBattle(()=>calls++,10);c.battleGeneration++;callbacks.shift()();assert.equal(calls,0);
+  c.scheduleBattle(()=>calls++,10);c.battle.active=false;callbacks.shift()();assert.equal(calls,0);
 });

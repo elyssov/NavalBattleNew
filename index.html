@@ -2138,6 +2138,7 @@
   <h1 id="menu-title">Naval Battle</h1>
   <h2 id="menu-subtitle">Strategic Edition</h2>
   <button class="menu-btn" id="menu-new-game" onclick="showSettings()">New Game</button>
+  <button class="menu-btn" id="menu-resume" onclick="resumeBattle()" hidden>Continue battle</button>
   <button class="menu-btn" id="menu-rules" onclick="showRules()">Game Rules</button>
   <button class="menu-btn" id="menu-donate" onclick="showDonate()" style="border-color:#66bb6a;color:#66bb6a;font-size:16px;padding:10px 36px;">Support the Author</button>
   <div id="lang-toggle">
@@ -2313,6 +2314,7 @@
     <div class="tb-item" id="tb-info"></div>
     <button id="tb-sound-btn" onclick="toggleSound()" style="background:none;border:1px solid #546e7a;color:#546e7a;padding:3px 8px;font-size:14px;cursor:pointer;letter-spacing:0;">&#x1F50A;</button>
     <button id="tb-menu-btn" onclick="backToMenu()">Menu</button>
+    <button id="save-battle-btn" class="cic-control" onclick="saveBattle(true)">Save</button>
   </div>
   <div id="cic-console" aria-label="Usagi command information center">
     <div class="cic-console-id">
@@ -2421,7 +2423,87 @@
   <div id="nuke-impact-content"></div>
 </div>
 
+<script src="save-game.js"></script>
 <script>
+let battleGeneration = 0;
+let battleSaveTimer = null;
+
+function validCombatTarget(playerIdx, x, y) {
+  const sz = gameState.settings.fieldSize;
+  return !gameState.gameOver && playerIdx === gameState.currentPlayer && !gameState.actionDone &&
+    Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < sz && y < sz;
+}
+
+function scheduleBattle(callback, delay) {
+  const generation = battleGeneration;
+  return setTimeout(() => {
+    if (generation === battleGeneration && battle.active && !gameState.gameOver) callback();
+  }, delay);
+}
+
+function queueBattleSave() {
+  clearTimeout(battleSaveTimer);
+  const generation = battleGeneration;
+  battleSaveTimer = setTimeout(() => { if (generation === battleGeneration) saveBattle(false); }, 80);
+}
+
+function updateSaveControls() {
+  const resume = document.getElementById('menu-resume');
+  if (resume) {
+    try { resume.hidden = !NavalSave.read(localStorage); }
+    catch { resume.hidden = false; }
+    resume.textContent = currentLang === 'ru' ? 'Продолжить бой' : 'Continue battle';
+  }
+  const save = document.getElementById('save-battle-btn');
+  if (save) save.textContent = currentLang === 'ru' ? 'Сохранить' : 'Save';
+}
+
+function saveBattle(notify = false) {
+  const stable = battle.active && !battle.nuclearAnimating && !battle.cicAnimating && !battle.strikerMode &&
+    (gameState.settings.gameMode === 'hotseat' || gameState.currentPlayer === 0 || gameState.gameOver);
+  if (!stable) {
+    if (notify) showToast(currentLang === 'ru' ? 'Завершите текущую атаку; предыдущий стабильный ход сохранён.' : 'Finish the current attack. The previous stable checkpoint is retained.', 'info', 3000);
+    return false;
+  }
+  try {
+    NavalSave.write(localStorage, gameState, battleLog);
+    updateSaveControls();
+    if (notify) showToast(currentLang === 'ru' ? 'Бой сохранён в этом браузере.' : 'Battle saved in this browser.', 'info', 2500);
+    return true;
+  } catch (error) {
+    console.warn('Battle save failed:', error.message);
+    if (notify) showToast(currentLang === 'ru' ? 'Не удалось сохранить бой. Проверьте свободное место браузера.' : 'Unable to save. Check browser storage space.', 'info', 3500);
+    return false;
+  }
+}
+
+function resumeBattle() {
+  let snapshot;
+  try { snapshot = NavalSave.read(localStorage); }
+  catch { showToast(currentLang === 'ru' ? 'Сохранение повреждено или несовместимо. Оно не изменено.' : 'Save is damaged or incompatible. It has not been modified.', 'info', 4000); return; }
+  if (!snapshot) return;
+  battleGeneration++;
+  cancelAnimationFrame(renderFrameId);
+  Object.assign(gameState, snapshot.game);
+  gameState.rebFlashes = [];
+  battle.radarPulses = []; battle.sinkExplosions = [];
+  battle.nuclearAnimating = false; battle.cicAnimating = false;
+  resetFireModes();
+  buildGridCache();
+  document.getElementById('menu-screen').style.display = 'none';
+  document.getElementById('settings-screen').style.display = 'none';
+  startBattle(true);
+  clearBattleLog();
+  battleLog.push(...snapshot.log);
+  const entries = document.getElementById('log-entries');
+  for (const row of snapshot.log) {
+    const el = document.createElement('div');el.className = 'log-entry';
+    el.textContent = '[' + row.turn + '] ' + row.msg;entries.appendChild(el);
+  }
+  document.getElementById('log-last').textContent = snapshot.log.at(-1)?.msg || '';
+  if (gameState.gameOver) showVictory(gameState.winner);
+  renderLoop();
+}
 // ============================================================
 //  NAVAL BATTLE: STRATEGIC EDITION
 //  Phase 1 (Menu/Landscape) + Phase 2 (Placement) + Phase 3 (Combat)
@@ -2530,6 +2612,9 @@ function cicToggleCrt() {
 }
 
 function showMenu() {
+  if (battle.nuclearAnimating || battle.cicAnimating) return;
+  saveBattle(false);
+  battleGeneration++;
   stopAmbient();
   cancelAnimationFrame(renderFrameId);
   document.getElementById('menu-screen').style.display = 'flex';
@@ -2541,6 +2626,7 @@ function showMenu() {
   document.getElementById('handoff-overlay').style.display = 'none';
   placement.phase = 'none';
   battle.active = false;
+  updateSaveControls();
 }
 
 function showSettings() {
@@ -3412,6 +3498,7 @@ function applyLocaleToDOM() {
   const mt = document.getElementById('menu-title'); if (mt) mt.textContent = L('menu.title');
   const ms = document.getElementById('menu-subtitle'); if (ms) ms.textContent = L('menu.subtitle');
   const mng = document.getElementById('menu-new-game'); if (mng) mng.textContent = L('menu.new_game');
+  updateSaveControls();
   const mr = document.getElementById('menu-rules'); if (mr) mr.textContent = L('menu.rules');
   const md = document.getElementById('menu-donate'); if (md) md.textContent = currentLang === 'ru' ? 'Поддержать автора' : 'Support the Author';
 
@@ -4550,6 +4637,7 @@ function buildGridCache() {
 // ── Start Game ──
 
 function startGame() {
+  battleGeneration++;
   gameState.settings.fieldSize = parseInt(document.querySelector('input[name="fieldSize"]:checked').value);
   gameState.settings.landscape = document.querySelector('input[name="landscape"]:checked').value;
   gameState.settings.gameMode = document.querySelector('input[name="gameMode"]:checked').value;
@@ -4607,9 +4695,9 @@ function startGame() {
 //  BATTLE (Phase 3)
 // ══════════════════════════════════════════════
 
-function startBattle() {
+function startBattle(resuming = false) {
   battle.active = true;
-  clearBattleLog();
+  if (!resuming) clearBattleLog();
   battle.selectedShip = null;
   battle.moveHighlights = [];
   battle.torpedoMode = false;
@@ -4625,10 +4713,12 @@ function startBattle() {
   battle.scanLineAngle = 0;
   battle.strikerMode = false;
   battle.strikerChain = [];
-  gameState.blastZones = [];
-  gameState.nuclearZones = [];
-  gameState.sonarDetections = [];
-  gameState.activeTorpedoes = [];
+  if (!resuming) {
+    gameState.blastZones = [];
+    gameState.nuclearZones = [];
+    gameState.sonarDetections = [];
+    gameState.activeTorpedoes = [];
+  }
 
   // Init cameras to fit field
   const sz = gameState.settings.fieldSize;
@@ -4668,9 +4758,14 @@ function startBattle() {
     fitCam(radarCam, rc.width, rc.height);
   });
 
-  gameState.currentTurn = 1;
-  gameState.currentPlayer = 0;
-  beginPlayerTurn();
+  if (!resuming) {
+    gameState.currentTurn = 1;
+    gameState.currentPlayer = 0;
+    beginPlayerTurn();
+  } else {
+    updateTopBar(); updateActionBar();
+    if (gameState.settings.gameMode === 'hotseat') showHandoff();
+  }
 }
 
 // ── Turn Management ──
@@ -4767,7 +4862,7 @@ function beginPlayerTurn() {
   }
 
   if (gameState.settings.gameMode === 'ai' && gameState.currentPlayer === 1) {
-    setTimeout(() => aiTakeTurn(), 600);
+    scheduleBattle(() => aiTakeTurn(), 600);
   }
 }
 
@@ -4807,6 +4902,7 @@ function triggerRebFlash(cells) {
 
 function endTurn() {
   if (gameState.gameOver || battle.nuclearAnimating || battle.cicAnimating) return;
+  saveBattle(false);
 
   // End-of-turn processing
   decrementCooldowns(gameState.currentPlayer);
@@ -4847,7 +4943,9 @@ function checkVictory() {
     if (trulySunk) {
       gameState.gameOver = true;
       const winner = 1 - p;
+      gameState.winner = winner;
       showVictory(winner);
+      saveBattle(false);
       return true;
     }
   }
@@ -4895,6 +4993,7 @@ function updateTopBar() {
 }
 
 function updateActionBar() {
+  queueBattleSave();
   const bar = document.getElementById('bottom-bar');
   bar.innerHTML = '';
   const isHuman = gameState.settings.gameMode === 'hotseat' || gameState.currentPlayer === 0;
@@ -5208,7 +5307,8 @@ function checkReactorDetonation(attackerIdx, ship, cellIndex, ownerIdx) {
 
   // Reactor hit (center cell, index 2) on TARKR or Carrier
   if (ship.reactor === 2 && cellIndex === 2) {
-    if (roll <= 50) {
+    ship.reactorHits = (ship.reactorHits || 0) + 1;
+    if (ship.reactorHits >= 2) {
       addLog(L('log.reactor_hit'), 'critical');
       triggerNuclearExplosion(attackerIdx, ownerIdx, center.x, center.y);
       return true;
@@ -5291,14 +5391,12 @@ function triggerNuclearExplosion(attackerIdx, ownerIdx, centerX, centerY) {
 }
 
 function regularShot(attackerIdx, x, y) {
+  if (!validCombatTarget(attackerIdx, x, y)) return false;
   const defender = gameState.players[1 - attackerIdx];
   const attacker = gameState.players[attackerIdx];
 
-  // Check already shot here
-  if (attacker.radarData.shots.some(s => s.x === x && s.y === y)) {
-    showToast(L('toast.already_fired'), 'info', 1500);
-    return false;
-  }
+  // Ships move: an old miss cannot make a coordinate invulnerable forever.
+  attacker.radarData.shots = attacker.radarData.shots.filter(s => s.x !== x || s.y !== y);
 
   // Check has living surface ship
   if (!attacker.ships.some(s => !s.sunk && s.type !== 'submarine')) {
@@ -5563,7 +5661,8 @@ function updateSubGhost() {
 }
 
 function deploySubmarine(playerIdx, cells, orientation) {
-  const sub = gameState.players[playerIdx].ships.find(s => s.type === 'submarine' && !s.deployed);
+  if (gameState.gameOver || gameState.actionDone || playerIdx !== gameState.currentPlayer || gameState.currentTurn > 10 || !isValidSubPlacement(cells, playerIdx)) return false;
+  const sub = gameState.players[playerIdx].ships.find(s => s.type === 'submarine' && !s.deployed && !s.sunk);
   if (!sub) return;
   sub.cells = cells.map(c => ({ ...c }));
   sub.orientation = orientation;
@@ -5682,6 +5781,7 @@ function startAsrocMode() {
 }
 
 function fireAsroc(attackerIdx, x, y) {
+  if (!validCombatTarget(attackerIdx, x, y)) return false;
   const attacker = gameState.players[attackerIdx];
   const defenderIdx = 1 - attackerIdx;
 
@@ -5689,11 +5789,7 @@ function fireAsroc(attackerIdx, x, y) {
   const dd = attacker.ships.find(s => s.type === 'destroyer' && !s.sunk && s.asroc > 0);
   if (!dd) { showToast(L('toast.no_asroc'), 'info'); return false; }
 
-  // Already shot here?
-  if (attacker.radarData.shots.some(s => s.x === x && s.y === y)) {
-    showToast(L('toast.already_fired'), 'info', 1500);
-    return false;
-  }
+  attacker.radarData.shots = attacker.radarData.shots.filter(s => s.x !== x || s.y !== y);
 
   dd.asroc--;
   const target = getShipAt(defenderIdx, x, y);
@@ -5716,7 +5812,9 @@ function fireAsroc(attackerIdx, x, y) {
   } else if (target) {
     // Regular hit on surface ship
     target.ship.hits[target.cellIndex] = true;
+    if (target.ship.type === 'carrier') target.ship.blocked = true;
     attacker.radarData.shots.push({ x, y, hit: true });
+    if (checkReactorDetonation(attackerIdx, target.ship, target.cellIndex, defenderIdx)) return true;
     if (target.ship.hits.every(h => h)) {
       target.ship.sunk = true;
       attacker.radarData.sunkShips.push({
@@ -5747,6 +5845,7 @@ function startTorpedoMode() {
 }
 
 function fireTorpedo(attackerIdx, targetX, targetY) {
+  if (!validCombatTarget(attackerIdx, targetX, targetY)) return false;
   const attacker = gameState.players[attackerIdx];
   const sub = attacker.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.torpedoes > 0);
   if (!sub) { showToast(L('toast.no_torpedo'), 'info'); return false; }
@@ -5923,6 +6022,7 @@ function startT10Mode() {
 }
 
 function launchNuclearStrike(attackerIdx, centerX, centerY) {
+  if (!validCombatTarget(attackerIdx, centerX, centerY) || gameState.settings.fieldSize === 30) return false;
   const attacker = gameState.players[attackerIdx];
   const defenderIdx = 1 - attackerIdx;
   const defender = gameState.players[defenderIdx];
@@ -5930,6 +6030,7 @@ function launchNuclearStrike(attackerIdx, centerX, centerY) {
 
   // ☢ T-15 is fired from submarine — surface it
   const sub = attacker.ships.find(s => s.type === 'submarine' && s.deployed && !s.sunk && s.t10 > 0);
+  if (!sub || attacker.nuclearUsed) return false;
   if (sub) {
     sub.t10--;
     sub.surfaced = true;
@@ -6492,6 +6593,7 @@ function playCicPcrSequence() {
 }
 
 function firePCR(attackerIdx, x, y) {
+  if (!validCombatTarget(attackerIdx, x, y)) return false;
   const attacker = gameState.players[attackerIdx];
   const defenderIdx = 1 - attackerIdx;
   const tarkr = attacker.ships.find(s => s.type === 'tarkr' && !s.sunk);
@@ -6591,6 +6693,7 @@ function firePCR(attackerIdx, x, y) {
 // ── Striker Aircraft ──
 
 function startStrikerMode() {
+  if (gameState.gameOver || gameState.actionDone || battle.strikerMode) return;
   const player = gameState.players[gameState.currentPlayer];
   const carrier = player.ships.find(s => s.type === 'carrier' && !s.sunk);
   if (!carrier) { showToast(L('toast.no_carrier'), 'info'); return; }
@@ -6605,16 +6708,27 @@ function startStrikerMode() {
   battle.pcrMode = false;
   battle.strikerMode = true;
   battle.strikerChain = [];
+  battle.strikerTargetId = null;
   addLog(T('log.striker_launch', {name: shipProperName(carrier), n: carrier.strikers}), 'info');
   showToast(L('toast.striker_aim'), 'info', 3000);
   updateActionBar();
 }
 
 function strikerAttack(attackerIdx, x, y) {
+  if (!validCombatTarget(attackerIdx, x, y)) return 'end';
   playSound('striker');
   const attacker = gameState.players[attackerIdx];
   const defenderIdx = 1 - attackerIdx;
   const target = getShipAt(defenderIdx, x, y);
+  if (battle.strikerTargetId && (!target || target.ship.id !== battle.strikerTargetId)) {
+    showToast(currentLang === 'ru' ? 'Продолжайте атаку того же корабля.' : 'Continue attacking the same ship.', 'info');
+    return 'continue';
+  }
+  if (target && target.ship.hits[target.cellIndex]) {
+    showToast(currentLang === 'ru' ? 'Эта секция уже поражена. Выберите целую.' : 'Section already hit. Select an intact section.', 'info');
+    return 'continue';
+  }
+  if (target) battle.strikerTargetId = target.ship.id;
 
   if (!target) {
     // Miss — striker returns safely
@@ -6644,6 +6758,7 @@ function strikerAttack(attackerIdx, x, y) {
   if (attackRoll > defenseRoll) {
     // Striker wins — hit the cell
     target.ship.hits[target.cellIndex] = true;
+    if (target.ship.type === 'carrier') target.ship.blocked = true;
     if (!attacker.radarData.shots.some(s => s.x === x && s.y === y)) {
       attacker.radarData.shots.push({ x, y, hit: true });
     }
@@ -6654,7 +6769,7 @@ function strikerAttack(attackerIdx, x, y) {
 
     // Check sunk
     const tType = shipTypeName(target.ship.type);
-    if (target.ship.hits.every(h => h)) {
+    if (!target.ship.sunk && target.ship.hits.every(h => h)) {
       target.ship.sunk = true;
       attacker.radarData.sunkShips.push({
         type: target.ship.type,
@@ -6667,7 +6782,8 @@ function strikerAttack(attackerIdx, x, y) {
     } else {
       addLog(L('log.striker_hit'), 'hit');
     }
-    // Chain continues — player clicks next target
+    if (target.ship.sunk || detonation) { battle.strikerMode = false; return 'end'; }
+    // Continue only on intact sections of this same surviving ship.
     return 'continue';
   } else {
     // Striker shot down
@@ -7031,7 +7147,7 @@ function aiTrySpecialWeapons(aiIdx, ai, shotSet, sz) {
 // ── AI Main Turn ──
 
 function aiTakeTurn() {
-  if (gameState.gameOver) return;
+  if (gameState.gameOver || !battle.active || gameState.currentPlayer !== 1) return;
 
   const aiIdx = 1;
   const ai = gameState.players[aiIdx];
@@ -7047,7 +7163,7 @@ function aiTakeTurn() {
         gameState.actionDone = true;
         // AI still spends movement points after deploying sub
         aiSpendMovePoints(aiIdx, ai, human);
-        setTimeout(() => endTurn(), 600);
+        scheduleBattle(() => endTurn(), 600);
         return;
       }
     }
@@ -7114,10 +7230,10 @@ function aiTakeTurn() {
   updateTopBar();
 
   // AI spends movement points
-  setTimeout(() => {
+  scheduleBattle(() => {
     if (gameState.gameOver) return;
     aiSpendMovePoints(aiIdx, ai, human);
-    setTimeout(() => endTurn(), 400);
+    scheduleBattle(() => endTurn(), 400);
   }, 400);
 }
 
@@ -8595,6 +8711,7 @@ function setupBattleInput() {
     const markActionDone = () => {
       gameState.actionDone = true;
       resetFireModes();
+      if (checkVictory()) return;
       updateTopBar();
       updateActionBar();
     };
