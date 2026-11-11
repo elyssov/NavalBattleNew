@@ -2,7 +2,9 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const html = fs.readFileSync(require('node:path').join(__dirname, '../index.html'), 'utf8');
+const html = process.env.NAVAL_BASELINE
+  ? require('node:child_process').execFileSync('git',['show','187fc53:index.html'],{cwd:require('node:path').join(__dirname,'..'),encoding:'utf8',maxBuffer:2*1024*1024})
+  : fs.readFileSync(require('node:path').join(__dirname, '../index.html'), 'utf8');
 const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 new vm.Script(script); // Parse the actual shipped script, not a parallel model.
 function source(name) {
@@ -74,6 +76,7 @@ test('torpedo gives defender a response and expires at the selected target',()=>
   c.gameState.players[1].ships=[victim];
   c.fireTorpedo(0,10,10); c.advanceTorpedoes();
   assert.equal(c.gameState.activeTorpedoes[0].turnsRemaining,2);
+  assert.equal(c.gameState.activeTorpedoes[0].currentY,c.gameState.activeTorpedoes[0].spawnY);
   c.gameState.currentPlayer=1; c.advanceTorpedoes();
   assert.equal(victim.sunk,false);
   c.gameState.currentPlayer=0;c.gameState.currentTurn=2;c.advanceTorpedoes();

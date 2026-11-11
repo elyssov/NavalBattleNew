@@ -8773,7 +8773,7 @@ function getRulesRU() {
 <h4>Торпеда (ПЛ)</h4>
 <ul>
 <li>3 торпеды на ПЛ. Выбирается цель на радаре.</li>
-<li>Торпеда движется 3 хода к цели (1 клетка/ход).</li>
+<li>Торпеда появляется в трёх клетках от цели. У противника один полный ход на уклонение; попадание разрешается в конце следующего хода атакующего.</li>
 <li>Гарантированное уничтожение при попадании. Если цель ушла — промах.</li>
 <li>ПЛ всплывает на 1 ход (видна противнику).</li>
 <li>Торпеда уничтожается при столкновении с островом.</li>
@@ -8850,7 +8850,7 @@ function getRulesRU() {
 </ul>
 
 <h3>Условие победы</h3>
-<p>Уничтожить все корабли противника (включая развёрнутую ПЛ). Неразвёрнутая ПЛ после хода 10 считается потерянной.</p>
+<p>Уничтожить все корабли противника. Резервная ПЛ остаётся частью флота до конца 10-го хода; с 11-го хода неразвёрнутая ПЛ считается потерянной.</p>
 
 <h3>Устаревание разведданных</h3>
 <p>Обнаруженные корабли отображаются 4 хода, затем исчезают. Свежие данные — яркие, старые — тусклые. Противник может переместить корабль после обнаружения.</p>
@@ -8932,7 +8932,7 @@ function getRulesEN() {
 <h4>Torpedo (Submarine)</h4>
 <ul>
 <li>3 torpedoes per submarine. Select target on radar.</li>
-<li>Torpedo travels 3 turns to target (1 cell/turn).</li>
+<li>The torpedo appears three cells from its target. The defender gets one full turn to evade; impact resolves at the end of the attacker's next turn.</li>
 <li>Guaranteed kill on impact. If target moved away — miss.</li>
 <li>Submarine surfaces for 1 turn (visible to enemy).</li>
 <li>Torpedo destroyed if it hits an island.</li>
@@ -9009,7 +9009,7 @@ function getRulesEN() {
 </ul>
 
 <h3>Victory Condition</h3>
-<p>Destroy all enemy ships (including deployed submarine). Undeployed submarine after turn 10 is considered lost.</p>
+<p>Destroy every enemy ship. The reserve submarine remains part of the fleet through turn 10; an undeployed submarine is lost from turn 11.</p>
 
 <h3>Intel Aging</h3>
 <p>Detected ships are displayed for 4 turns, then fade. Fresh data is bright, old data is dim. The enemy may have moved ships after detection.</p>
