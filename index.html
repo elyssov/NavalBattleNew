@@ -2039,6 +2039,96 @@
     body[data-visual-mode="cic"] #battle-area { inset: 14% 1% 18%; padding: 5px; gap: 5px; transform: none; }
     body[data-visual-mode="cic"] #cic-console { min-height: 72px; flex-wrap: wrap; justify-content: center; }
   }
+  /* Flagship 50: real tactical displays, with the bridge kept above them. */
+  body[data-visual-mode="cic"] #battle-screen {
+    height: 100dvh; background: #07121e; color: #e9f1ef; overflow: auto;
+    font-family: "Segoe UI", Arial, sans-serif;
+  }
+  body[data-visual-mode="cic"] #top-bar {
+    height: auto; min-height: 48px; padding: 8px 18px; gap: 16px;
+    background: #0b1926; border-bottom: 1px solid #365064; flex-wrap: wrap;
+  }
+  body[data-visual-mode="cic"] .tb-item,
+  body[data-visual-mode="cic"] .tb-item span { color: #c9e3ec; font-size: 14px; }
+  body[data-visual-mode="cic"] #tb-menu-btn { color: #c9e3ec; min-height: 32px; }
+  body[data-visual-mode="cic"] #cic-console {
+    min-height: 116px; padding: 12px 20px; gap: 12px; align-items: flex-end;
+    background: linear-gradient(0deg, #07121e, #07121e22 80%),
+      url('sprites/showcase/usagi-bridge-v2.png') center 32% / cover;
+    border: 0; box-shadow: none; flex-wrap: wrap;
+  }
+  body[data-visual-mode="cic"] #cic-console::before { display: none; }
+  body[data-visual-mode="cic"] .cic-call { color: #f1f6f4; font-size: 22px; letter-spacing: 2px; }
+  body[data-visual-mode="cic"] .cic-unit { color: #b1c6d4; font-size: 10px; }
+  body[data-visual-mode="cic"] .cic-control {
+    min-height: 34px; padding: 7px 12px; background: #102635e8;
+    color: #d7e8ec; border-color: #4b6b7b; font-size: 11px;
+  }
+  body[data-visual-mode="cic"] #cic-stage {
+    flex: 1 0 360px; min-height: 360px; display: flex; background: #07121e;
+    overflow: hidden; padding: 0 12px 12px; box-sizing: border-box;
+  }
+  body[data-visual-mode="cic"] #cic-stage::before,
+  body[data-visual-mode="cic"] .cic-parallax-window,
+  body[data-visual-mode="cic"] .cic-wall-apparatus,
+  body[data-visual-mode="cic"] .cic-deck-rail { display: none; }
+  body[data-visual-mode="cic"] #battle-area {
+    position: relative; inset: auto; width: 100%; flex: 1; min-height: 0;
+    display: flex; align-items: stretch; gap: 12px; padding: 0; border: 0;
+    border-radius: 0; background: none; transform: none; backdrop-filter: none; box-shadow: none;
+  }
+  body[data-visual-mode="cic"] #battle-area::before { display: none; }
+  body[data-visual-mode="cic"] .battle-panel {
+    flex: 1; width: auto; height: auto; min-width: 0; border: 1px solid #35526a;
+    border-radius: 8px; background: #06141e; box-shadow: none; backdrop-filter: none;
+  }
+  body[data-visual-mode="cic"] #fleet-panel { border: 1px solid #35526a; }
+  body[data-visual-mode="cic"] #radar-panel { border: 1px solid #387b58; background: #020d08; }
+  body[data-visual-mode="cic"] .battle-panel::after { display: none; }
+  body[data-visual-mode="cic"] .panel-label {
+    top: 0; left: 0; right: 0; transform: none; height: 36px; box-sizing: border-box;
+    padding: 10px 16px; border: 0; border-bottom: 1px solid #35526a;
+    background: #122737; color: #b9e8f6 !important; font: 600 12px "Segoe UI", sans-serif;
+    letter-spacing: 1.2px; text-shadow: none;
+  }
+  body[data-visual-mode="cic"] #radar-panel .panel-label {
+    background: #0b281b; color: #83ffb2 !important; border-bottom-color: #387b58;
+  }
+  body[data-visual-mode="cic"] .battle-panel canvas {
+    position: absolute; top: 36px; left: 0; width: 100%; height: calc(100% - 36px);
+    filter: none !important; border-radius: 0 0 8px 8px;
+  }
+  body[data-visual-mode="cic"] #bottom-bar {
+    height: auto; min-height: 68px; flex-wrap: wrap; padding: 12px; gap: 8px;
+    justify-content: center; background: #0b1926; border-top: 1px solid #365064;
+  }
+  body[data-visual-mode="cic"] .action-btn {
+    min-height: 40px; padding: 9px 14px; border-radius: 4px; background: #142b3b;
+    color: #daebef; font: 600 12px "Segoe UI", sans-serif; letter-spacing: .5px;
+  }
+  body[data-visual-mode="cic"] .action-btn.active { background: #234650; border-color: #85d8e9; }
+  body[data-visual-mode="cic"] .action-btn:disabled { opacity: .38; }
+  body[data-visual-mode="cic"] .action-btn.skip-btn {
+    background: #315440; color: #effff2; border-color: #8ac39c; margin-left: 12px;
+  }
+  body[data-visual-mode="cic"] #battle-log-bar { background: #07121e; color: #b6d4df; border-color: #365064; }
+  body[data-visual-mode="cic"] #battle-screen::after { display: none; }
+  button:focus-visible { outline: 2px solid #f5b666; outline-offset: 3px; }
+  @media (max-width: 700px) {
+    body[data-visual-mode="cic"] #top-bar { gap: 8px; padding: 8px; }
+    body[data-visual-mode="cic"] #cic-console { min-height: 90px; padding: 10px; justify-content: space-between; }
+    body[data-visual-mode="cic"] .cic-console-id { min-width: 0; }
+    body[data-visual-mode="cic"] .cic-mfd-group { flex-wrap: wrap; gap: 5px; }
+    body[data-visual-mode="cic"] #cic-stage { flex: none; min-height: 0; padding: 0 8px 8px; overflow: visible; }
+    body[data-visual-mode="cic"] #battle-area { flex-direction: column; }
+    body[data-visual-mode="cic"] .battle-panel { flex: none; width: 100%; height: max(320px, 85vw); }
+    body[data-visual-mode="cic"] .action-btn { flex: 1 0 96px; }
+    body[data-visual-mode="cic"] .action-separator { display: none; }
+    body[data-visual-mode="cic"] .action-btn.skip-btn { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition: none !important; }
+  }
 </style>
 </head>
 <body data-visual-mode="classic">
@@ -4555,14 +4645,14 @@ function startBattle() {
   const rp = document.getElementById('radar-panel');
 
   function sizeCanvases() {
-    fc.width = fp.clientWidth; fc.height = fp.clientHeight;
-    rc.width = rp.clientWidth; rc.height = rp.clientHeight;
+    fc.width = fc.clientWidth; fc.height = fc.clientHeight;
+    rc.width = rc.clientWidth; rc.height = rc.clientHeight;
   }
   sizeCanvases();
 
   // Fit cameras
   function fitCam(cam, canvasW, canvasH) {
-    const fit = Math.min(canvasW / worldSize, canvasH / worldSize) * 0.85;
+    const fit = Math.min(canvasW / worldSize, canvasH / worldSize) * 0.92;
     cam.zoom = Math.max(cam.minZoom, Math.min(cam.maxZoom, fit));
     cam.x = (canvasW - worldSize * cam.zoom) / 2;
     cam.y = (canvasH - worldSize * cam.zoom) / 2;
@@ -4574,6 +4664,8 @@ function startBattle() {
   window.addEventListener('resize', () => {
     if (!battle.active) return;
     sizeCanvases();
+    fitCam(fleetCam, fc.width, fc.height);
+    fitCam(radarCam, rc.width, rc.height);
   });
 
   gameState.currentTurn = 1;
@@ -7760,7 +7852,7 @@ function renderRadar() {
   ctx.scale(cam.zoom, cam.zoom);
 
   // Dark green field
-  ctx.fillStyle = '#0a0a0a';
+  ctx.fillStyle = '#03150c';
   ctx.fillRect(0, 0, worldSize, worldSize);
 
   const vx0 = Math.max(0, Math.floor(-cam.x / (cam.zoom * CELL_PX)));
@@ -7801,15 +7893,21 @@ function renderRadar() {
     }
   }
 
-  drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(0,80,0,0.2)');
+  drawGridLines(ctx, vx0, vy0, vx1, vy1, 'rgba(64,186,116,0.27)');
+  // Bright range rings give the array a readable scale without clipping corners.
+  ctx.strokeStyle = 'rgba(92,255,158,0.38)';
+  ctx.lineWidth = 1 / cam.zoom;
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();ctx.arc(worldSize/2, worldSize/2, worldSize*.12*ring, 0, Math.PI*2);ctx.stroke();
+  }
 
   // Scan line (rotating)
   battle.scanLineAngle = (battle.scanLineAngle + 0.008) % (Math.PI * 2);
   const centerX = worldSize / 2;
   const centerY = worldSize / 2;
   const scanLen = worldSize * 0.7;
-  ctx.strokeStyle = 'rgba(0,255,0,0.15)';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(117,255,174,0.9)';
+  ctx.lineWidth = 1.5 / cam.zoom;
   ctx.beginPath();
   ctx.moveTo(centerX, centerY);
   ctx.lineTo(
