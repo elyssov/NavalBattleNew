@@ -86,3 +86,10 @@ action still consumed, 9 movement points retained; End Turn -> AI -> player turn
 No full campaign, every AI edge case or every special-weapon cinematic claimed.
 The art pass reuses existing raster assets; no new raster generation this phase.
 Large cinematic nuclear treatment remains a separate later stage.
+
+Final browser evidence for this phase: actual reload -> Continue restored turn 1,
+spent action, movement 9 and shot at Z-25. End Turn -> AI -> turn 2; a second
+reload/Continue retained turn 2. Firing at Z-25 again succeeded and consumed that
+turn's action. No captured warning/error logs. Detailed CIC ship silhouettes
+visually inspected. Screenshot: `artifacts/flagship-50-save-and-ships.jpg`.
+Saves are local to the same browser/origin, not cross-device cloud saves.
