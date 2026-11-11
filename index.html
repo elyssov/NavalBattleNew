@@ -4714,13 +4714,13 @@ function triggerRebFlash(cells) {
 }
 
 function endTurn() {
-  if (gameState.gameOver) return;
+  if (gameState.gameOver || battle.nuclearAnimating || battle.cicAnimating) return;
 
   // End-of-turn processing
   decrementCooldowns(gameState.currentPlayer);
   advanceTorpedoes();
-  applyRadiationDamage();
-  decrementNuclearZones();
+  applyRadiationDamage(gameState.currentPlayer);
+  decrementNuclearZones(gameState.currentPlayer);
 
   // Check victory
   if (checkVictory()) return;
@@ -4749,10 +4749,8 @@ function checkVictory() {
     const subDeadline = subNotDeployed && gameState.currentTurn > 10;
     if (subDeadline && subNotDeployed) { subNotDeployed.sunk = true; }
 
-    const trulySunk = gameState.players[p].ships
-      .filter(s => s.placed || s.deployed || s.type !== 'submarine')
-      .filter(s => s.type !== 'submarine' || s.deployed || gameState.currentTurn > 10)
-      .every(s => s.sunk);
+    // A reserve submarine is still part of the fleet until its deployment deadline.
+    const trulySunk = gameState.players[p].ships.every(s => s.sunk);
 
     if (trulySunk) {
       gameState.gameOver = true;
@@ -5702,7 +5700,7 @@ function fireTorpedo(attackerIdx, targetX, targetY) {
   for (let d = 1; d <= 3; d++) {
     const cx = targetX + bestDir.dx * d;
     const cy = targetY + bestDir.dy * d;
-    if (cx < 0 || cy < 0 || cx >= sz || cy >= sz || gridCache[cy][cx] === 1) {
+    if (cx < 0 || cy < 0 || cx >= sz || cy >= sz || gridCache[cy][cx] !== 0) {
       blocked = true; break;
     }
   }
@@ -5718,7 +5716,8 @@ function fireTorpedo(attackerIdx, targetX, targetY) {
     targetX, targetY,
     spawnX, spawnY,
     currentX: spawnX, currentY: spawnY,
-    turnsRemaining: 3,
+    turnsRemaining: 2,
+    launchedTurn: gameState.currentTurn,
     direction: bestDir.name
   });
 
@@ -5732,6 +5731,9 @@ function advanceTorpedoes() {
   const toRemove = [];
   for (let i = 0; i < gameState.activeTorpedoes.length; i++) {
     const torp = gameState.activeTorpedoes[i];
+    // Never advance during the launcher's own launch turn. The defender gets
+    // one complete response turn before arrival on the next attacking turn.
+    if (torp.attackerIdx === gameState.currentPlayer && torp.launchedTurn === gameState.currentTurn) continue;
     torp.turnsRemaining--;
 
     // Move 1 cell toward target
@@ -5739,11 +5741,20 @@ function advanceTorpedoes() {
     const dy = Math.sign(torp.targetY - torp.currentY);
     torp.currentX += dx;
     torp.currentY += dy;
+    if (torp.turnsRemaining === 0) {
+      // The last phase covers the remaining two cells; check both, not only
+      // the destination, otherwise an intervening island/wreck is skipped.
+      const betweenX = torp.currentX + Math.sign(torp.targetX - torp.currentX);
+      const betweenY = torp.currentY + Math.sign(torp.targetY - torp.currentY);
+      if (gridCache[betweenY]?.[betweenX] !== 0) { toRemove.push(i); continue; }
+      torp.currentX = torp.targetX;
+      torp.currentY = torp.targetY;
+    }
 
     // Check landscape blocking
     const sz = gameState.settings.fieldSize;
     if (torp.currentX < 0 || torp.currentY < 0 || torp.currentX >= sz || torp.currentY >= sz ||
-        gridCache[torp.currentY][torp.currentX] === 1) {
+        gridCache[torp.currentY][torp.currentX] !== 0) {
       toRemove.push(i);
       continue;
     }
@@ -5840,8 +5851,8 @@ function launchNuclearStrike(attackerIdx, centerX, centerY) {
   }
   attacker.nuclearUsed = true;
 
-  const x0 = Math.max(0, centerX - 9), x1 = Math.min(sz - 1, centerX + 9);
-  const y0 = Math.max(0, centerY - 9), y1 = Math.min(sz - 1, centerY + 9);
+  const x0 = Math.max(0, centerX - 5), x1 = Math.min(sz - 1, centerX + 5);
+  const y0 = Math.max(0, centerY - 5), y1 = Math.min(sz - 1, centerY + 5);
 
   // Destroy/damage ships in zone
   for (const ship of defender.ships) {
@@ -5863,11 +5874,13 @@ function launchNuclearStrike(attackerIdx, centerX, centerY) {
     } else {
       // Partially inside: radiation damage
       ship.radiationDamage = true;
+      ship.radiationTurns = 3;
+      ship.radiationZoneId = attackerIdx + ':' + gameState.currentTurn;
     }
   }
 
   // Nuclear zone for ongoing radiation
-  gameState.nuclearZones.push({ centerX, centerY, x0, y0, x1, y1, turnsRemaining: 3, attackerIdx });
+  gameState.nuclearZones.push({ id: attackerIdx + ':' + gameState.currentTurn, centerX, centerY, x0, y0, x1, y1, turnsRemaining: 3, attackerIdx });
 
   // Record all zone cells as shots
   for (let by = y0; by <= y1; by++) {
@@ -6217,10 +6230,11 @@ function showNukeImpactOverlay(impact, callback) {
   setTimeout(dismiss, 5000);
 }
 
-function applyRadiationDamage() {
-  for (let p = 0; p < 2; p++) {
+function applyRadiationDamage(playerIdx = gameState.currentPlayer) {
+  for (const p of [playerIdx]) {
     for (const ship of gameState.players[p].ships) {
       if (!ship.radiationDamage || ship.sunk) continue;
+      ship.radiationTurns = (ship.radiationTurns ?? 3) - 1;
       // Find first unhit cell and damage it
       const idx = ship.hits ? ship.hits.findIndex(h => !h) : -1;
       if (idx >= 0) {
@@ -6237,18 +6251,22 @@ function applyRadiationDamage() {
           if (isHuman) addLog(T('log.radiation_death', {type: shipTypeName(ship.type), name: shipProperName(ship), crew: ship.crew}), 'critical');
         }
       }
+      if (ship.radiationTurns <= 0) ship.radiationDamage = false;
     }
   }
 
   // Also damage ships currently sitting inside active nuclear zones
   for (const zone of gameState.nuclearZones) {
     const defenderIdx = 1 - zone.attackerIdx;
+    if (defenderIdx !== playerIdx) continue;
     for (const ship of gameState.players[defenderIdx].ships) {
-      if (ship.sunk || ship.radiationDamage) continue;
+      if (ship.sunk || ship.radiationDamage || ship.radiationZoneId === zone.id) continue;
       if (ship.type === 'submarine' && !ship.deployed) continue;
       for (const c of ship.cells) {
         if (c.x >= zone.x0 && c.x <= zone.x1 && c.y >= zone.y0 && c.y <= zone.y1) {
           ship.radiationDamage = true;
+          ship.radiationTurns = 3;
+          ship.radiationZoneId = zone.id;
           break;
         }
       }
@@ -6256,9 +6274,9 @@ function applyRadiationDamage() {
   }
 }
 
-function decrementNuclearZones() {
+function decrementNuclearZones(playerIdx = gameState.currentPlayer) {
   gameState.nuclearZones = gameState.nuclearZones.filter(z => {
-    z.turnsRemaining--;
+    if (1 - z.attackerIdx === playerIdx) z.turnsRemaining--;
     return z.turnsRemaining > 0;
   });
 }
@@ -7495,10 +7513,6 @@ function renderCicRadarScreen(screen) {
 }
 
 function renderFleetMap() {
-  if (isCicMode()) {
-    renderCicRadarScreen('fleet');
-    return;
-  }
   const canvas = document.getElementById('fleet-canvas');
   const ctx = canvas.getContext('2d');
   const sz = gameState.settings.fieldSize;
@@ -7732,10 +7746,6 @@ function renderFleetMap() {
 // ── Radar Rendering ──
 
 function renderRadar() {
-  if (isCicMode()) {
-    renderCicRadarScreen('radar');
-    return;
-  }
   const canvas = document.getElementById('radar-canvas');
   const ctx = canvas.getContext('2d');
   const sz = gameState.settings.fieldSize;
@@ -8383,6 +8393,7 @@ function setupBattleInput() {
     if (fleetCam.dragMoved) { fleetCam.dragging = false; fleetCam.dragMoved = false; return; }
     fleetCam.dragging = false; fleetCam.dragMoved = false;
     if (e.button !== 0) return;
+    if (gameState.gameOver || battle.nuclearAnimating || battle.cicAnimating) return;
     if (gameState.settings.gameMode === 'ai' && gameState.currentPlayer !== 0) return;
 
     const cell = screenToCell(e.clientX, e.clientY, fc, fleetCam);
@@ -8472,6 +8483,7 @@ function setupBattleInput() {
     if (radarCam.dragMoved) { radarCam.dragging = false; radarCam.dragMoved = false; return; }
     radarCam.dragging = false; radarCam.dragMoved = false;
     if (e.button !== 0) return;
+    if (gameState.gameOver) return;
     if (gameState.settings.gameMode === 'ai' && gameState.currentPlayer !== 0) return;
     if (gameState.actionDone) return;
     if (battle.nuclearAnimating) return;
@@ -8491,13 +8503,13 @@ function setupBattleInput() {
 
     if (battle.torpedoMode) {
       const result = fireTorpedo(cp, cell.x, cell.y);
-      if (result) setTimeout(markActionDone, 600);
+      if (result) markActionDone();
       return;
     }
 
     if (battle.asrocMode) {
       const result = fireAsroc(cp, cell.x, cell.y);
-      if (result) setTimeout(markActionDone, 600);
+      if (result) markActionDone();
       return;
     }
 
@@ -8510,8 +8522,9 @@ function setupBattleInput() {
     if (battle.pcrMode && battle.pcrSelectedLauncher >= 0) {
       const result = firePCR(cp, cell.x, cell.y);
       if (result) {
+        markActionDone();
         const ceremony = isCicMode() ? playCicPcrSequence() : Promise.resolve();
-        ceremony.then(markActionDone);
+        ceremony.then(() => { updateTopBar(); updateActionBar(); });
       }
       return;
     }
@@ -8519,7 +8532,7 @@ function setupBattleInput() {
     if (battle.strikerMode) {
       const result = strikerAttack(cp, cell.x, cell.y);
       if (result === 'end') {
-        setTimeout(markActionDone, 1000);
+        markActionDone();
       }
       // 'continue' — chain continues, player clicks next target
       updateActionBar();
@@ -8528,7 +8541,7 @@ function setupBattleInput() {
 
     const result = regularShot(cp, cell.x, cell.y);
     if (result) {
-      setTimeout(markActionDone, 600);
+      markActionDone();
     }
   });
 
