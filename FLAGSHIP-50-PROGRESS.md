@@ -50,8 +50,9 @@ no people, painted screens, radar, text, buttons or logos.
 Art is atmosphere above real controls, not a fake UI.
 
 Owner requested Phoebe curator through Ochag. Request #5932; advisory response
-from `lara-fable`. Identity clarification #5941 pending before calling this
-Phoebe's acceptance. No new worker, task or automation.
+from `lara-fable`. Phoebe explicitly confirmed that handle is hers after the
+identity clarification #5941. Advisory curation accepted, no parallel code.
+No new worker, task or automation.
 
 Remaining: further combat edge cases, save/resume, ship/terrain/effect art,
 audio and event pacing, nuclear cinematic and owner visual acceptance.
